@@ -1,5 +1,5 @@
 <?php
-session_start();
+
 require 'autoloader.php';
 
 use Ospina\EasySQL\EasySQL;
@@ -11,10 +11,11 @@ $requestData = getDataFromPostRequest();
 try {
     $isGraduated = verifyIfIsGraduated($requestData->identificationNumber);
 } catch (JsonException $e) {
+
 }
 
 //Actualizar DataBase
-$mysql = new EasySQL('encuesta_graduados', 'local');
+$mysql = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 $result = $mysql->table('form_answers')
     ->where('id', '=', $requestData->id)
     ->update([
@@ -61,13 +62,14 @@ function getDataFromPostRequest(): object
  */
 function verifyIfIsGraduated(string $identification_number): int
 {
-    $endpoint = 'https://academia.unibague.edu.co/atlante/graduados_ver_siga.php';
+    $endpoint = 'https://academia.unibague.edu.co/atlante/grad_ver_siga.php';
     $curl = new \Ospina\CurlCobain\CurlCobain($endpoint);
     $curl->setQueryParamsAsArray([
         'consulta' => 'Consultar',
         'documento' => $identification_number,
     ]);
     $response = $curl->makeRequest();
+
     return json_decode($response, true, 512, JSON_THROW_ON_ERROR)['data'];
 }
 
@@ -75,10 +77,5 @@ function verifyIfIsGraduated(string $identification_number): int
  * @param $var
  * @return void
  */
-function dd($var)
-{
-    header('Content-Type: application/json;charset=utf-8');
-    echo json_encode($var);
-    die();
-}
+
 

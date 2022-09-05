@@ -25,10 +25,10 @@
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
 
                     <li class="nav-item">
-                        <a class="nav-link" href="/ready.php">Listos para migrar</a>
+                        <a class="nav-link" href="/ready.php">Listos para actualizar</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/pending.php">Pendientes de sincronización</a>
+                        <a class="nav-link" href="/pending.php">No están en SIGA</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/rejected.php">Rechazados</a>

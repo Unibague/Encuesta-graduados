@@ -1,7 +1,5 @@
 <?php
-session_start();
-require 'vendor/autoload.php';
-require 'Helpers/Auth.php';
+require __DIR__ . '/app/controllers/autoloader.php';
 
 use eftec\bladeone\BladeOne;
 use Ospina\EasyLDAP\EasyLDAP;
@@ -34,22 +32,21 @@ function handleGetRequest()
 
 function isValidUser(string $userName): bool
 {
-    $user = getUserId($userName);
-    return count($user) !== 0;
+    return getUserId($userName) !== null;
 }
 
-function getUserId(string $userName)
+function getUserId(string $userName): ?int
 {
-    $mysql = new EasySQL('encuesta_graduados', 'local');
+    $mysql = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
     try {
         $result = $mysql->table('users')->select(['id'])
             ->where('username', '=', $userName)
             ->get();
 
     } catch (RuntimeException $e) {
-        return false;
+        return null;
     }
-    return $result[0]['id'];
+    return $result[0]['id'] ?? null;
 }
 
 /**
@@ -57,8 +54,10 @@ function getUserId(string $userName)
  */
 function handlePostRequest()
 {
+
     try {
         $request = parseRequest();
+
     } catch (RuntimeException $e) {
         //Render the login view again.
         $error = $e->getMessage();
@@ -66,6 +65,7 @@ function handlePostRequest()
     }
 
     $isValid = isValidUser($request->username);
+
     if ($isValid !== true) {
         $error = 'No estás autorizado para usar la plataforma';
         parseLoginView($error);

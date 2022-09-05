@@ -3,7 +3,7 @@ require 'autoloader.php';
 
 use Ospina\EasySQL\EasySQL;
 
-$pendingAnswersConnection = new EasySQL('encuesta_graduados', 'local');
+$pendingAnswersConnection = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 $pendingAnswers = $pendingAnswersConnection->table('form_answers')->select(['identification_number','id'])
     ->where('is_graduated', '=', 0)
     ->where('is_migrated', '=', 0)
@@ -16,7 +16,7 @@ foreach ($pendingAnswers as $answer) {
     try {
         $isGraduated = verifyIfIsGraduated($answer['identification_number']);
         //Actualizar DataBase
-        $mysql = new EasySQL('encuesta_graduados', 'local');
+        $mysql = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
         $result = $mysql->table('form_answers')
             ->where('id', '=', $answer['id'])
             ->update([
@@ -53,10 +53,5 @@ function verifyIfIsGraduated(string $identification_number): int
  * @param $var
  * @return void
  */
-function dd($var)
-{
-    header('Content-Type: application/json;charset=utf-8');
-    echo json_encode($var);
-    die();
-}
+
 

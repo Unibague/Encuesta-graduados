@@ -1,7 +1,6 @@
 <?php
-session_start();
-require 'vendor/autoload.php';
-require 'Helpers/Auth.php';
+require __DIR__ . '/app/controllers/autoloader.php';
+
 
 use eftec\bladeone\BladeOne;
 use Ospina\EasySQL\EasySQL;
@@ -14,7 +13,7 @@ $dotenv = Dotenv::createUnsafeImmutable(__DIR__);
 $dotenv->load();
 
 //create db object
-$graduatedAnswersConnection = new EasySQL('encuesta_graduados', 'local');
+$graduatedAnswersConnection = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 $graduatedAnswers = $graduatedAnswersConnection->table('form_answers')->select(['*'])
     ->where('is_graduated', '=', 1)
     ->where('is_migrated', '=', 0)
@@ -64,9 +63,3 @@ function getUserData(string $identification_number)
     return json_decode($response, true);
 }
 
-function dd($var)
-{
-    header('Content-Type: application/json;charset=utf-8');
-    echo json_encode($var);
-    die();
-}

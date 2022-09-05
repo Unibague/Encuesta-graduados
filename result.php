@@ -1,6 +1,5 @@
 <?php
 require 'vendor/autoload.php';
-require 'Helpers/OspinaMysqlHelper.php';
 
 use eftec\bladeone\BladeOne;
 use Ospina\SmartQueryBuilder\SmartQueryBuilder;
@@ -50,9 +49,3 @@ function getIdFromRequest()
     return $_GET['id'];
 }
 
-function dd($var)
-{
-    header('Content-Type: application/json;charset=utf-8');
-    echo json_encode($var);
-    die();
-}

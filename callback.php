@@ -51,7 +51,7 @@ $data = [
 ];
 //Get DB Object
 
-$easySQL = new EasySQL('encuesta_graduados', 'local');
+$easySQL = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 $easySQL->table('form_answers')->insert($data);
 
 $easySQL->dd();
@@ -145,9 +145,3 @@ function parseRequest()
     return json_decode($data, false, 512, JSON_THROW_ON_ERROR);
 }
 
-function dd($var)
-{
-    header('Content-Type: application/json;charset=utf-8');
-    echo json_encode($var);
-    die();
-}

@@ -1,5 +1,5 @@
 <?php
-session_start();
+
 require 'autoloader.php';
 
 use Ospina\EasySQL\EasySQL;
@@ -7,12 +7,11 @@ use Ospina\EasySQL\EasySQL;
 
 $request = parseRequest();
 
-$easySQL = new EasySQL('encuesta_graduados', 'local');
+$easySQL = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 $easySQL->table('form_answers')->where('ID', '=', $request->id)->update(
     [
         'is_denied' => 1,
         'denied_by' => user()->id,
-        'modificated_at' => time(),
     ]
 );
 flashSession('Se ha rechazado el registro exitosamente');
@@ -24,10 +23,5 @@ function parseRequest()
     return (object)$_REQUEST;
 }
 
-function dd($var)
-{
-    header('Content-Type: application/json;charset=utf-8');
-    echo json_encode($var);
-    die();
-}
+
 

@@ -1,5 +1,5 @@
 <?php
-session_start();
+
 require 'Helpers/Auth.php';
 //Check if is auth
 verifyIsAuthenticated();

@@ -1,7 +1,5 @@
 <?php
-session_start();
-require 'vendor/autoload.php';
-require 'Helpers/Auth.php';
+require __DIR__ . '/app/controllers/autoloader.php';
 
 use eftec\bladeone\BladeOne;
 use Ospina\EasySQL\EasySQL;
@@ -11,7 +9,7 @@ verifyIsAuthenticated();
 
 
 //create db object
-$notGraduatedAnswersConnection = new EasySQL('encuesta_graduados', 'local');
+$notGraduatedAnswersConnection = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 $rejectedAnswers = $notGraduatedAnswersConnection->table('form_answers')->select(['*'])
     ->where('is_denied','=',1)
     ->where('is_deleted','=',0)
@@ -36,9 +34,3 @@ try {
     echo 'Ha ocurrido un error';
 }
 
-function dd($var)
-{
-    header('Content-Type: application/json;charset=utf-8');
-    echo json_encode($var);
-    die();
-}

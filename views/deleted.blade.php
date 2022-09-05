@@ -1,6 +1,6 @@
 @component('templates.main')
     @slot('title')
-        Registros eliminados
+        Registros borrados
     @endslot
 
     @slot('header')
@@ -43,7 +43,7 @@
         </div>
     @endif
     <h1 class="text-center mb-4">
-        Registros eliminados
+        Registros borrados
     </h1>
 
     <div class="table-responsive">

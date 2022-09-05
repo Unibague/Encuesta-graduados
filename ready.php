@@ -19,14 +19,13 @@ $graduatedAnswers = $graduatedAnswersConnection->table('form_answers')->select([
     ->where('is_migrated', '=', 0)
     ->where('is_denied', '=', 0)
     ->where('is_deleted', '=', 0)
+    ->limit($_GET['limit'] ?? 10)
     ->get();
 
-$graduatedAnswers = array_slice($graduatedAnswers, 0, 10);
 //Get data from siga
 foreach ($graduatedAnswers as $key => $answer) {
     $graduatedAnswers[$key]['official_answers'] = getUserData($answer['identification_number']);
 }
-
 
 $blade = new BladeOne();
 try {

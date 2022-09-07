@@ -16,7 +16,7 @@ $easySQL->table('form_answers')->where('ID', '=', $request->id)->update(
         'migrated_by' => user()->id
     ]
 );
-flashSession('Se ha migrado el registro a siga exitosamente');
+flashSession('Se ha migrado el registro a SIGA exitosamente');
 header("Location: " . $_SERVER['HTTP_REFERER']);
 die();
 

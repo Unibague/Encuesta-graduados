@@ -6,9 +6,6 @@ use Ospina\EasySQL\EasySQL;
 $pendingAnswersConnection = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 $pendingAnswers = $pendingAnswersConnection->table('form_answers')->select(['identification_number','id'])
     ->where('is_graduated', '=', 0)
-    ->where('is_migrated', '=', 0)
-    ->where('is_denied', '=', 0)
-    ->where('is_deleted', '=', 0)
     ->get();
 
 
@@ -39,7 +36,7 @@ foreach ($pendingAnswers as $answer) {
  */
 function verifyIfIsGraduated(string $identification_number): int
 {
-    $endpoint = 'https://academia.unibague.edu.co/atlante/graduados_ver_siga.php';
+    $endpoint = 'https://academia.unibague.edu.co/atlante/grad_ver_siga.php';
     $curl = new \Ospina\CurlCobain\CurlCobain($endpoint);
     $curl->setQueryParamsAsArray([
         'consulta' => 'Consultar',

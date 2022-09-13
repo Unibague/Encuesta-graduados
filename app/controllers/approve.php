@@ -28,12 +28,23 @@ function updateUserData(string $identification_number, object $request)
         'consulta' => 'Modificar',
         'documento' => $identification_number,
         'token' => md5($identification_number) . getenv('SECURE_TOKEN'),
-        'correo' => $request->email,
-        'ciudad' => $request->city,
-        'direccion' => $request->address,
-        'telefono' => $request->mobile_phone,
-        'tel_alterno' => $request->alternative_mobile_phone
     ];
+
+    if ($request->email) {
+        $data['correo'] = $request->email;
+    }
+    if ($request->city) {
+        $data['ciudad'] = $request->city;
+    }
+    if ($request->address) {
+        $data['direccion'] = $request->address;
+    }
+    if ($request->mobile_phone) {
+        $data['telefono'] = $request->mobile_phone;
+    }
+    if ($request->alternative_mobile_phone) {
+        $data['tel_alterno'] = $request->alternative_mobile_phone;
+    }
 
     $curl->setQueryParamsAsArray($data);
 

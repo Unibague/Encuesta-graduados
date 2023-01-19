@@ -5,9 +5,12 @@ require 'autoloader.php';
 use Ospina\EasySQL\EasySQL;
 
 $request = parseRequest();
-
 $response = updateUserData($request->identification_number, $request);
-
+if (isset($response->error)) {
+    flashSession('Ha ocurrido el siguiente error:' . $response->error);
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    die();
+}
 
 $easySQL = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 $easySQL->table('form_answers')->where('ID', '=', $request->id)->update(
@@ -49,7 +52,7 @@ function updateUserData(string $identification_number, object $request)
     $curl->setQueryParamsAsArray($data);
 
     $response = $curl->makeRequest();
-    return json_decode($response, true);
+    return json_decode($response, false);
 }
 
 function parseRequest()

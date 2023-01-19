@@ -7,7 +7,7 @@ use Ospina\EasySQL\EasySQL;
 $request = parseRequest();
 $response = updateUserData($request->identification_number, $request);
 if (isset($response->error)) {
-    flashSession('Ha ocurrido el siguiente error:' . $response->error);
+    flashSession('Ha ocurrido el siguiente error: ' . $response->error . ' Favor comunicarse con el administrador del sistema');
     header("Location: " . $_SERVER['HTTP_REFERER']);
     die();
 }

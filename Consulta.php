@@ -1,9 +1,8 @@
 <?php
 
-require 'vendor/autoload.php';
+require __DIR__ . '/app/controllers/autoloader.php';
 
 use Dotenv\Dotenv;
-
 const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSf1ijgwz_RiQDP9zzI6YeM6n_Hl2Gnad03wu_mimLZ1PxPn-A/viewform';
 
 //Get HTTP params
@@ -13,6 +12,8 @@ validatedRequest($request);
 
 //Search on DB
 $result = searchUser($request);
+
+
 //Format data
 $formattedData = formatData($result);
 //Build final form URL
@@ -59,8 +60,7 @@ function searchUser(array $request)
         'token' => md5($request['identification_number']) . getenv('SECURE_TOKEN')
     ]);
     $response = $curl->makeRequest();
-
-    return json_decode($response, true)[0];
+    return json_decode($response, true);
 }
 
 function getFormItems()
@@ -101,10 +101,3 @@ function verifyRequest(array $request)
     return ['error' => false];
 
 }
-
-function dd($var)
-{
-    print_r($var);
-    die();
-}
-

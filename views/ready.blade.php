@@ -32,7 +32,7 @@
     @endslot
 
     @if(isset($message))
-        <div class="toast align-items-center text-bg-danger border-0 position-fixed top-0 end-0 m-2" role="alert"
+        <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-2" role="alert"
              aria-live="assertive" aria-atomic="true" id="messages">
             <div class="d-flex">
                 <div class="toast-body">

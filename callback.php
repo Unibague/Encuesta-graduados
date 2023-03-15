@@ -1,14 +1,15 @@
 <?php
-
+require __DIR__ . '/app/controllers/autoloader.php';
 use Ospina\EasySQL\EasySQL;
 
-require 'vendor/autoload.php';
+//require 'vendor/autoload.php';
 //parse the request
 try {
     $request = parseRequest();
 } catch (JsonException $e) {
     echo 'There was a problem parsing the request';
 }
+
 //Get identification number an email
 $identification_number = getIdentificationNumberFromRequest($request);
 $email = getEmailFromRequest($request);
@@ -45,13 +46,14 @@ $data = [
     'address' => $address,
     'country' => $country,
     'city' => $city,
-    'is_graduated' => $isGraduated,
+    'is_graduated' => (int)$isGraduated,
     'answers' => $answer,
     'created_at' => date('Y-m-d H:i:s'),
 ];
 //Get DB Object
 
 $easySQL = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+//dd($data);
 $easySQL->table('form_answers')->insert($data);
 
 $easySQL->dd();
@@ -140,8 +142,7 @@ function getIdentificationNumberFromRequest($request)
  */
 function parseRequest()
 {
-    $data = file_get_contents('./data.json');
-    //$data = file_get_contents('php//input');
+    $data = file_get_contents('php://input');
     return json_decode($data, false, 512, JSON_THROW_ON_ERROR);
 }
 

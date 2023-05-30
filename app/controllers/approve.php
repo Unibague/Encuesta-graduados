@@ -33,11 +33,25 @@ function updateUserData(string $identification_number, object $request)
         'token' => md5($identification_number) . getenv('SECURE_TOKEN'),
     ];
 
+    //Conversion a mayusculas y eliminacion de tildes (Probar)
+    function convertir($city) {
+        $city = strtoupper($city, 'UTF-8');
+
+        $city = preg_replace('/[áÁ]/u', 'A', $city);
+        $city = preg_replace('/[éÉ]/u', 'E', $city);
+        $city = preg_replace('/[íÍ]/u', 'I', $city);
+        $city = preg_replace('/[óÓ]/u', 'O', $city);
+        $city = preg_replace('/[úÚ]/u', 'U', $city);
+        // $texto = preg_replace('/ñÑ/u', 'N', $texto);
+
+        return $city;
+    }
+
     if ($request->email) {
         $data['correo'] = $request->email;
     }
     if ($request->city) {
-        $data['ciudad'] = $request->city;
+        $data['ciudad'] = convertir($request->city);
     }
     if ($request->address) {
         $data['direccion'] = $request->address;

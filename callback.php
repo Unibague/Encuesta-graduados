@@ -145,7 +145,7 @@ function getIdentificationNumberFromRequest($request)
 function parseRequest()
 {
     $data = file_get_contents('php://input');
-    return $data;
+    var_dump($data);
     return json_decode($data, false, 512, JSON_THROW_ON_ERROR);
 }
 

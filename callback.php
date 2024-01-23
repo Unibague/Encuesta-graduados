@@ -4,9 +4,12 @@ use Ospina\EasySQL\EasySQL;
 
 //require 'vendor/autoload.php';
 //parse the request
+
 try {
     $request = parseRequest();
+
 } catch (JsonException $e) {
+    echo "hello it failed";
     echo 'There was a problem parsing the request';
 }
 
@@ -57,7 +60,6 @@ $easySQL = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 $easySQL->table('form_answers')->insert($data);
 
 $easySQL->dd();
-
 
 
 function getNameFromRequest($request): string
@@ -143,6 +145,7 @@ function getIdentificationNumberFromRequest($request)
 function parseRequest()
 {
     $data = file_get_contents('php://input');
+    return $data;
     return json_decode($data, false, 512, JSON_THROW_ON_ERROR);
 }
 

@@ -63,7 +63,7 @@ function handlePostRequest()
         $error = $e->getMessage();
         parseLoginView($error);
     }
-
+/*
     $isValid = isValidUser($request->username);
 
     if ($isValid !== true) {
@@ -76,7 +76,7 @@ function handlePostRequest()
     if ($auth === false) {
         $error = 'Los datos que ingresaste no coinciden con nuestro registros';
         parseLoginView($error);
-    }
+    }*/
 
     setSessionObject($request->username, getUserId($request->username));
     redirectToDefaultRoute();

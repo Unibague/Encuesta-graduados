@@ -7,13 +7,12 @@ use Ospina\EasySQL\EasySQL;
 
 try {
     $request = parseRequest();
-
 } catch (JsonException $e) {
     echo "hello it failed";
     echo 'There was a problem parsing the request';
 }
 
-//Get identification number an email
+//Get identification number and email
 $identification_number = getIdentificationNumberFromRequest($request);
 $email = getEmailFromRequest($request);
 $name = getNameFromRequest($request);
@@ -123,13 +122,15 @@ function getAnswersFromRequestAsJsonText($request)
  */
 function verifyIfIsGraduated(string $identification_number): int
 {
-    $endpoint = 'https://academia.unibague.edu.co/atlante/graduados_ver_siga.php';
+    $endpoint = 'https://academia.unibague.edu.co/atlante/grad_ver_siga.php';
     $curl = new \Ospina\CurlCobain\CurlCobain($endpoint);
     $curl->setQueryParamsAsArray([
         'consulta' => 'Consultar',
         'documento' => $identification_number,
     ]);
     $response = $curl->makeRequest();
+    var_dump($response);
+    echo "This is the response";
     return json_decode($response, true, 512, JSON_THROW_ON_ERROR)['data'];
 }
 
@@ -145,7 +146,6 @@ function getIdentificationNumberFromRequest($request)
 function parseRequest()
 {
     $data = file_get_contents('php://input');
-    var_dump($data);
     return json_decode($data, false, 512, JSON_THROW_ON_ERROR);
 }
 

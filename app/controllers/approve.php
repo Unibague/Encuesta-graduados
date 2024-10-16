@@ -35,7 +35,7 @@ function updateUserData(string $identification_number, object $request)
 
     //Conversion a mayusculas y eliminacion de tildes (Probar)
     function convertir($city) {
-        $city = strtoupper($city, 'UTF-8');
+        $city = strtoupper($city);
 
         $city = preg_replace('/[áÁ]/u', 'A', $city);
         $city = preg_replace('/[éÉ]/u', 'E', $city);

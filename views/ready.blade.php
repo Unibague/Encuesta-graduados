@@ -10,8 +10,6 @@
             #flt10_table1 {
                 display: none;
             }
-
-
             th {
                 height: 50px;
                 width: 50px;
@@ -59,7 +57,6 @@
     <h1 class="text-center mb-4">
         Registros listos para migrar
     </h1>
-
 
     <div class="table-responsive">
         <table class="table table-striped table-hover" id="table1">

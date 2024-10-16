@@ -4,7 +4,6 @@ use Ospina\EasySQL\EasySQL;
 
 //require 'vendor/autoload.php';
 //parse the request
-
 try {
     $request = parseRequest();
 } catch (JsonException $e) {

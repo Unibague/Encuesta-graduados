@@ -1,3 +1,4 @@
 /vendor
 .env
 /compiles
+credentials.json

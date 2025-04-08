@@ -39,6 +39,14 @@ $userInfo = $oauth->userinfo->get();
 $email = $userInfo->email;
 $name = $userInfo->name;
 
+// ✅ Validar correo institucional
+if (
+    !str_ends_with($email, '@unibague.edu.co') &&
+    !str_ends_with($email, '@estudiantesunibague.edu.co')
+) {
+    returnErrorPage("Solo puedes hacer la prueba con tu correo institucional.");
+}
+
 // Extract username (assuming email format like 1005712934@unibague.edu.co)
 $username = extractUsername($email);
 

@@ -4,33 +4,29 @@ function verifyIsAuthenticated()
 {
     if (!auth()) {
         header("Location: /login.php");
-        die();
+        exit;
     }
 }
 
 function auth(): bool
 {
-    if (isset($_SESSION['auth'])) {
-        return $_SESSION['auth'] === true;
-    }
-
-    return false;
+    return isset($_SESSION['auth']) && $_SESSION['auth'] === true;
 }
 
 function user(): ?object
 {
-    if (auth()) {
-        return (object)[
-            'username' => $_SESSION['username'],
-            'id' => $_SESSION['id'],
-        ];
+    if (!auth()) {
+        return null;
     }
-    return null;
+
+    return (object)[
+        'username' => $_SESSION['username'],
+        'id' => $_SESSION['id'],
+    ];
 }
 
 function redirectToDefaultRoute()
 {
-    $redirectUri = '/ready.php';
-    header("Location: $redirectUri");
-    die();
+    header("Location: /ready.php");
+    exit;
 }

@@ -90,8 +90,25 @@ function handlePostRequest()
  */
 function authenticate($username, $password): bool
 {
+    // ===============================
+    // ENTORNO LOCAL → SIN LDAP
+    // ===============================
+    if (getenv('APP_ENV') === 'local') {
+        // En local solo validamos que el usuario exista en la BD
+        return true;
+    }
+
+    // ===============================
+    // PRODUCCIÓN → LDAP REAL
+    // ===============================
+    if (!function_exists('ldap_connect')) {
+        // Seguridad adicional por si LDAP no está habilitado
+        throw new RuntimeException('LDAP no está habilitado en el servidor');
+    }
+
     $easyLDAP = new EasyLDAP(false);
-    $role = 1; //Functionary
+    $role = 1; // Functionary
+
     try {
         $easyLDAP->authenticate($username, $password, $role);
         return true;
@@ -99,6 +116,7 @@ function authenticate($username, $password): bool
         return false;
     }
 }
+
 
 function parseLoginView($error = null)
 {

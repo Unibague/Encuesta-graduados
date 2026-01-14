@@ -3,32 +3,49 @@ require __DIR__ . '/app/controllers/autoloader.php';
 
 use eftec\bladeone\BladeOne;
 use Ospina\EasySQL\EasySQL;
+use Dotenv\Dotenv;
 
-//Check if is auth
+// =========================
+// AUTH
+// =========================
 verifyIsAuthenticated();
 
-//create db object
+// =========================
+// ENV (FALTA ESTO)
+// =========================
+$dotenv = Dotenv::createUnsafeImmutable(__DIR__);
+$dotenv->load();
+
+// =========================
+// DB
+// =========================
 $deletedConnection = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
-$deletedAnswers = $deletedConnection->table('form_answers')->select(['*'])
+
+$deletedAnswers = $deletedConnection
+    ->table('form_answers')
+    ->select(['*'])
     ->where('is_deleted', '=', 1)
     ->get();
 
-$blade = new BladeOne();
-try {
-    $isPending = $_SESSION['pending'] ?? false;
-    if ($isPending) {
-        //Almacenar variable
-        $message = $_SESSION['message'];
+// =========================
+// BLADE
+// =========================
+$viewsPath = __DIR__ . '/views';
+$cachePath = __DIR__ . '/cache';
 
-        //Limpiar variables antes de renderizar
-        $_SESSION['message'] = '';
-        $_SESSION['pending'] = false;
-        echo $blade->run("deleted", compact('deletedAnswers', 'message'));
-    } else {
-        echo $blade->run("deleted", compact('deletedAnswers'));
-    }
+$blade = new BladeOne($viewsPath, $cachePath, BladeOne::MODE_AUTO);
 
-} catch (Exception $e) {
-    echo 'Ha ocurrido un error';
+// =========================
+// RENDER
+// =========================
+$isPending = $_SESSION['pending'] ?? false;
+
+if ($isPending) {
+    $message = $_SESSION['message'] ?? null;
+    $_SESSION['message'] = null;
+    $_SESSION['pending'] = false;
+
+    echo $blade->run("deleted", compact('deletedAnswers', 'message'));
+} else {
+    echo $blade->run("deleted", compact('deletedAnswers'));
 }
-

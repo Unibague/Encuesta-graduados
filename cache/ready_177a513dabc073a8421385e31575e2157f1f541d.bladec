@@ -1,0 +1,217 @@
+<?php  $this->startComponent('templates.main'); ?>
+
+ <?php  $this->slot('title'); ?>
+ Registros listos para migrar
+ <?php  $this->endSlot(); ?>
+
+ <?php /* HEADER SLOT */ ?>
+ <?php  $this->slot('header'); ?>
+ <style>
+ .page-scroll {
+ overflow-x: auto;
+ width: 100%;
+ }
+
+ table {
+ min-width: 1600px;
+ }
+
+ th, td {
+ white-space: nowrap;
+ text-align: center;
+ vertical-align: middle;
+ height: 50px;
+ }
+ </style>
+ <?php  $this->endSlot(); ?>
+
+ <?php /* TOASTS */ ?>
+ <?php if(isset($message)): ?>
+ <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-2"
+ role="alert" aria-live="assertive" aria-atomic="true">
+ <div class="d-flex">
+ <div class="toast-body"><?php echo \htmlentities($message??'', ENT_QUOTES, 'UTF-8', false); ?></div>
+ <button type="button" class="btn-close btn-close-white me-2 m-auto"
+ data-bs-dismiss="toast"></button>
+ </div>
+ </div>
+ <?php endif; ?>
+
+ <?php if(isset($error)): ?>
+ <div class="toast align-items-center text-bg-danger border-0 position-fixed top-0 end-0 m-2"
+ role="alert" aria-live="assertive" aria-atomic="true">
+ <div class="d-flex">
+ <div class="toast-body"><?php echo \htmlentities($error??'', ENT_QUOTES, 'UTF-8', false); ?></div>
+ <button type="button" class="btn-close btn-close-white me-2 m-auto"
+ data-bs-dismiss="toast"></button>
+ </div>
+ </div>
+ <?php endif; ?>
+
+ <div class="page-scroll">
+
+ <h1 class="text-center mb-4">Registros listos para migrar</h1>
+
+ <?php /* BUSCADOR GLOBAL */ ?>
+ <form method="GET" class="mb-4 d-flex justify-content-center">
+ <input
+ type="text"
+ name="search"
+ value="<?php echo \htmlentities($search ?? ''??'', ENT_QUOTES, 'UTF-8', false); ?>"
+ class="form-control w-50"
+ placeholder="Buscar por cédula, nombre, correo, ciudad..."
+ >
+ <button class="btn btn-primary ms-2">Buscar</button>
+ </form>
+
+ <table class="table table-striped table-hover">
+ <thead>
+ <tr>
+ <th>#ID</th>
+ <th>Cédula</th>
+ <th>Nombre</th>
+ <th>Apellido</th>
+ <th>Correo electrónico</th>
+ <th>Teléfono</th>
+ <th>Teléfono alterno</th>
+ <th>Ciudad</th>
+ <th>Dirección</th>
+ <th>Fecha</th>
+ <th>Acciones</th>
+ </tr>
+ </thead>
+
+ <tbody>
+ <?php $__currentLoopData = $graduatedAnswers; $this->addLoop($__currentLoopData);$this->getFirstLoop();
+ foreach($__currentLoopData as $answer): $loop = $this->incrementLoopIndices();  ?>
+ <tr>
+ <td><?php echo \htmlentities($answer['id']??'', ENT_QUOTES, 'UTF-8', false); ?></td>
+
+ <td>
+ <p><?php echo \htmlentities($answer['identification_number']??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ <hr>
+ <p><?php echo \htmlentities($answer['official_answers']['Numero de identificacion'] ?? ''??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ </td>
+
+ <td>
+ <p><?php echo \htmlentities($answer['name']??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ <hr>
+ <p><?php echo \htmlentities($answer['official_answers']['Nombres'] ?? ''??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ </td>
+
+ <td>
+ <p><?php echo \htmlentities($answer['last_name']??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ <hr>
+ <p><?php echo \htmlentities($answer['official_answers']['Apellidos'] ?? ''??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ </td>
+
+ <td>
+ <p><?php echo \htmlentities($answer['email']??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ <hr>
+ <p><?php echo \htmlentities($answer['official_answers']['Correo'] ?? ''??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ <input type="checkbox" class="select" name="email"
+ value="<?php echo \htmlentities($answer['email']??'', ENT_QUOTES, 'UTF-8', false); ?>" data-row="<?php echo \htmlentities($answer['id']??'', ENT_QUOTES, 'UTF-8', false); ?>" checked>
+ </td>
+
+ <td>
+ <p><?php echo \htmlentities($answer['mobile_phone']??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ <hr>
+ <p><?php echo \htmlentities($answer['official_answers']['Telefono de contacto'] ?? ''??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ <input type="checkbox" class="select" name="mobile_phone"
+ value="<?php echo \htmlentities($answer['mobile_phone']??'', ENT_QUOTES, 'UTF-8', false); ?>" data-row="<?php echo \htmlentities($answer['id']??'', ENT_QUOTES, 'UTF-8', false); ?>" checked>
+ </td>
+
+ <td>
+ <p><?php echo \htmlentities($answer['alternative_mobile_phone'] ?: 'No proporcionado'??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ <hr>
+ <p><?php echo \htmlentities($answer['official_answers']['Telefono alterno'] ?? ''??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ <input type="checkbox" class="select" name="alternative_mobile_phone"
+ value="<?php echo \htmlentities($answer['alternative_mobile_phone']??'', ENT_QUOTES, 'UTF-8', false); ?>" data-row="<?php echo \htmlentities($answer['id']??'', ENT_QUOTES, 'UTF-8', false); ?>" checked>
+ </td>
+
+ <td>
+ <p><?php echo \htmlentities($answer['city']??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ <hr>
+ <p><?php echo \htmlentities($answer['official_answers']['Ciudad residencia'] ?? ''??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ <input type="checkbox" class="select" name="city"
+ value="<?php echo \htmlentities($answer['city']??'', ENT_QUOTES, 'UTF-8', false); ?>" data-row="<?php echo \htmlentities($answer['id']??'', ENT_QUOTES, 'UTF-8', false); ?>" checked>
+ </td>
+
+ <td>
+ <p><?php echo \htmlentities($answer['address']??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ <hr>
+ <p><?php echo \htmlentities($answer['official_answers']['Direccion de correspondencia'] ?? ''??'', ENT_QUOTES, 'UTF-8', false); ?></p>
+ <input type="checkbox" class="select" name="address"
+ value="<?php echo \htmlentities($answer['address']??'', ENT_QUOTES, 'UTF-8', false); ?>" data-row="<?php echo \htmlentities($answer['id']??'', ENT_QUOTES, 'UTF-8', false); ?>" checked>
+ </td>
+
+ <td><?php echo \htmlentities($answer['created_at']??'', ENT_QUOTES, 'UTF-8', false); ?></td>
+
+ <td>
+ <div class="d-flex gap-2">
+ <form action="/app/controllers/approve.php"
+ method="POST"
+ onsubmit="return approve(<?php echo \htmlentities($answer['id']??'', ENT_QUOTES, 'UTF-8', false); ?>)"
+ id="form-<?php echo \htmlentities($answer['id']??'', ENT_QUOTES, 'UTF-8', false); ?>">
+ <input type="hidden" name="id" value="<?php echo \htmlentities($answer['id']??'', ENT_QUOTES, 'UTF-8', false); ?>">
+ <input type="hidden" name="identification_number"
+ value="<?php echo \htmlentities($answer['identification_number']??'', ENT_QUOTES, 'UTF-8', false); ?>">
+ <button class="btn btn-success btn-sm">Aprobar</button>
+ </form>
+
+ <form action="/app/controllers/deny.php"
+ method="POST"
+ onsubmit="return confirm('¿Estás seguro de rechazar este registro?')">
+ <input type="hidden" name="id" value="<?php echo \htmlentities($answer['id']??'', ENT_QUOTES, 'UTF-8', false); ?>">
+ <button class="btn btn-danger btn-sm">Rechazar</button>
+ </form>
+ </div>
+ </td>
+ </tr>
+ <?php endforeach; $this->popLoop(); $loop = $this->getFirstLoop(); ?>
+ </tbody>
+ </table>
+
+ <?php /* PAGINACIÓN */ ?>
+ <nav class="d-flex justify-content-center mt-4">
+ <ul class="pagination">
+ <li class="page-item <?php echo \htmlentities($page <= 1 ? 'disabled' : ''??'', ENT_QUOTES, 'UTF-8', false); ?>">
+ <a class="page-link" href="?page=<?php echo \htmlentities($page - 1??'', ENT_QUOTES, 'UTF-8', false); ?>&search=<?php echo \htmlentities($search??'', ENT_QUOTES, 'UTF-8', false); ?>">«</a>
+ </li>
+
+ <?php for($i = max(1,$page-3); $i <= min($totalPages,$page+3); $i++): ?>
+ <li class="page-item <?php echo \htmlentities($i == $page ? 'active' : ''??'', ENT_QUOTES, 'UTF-8', false); ?>">
+ <a class="page-link" href="?page=<?php echo \htmlentities($i??'', ENT_QUOTES, 'UTF-8', false); ?>&search=<?php echo \htmlentities($search??'', ENT_QUOTES, 'UTF-8', false); ?>"><?php echo \htmlentities($i??'', ENT_QUOTES, 'UTF-8', false); ?></a>
+ </li>
+ <?php endfor; ?>
+
+ <li class="page-item <?php echo \htmlentities($page >= $totalPages ? 'disabled' : ''??'', ENT_QUOTES, 'UTF-8', false); ?>">
+ <a class="page-link" href="?page=<?php echo \htmlentities($page + 1??'', ENT_QUOTES, 'UTF-8', false); ?>&search=<?php echo \htmlentities($search??'', ENT_QUOTES, 'UTF-8', false); ?>">»</a>
+ </li>
+ </ul>
+ </nav>
+
+ </div>
+
+ <?php  $this->slot('scripts'); ?>
+ <script>
+ function approve(id) {
+ const checks = [...document.getElementsByClassName('select')]
+ .filter(c => c.dataset.row == id && c.checked);
+
+ const form = document.getElementById('form-' + id);
+
+ checks.forEach(c => {
+ const input = document.createElement('input');
+ input.type = 'hidden';
+ input.name = c.name;
+ input.value = c.value;
+ form.appendChild(input);
+ });
+
+ return true;
+ }
+ </script>
+ <?php  $this->endSlot(); ?>
+
+<?php echo $this->renderComponent(); ?>

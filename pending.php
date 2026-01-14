@@ -1,37 +1,104 @@
 <?php
+
 require __DIR__ . '/app/controllers/autoloader.php';
 
 use eftec\bladeone\BladeOne;
 use Ospina\EasySQL\EasySQL;
 
-//Check if is auth
+// =========================
+// AUTH
+// =========================
 verifyIsAuthenticated();
 
-//create db object
-$graduatedAnswersConnection = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
-$graduatedAnswers = $graduatedAnswersConnection->table('form_answers')->select(['*'])
-    ->where('is_graduated', '=', 0)
-    ->where('is_migrated', '=', 0)
-    ->where('is_denied', '=', 0)
-    ->where('is_deleted', '=', 0)
-    ->get();
+// =========================
+// PAGINACIÓN
+// =========================
+$page   = max((int)($_GET['page'] ?? 1), 1);
+$limit  = 50;
+$offset = ($page - 1) * $limit;
 
-$blade = new BladeOne();
-try {
-    $isPending = $_SESSION['pending'] ?? false;
-    if ($isPending) {
-        //Almacenar variable
-        $message = $_SESSION['message'];
+// =========================
+// BUSCADOR
+// =========================
+$search = trim($_GET['search'] ?? '');
 
-        //Limpiar variables antes de renderizar
-        $_SESSION['message'] = '';
-        $_SESSION['pending'] = false;
-        echo $blade->run("pending", compact('graduatedAnswers', 'message'));
-    } else {
-        echo $blade->run("pending", compact('graduatedAnswers'));
-    }
+// =========================
+// DB
+// =========================
+$db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
-} catch (Exception $e) {
-    echo 'Ha ocurrido un error';
+// =========================
+// WHERE BASE
+// =========================
+$where = "
+    is_graduated = 0
+    AND is_migrated = 0
+    AND is_denied = 0
+    AND is_deleted = 0
+";
+
+// =========================
+// WHERE BUSCADOR
+// =========================
+if ($search !== '') {
+    $search = addslashes($search);
+
+    $where .= "
+        AND (
+            identification_number LIKE '%$search%'
+            OR name LIKE '%$search%'
+            OR last_name LIKE '%$search%'
+            OR email LIKE '%$search%'
+            OR mobile_phone LIKE '%$search%'
+            OR alternative_mobile_phone LIKE '%$search%'
+            OR city LIKE '%$search%'
+            OR address LIKE '%$search%'
+        )
+    ";
 }
 
+// =========================
+// TOTAL REGISTROS
+// =========================
+$countResult = $db->makeQuery("
+    SELECT COUNT(*) AS total
+    FROM form_answers
+    WHERE $where
+");
+
+$totalRow   = $countResult->fetch_assoc();
+$total      = (int)($totalRow['total'] ?? 0);
+$totalPages = (int)ceil($total / $limit);
+
+// =========================
+// DATOS (ORDEN CORRECTO)
+// =========================
+$graduatedAnswers = $db->makeQuery("
+    SELECT
+        id,
+        identification_number,
+        name,
+        last_name,
+        email,
+        mobile_phone,
+        alternative_mobile_phone,
+        country,
+        city,
+        address,
+        created_at
+    FROM form_answers
+    WHERE $where
+    LIMIT $limit OFFSET $offset
+")->fetch_all(MYSQLI_ASSOC);
+
+// =========================
+// BLADE
+// =========================
+$blade = new BladeOne(__DIR__.'/views', __DIR__.'/cache', BladeOne::MODE_AUTO);
+
+echo $blade->run('pending', [
+    'graduatedAnswers' => $graduatedAnswers,
+    'page'             => $page,
+    'totalPages'       => $totalPages,
+    'search'           => $search
+]);

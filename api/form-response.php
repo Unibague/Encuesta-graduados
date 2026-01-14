@@ -50,7 +50,7 @@ if (!$identificationNumber) {
 
 /**
  * =========================
- * CONSULTAR SIGA (CLAVE 🔑)
+ * CONSULTAR SIGA
  * =========================
  */
 try {
@@ -62,33 +62,28 @@ try {
 
 /**
  * =========================
- * DUPLICATE CHECK
+ * DB
  * =========================
  */
-$dbRead = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+$db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
-$exists = $dbRead->table('form_answers')
+/**
+ * =========================
+ * CHECK EXISTING
+ * =========================
+ */
+$existing = $db->table('form_answers')
     ->select(['id'])
     ->where('identification_number', '=', $identificationNumber)
     ->get();
 
-if (!empty($exists)) {
-    echo json_encode([
-        'status' => 'skipped_duplicate',
-        'identification_number' => $identificationNumber,
-        'is_graduated' => (int) $isGraduated
-    ]);
-    exit;
-}
-
 /**
  * =========================
- * PREPARE DATA
+ * DATA PREPARATION
  * =========================
  */
 $data = [
     'email'                     => $answers['Dirección de correo electrónico'][0] ?? null,
-    'identification_number'     => $identificationNumber,
     'name'                      => $answers['Nombres'][0] ?? null,
     'last_name'                 => $answers['Apellidos'][0] ?? null,
     'mobile_phone'              => $answers['Teléfono de contacto'][0] ?? null,
@@ -96,28 +91,45 @@ $data = [
     'address'                   => $answers['Dirección de correspondencia'][0] ?? null,
     'country'                   => $answers['País'][0] ?? null,
     'city'                      => $answers['Ciudad'][0] ?? null,
-    'is_graduated'              => (int) $isGraduated,   // 👈 AQUÍ
     'answers'                   => json_encode($answers, JSON_UNESCAPED_UNICODE),
-    'imported'                  => !empty($payload['imported']) ? 1 : 0,
-    'created_at'                => date('Y-m-d H:i:s'),
+    'is_graduated'              => (int) $isGraduated,
+
+    // 🔁 REACTIVA FLUJO
+    'is_migrated'               => 0,
+    'is_denied'                 => 0,
+    'is_deleted'                => 0,
+
     'updated_at'                => date('Y-m-d H:i:s'),
 ];
 
 /**
  * =========================
- * INSERT
+ * UPDATE OR INSERT
  * =========================
  */
-$dbWrite = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
-$dbWrite->table('form_answers')->insert($data);
+if (!empty($existing)) {
 
-/**
- * =========================
- * RESPONSE
- * =========================
- */
+    // 🔁 UPDATE
+    $db->table('form_answers')
+        ->where('identification_number', '=', $identificationNumber)
+        ->update($data);
+
+    echo json_encode([
+        'status' => 'updated',
+        'identification_number' => $identificationNumber,
+        'is_graduated' => (int) $isGraduated
+    ]);
+    exit;
+}
+
+// 🆕 INSERT
+$data['identification_number'] = $identificationNumber;
+$data['created_at'] = date('Y-m-d H:i:s');
+
+$db->table('form_answers')->insert($data);
+
 echo json_encode([
-    'status' => 'ok',
+    'status' => 'inserted',
     'identification_number' => $identificationNumber,
     'is_graduated' => (int) $isGraduated
 ]);

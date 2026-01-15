@@ -1,6 +1,6 @@
 <?php
 
-require __DIR__ . '/../app/controllers/autoloader.php';
+require __DIR__ . '/autoloader.php';
 
 use Ospina\EasySQL\EasySQL;
 
@@ -29,7 +29,7 @@ try {
 }
 
 // =========================
-// UPDATE (NUEVA INSTANCIA)
+// UPDATE (INSTANCIA NUEVA)
 // =========================
 $dbUpdate = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
@@ -37,17 +37,14 @@ $dbUpdate->table('form_answers')
     ->where('id', '=', $id)
     ->update([
         'is_graduated' => (int) $isGraduated,
-        'updated_at'  => date('Y-m-d H:i:s')
+        'updated_at'   => date('Y-m-d H:i:s')
     ]);
 
 // =========================
 // FEEDBACK
 // =========================
-if ($isGraduated === 1) {
-    flashSession('El usuario fue encontrado en SIGA y está listo para migrar');
-} else {
-    flashSession('El usuario aún NO aparece como graduado en SIGA');
-}
+flashSession($isGraduated === 1 ? 'El usuario ha sido migrado exitosamente' : 'El usuario aún no se encuentra migrado en el SIGA');
+
 
 header("Location: " . $_SERVER['HTTP_REFERER']);
 exit;
@@ -73,5 +70,5 @@ function verifyIfIsGraduated(string $identification_number): int
         throw new Exception('Respuesta inválida de SIGA');
     }
 
-    return (int) $decoded['data']; // 0 o 1
+    return (int) $decoded['data'];
 }

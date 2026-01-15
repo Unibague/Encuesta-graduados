@@ -4,78 +4,66 @@ require 'autoloader.php';
 
 use Ospina\EasySQL\EasySQL;
 
-//Leer y parsear la petición del front (ID)
-$requestData = getDataFromPostRequest();
+verifyIsAuthenticated();
 
-//Crear un método para volver a sincronizar - Función (verifyIfIsGraduated) arroja 0 o 1
-try {
-    $isGraduated = verifyIfIsGraduated($requestData->identificationNumber);
-} catch (JsonException $e) {
-
+// =========================
+// INPUT
+// =========================
+if (!isset($_POST['id'], $_POST['identification_number'])) {
+    flashSession('Datos incompletos');
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit;
 }
 
-//Actualizar DataBase
-$mysql = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
-$result = $mysql->table('form_answers')
-    ->where('id', '=', $requestData->id)
+$id = $_POST['id'];
+$identificationNumber = $_POST['identification_number'];
+
+// =========================
+// SIGA
+// =========================
+try {
+    $isGraduated = verifyIfIsGraduated($identificationNumber);
+} catch (Exception $e) {
+    error_log($e->getMessage());
+    $isGraduated = 0;
+}
+
+// =========================
+// DB UPDATE
+// =========================
+$db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+
+$db->table('form_answers')
+    ->where('id', '=', $id)
     ->update([
-        'is_graduated' => $isGraduated
+        'is_graduated' => $isGraduated,
+        'updated_at'   => date('Y-m-d H:i:s')
     ]);
 
-//Mostrar en front el usuario actualizado y removido de "No encontrado"
-//Write notification
-
+// =========================
+// FLASH
+// =========================
 flashSession($isGraduated === 1 ? 'El usuario ha sido migrado exitosamente' : 'El usuario aún no se encuentra migrado en el SIGA');
 
+
 header("Location: " . $_SERVER['HTTP_REFERER']);
-die();
-//---------------- Functions-------------------
+exit;
 
-/**
- * @return object
- */
-function getDataFromPostRequest(): object
-{
-
-    if (!isset($_POST['id'])) {
-        echo 'Debe proporcionar un ID válido';
-        die();
-    }
-    if (!isset($_POST['identification_number'])) {
-        echo 'Debe proporcionar una cédula válida';
-        die();
-    }
-    $id = $_POST['id'];
-    $identificationNumber = $_POST['identification_number'];
-
-    return (object)[
-        'id' => $id,
-        'identificationNumber' => $identificationNumber,
-    ];
-}
-
-
-/**
- * @param string $identification_number
- * @return int
- * @throws JsonException
- */
+// =========================
+// SIGA FUNCTION
+// =========================
 function verifyIfIsGraduated(string $identification_number): int
 {
     $endpoint = 'https://academia.unibague.edu.co/atlante/grad_ver_siga.php';
+
     $curl = new \Ospina\CurlCobain\CurlCobain($endpoint);
     $curl->setQueryParamsAsArray([
-        'consulta' => 'Consultar',
+        'consulta'  => 'Consultar',
         'documento' => $identification_number,
     ]);
+
     $response = $curl->makeRequest();
+    $decoded  = json_decode($response, true);
 
-    return json_decode($response, true, 512, JSON_THROW_ON_ERROR)['data'];
+    return (int)($decoded['data'] ?? 0);
 }
-
-/**
- * @param $var
- * @return void
- */
-
-

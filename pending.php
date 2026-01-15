@@ -67,11 +67,11 @@ $countResult = $db->makeQuery("
 ");
 
 $totalRow   = $countResult->fetch_assoc();
-$total      = (int)($totalRow['total'] ?? 0);
-$totalPages = (int)ceil($total / $limit);
+$total      = (int) ($totalRow['total'] ?? 0);
+$totalPages = (int) ceil($total / $limit);
 
 // =========================
-// DATOS (ORDEN CORRECTO)
+// DATOS (ORDENADOS)
 // =========================
 $graduatedAnswers = $db->makeQuery("
     SELECT
@@ -88,17 +88,36 @@ $graduatedAnswers = $db->makeQuery("
         created_at
     FROM form_answers
     WHERE $where
+    ORDER BY created_at DESC
     LIMIT $limit OFFSET $offset
 ")->fetch_all(MYSQLI_ASSOC);
 
 // =========================
+// FLASH MESSAGE
+// =========================
+$message = null;
+if (!empty($_SESSION['pending'])) {
+    $message = $_SESSION['message'] ?? null;
+    $_SESSION['pending'] = false;
+    $_SESSION['message'] = null;
+}
+
+// =========================
 // BLADE
 // =========================
-$blade = new BladeOne(__DIR__.'/views', __DIR__.'/cache', BladeOne::MODE_AUTO);
+$blade = new BladeOne(
+    __DIR__ . '/views',
+    __DIR__ . '/cache',
+    BladeOne::MODE_AUTO
+);
 
+// =========================
+// RENDER
+// =========================
 echo $blade->run('pending', [
     'graduatedAnswers' => $graduatedAnswers,
     'page'             => $page,
     'totalPages'       => $totalPages,
-    'search'           => $search
+    'search'           => $search,
+    'message'          => $message
 ]);

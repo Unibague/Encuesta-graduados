@@ -1,56 +1,60 @@
 <?php
 
-require 'autoloader.php';
+require __DIR__ . '/../app/controllers/autoloader.php';
 
 use Ospina\EasySQL\EasySQL;
 
-verifyIsAuthenticated();
-
 // =========================
-// INPUT
+// VALIDAR INPUT
 // =========================
 if (!isset($_POST['id'], $_POST['identification_number'])) {
-    flashSession('Datos incompletos');
+    flashSession('Datos incompletos para sincronizar');
     header("Location: " . $_SERVER['HTTP_REFERER']);
     exit;
 }
 
-$id = $_POST['id'];
-$identificationNumber = $_POST['identification_number'];
+$id = (int) $_POST['id'];
+$identificationNumber = trim($_POST['identification_number']);
 
 // =========================
-// SIGA
+// CONSULTAR SIGA
 // =========================
 try {
     $isGraduated = verifyIfIsGraduated($identificationNumber);
 } catch (Exception $e) {
-    error_log($e->getMessage());
-    $isGraduated = 0;
+    error_log('SIGA error: ' . $e->getMessage());
+    flashSession('Error consultando SIGA');
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit;
 }
 
 // =========================
-// DB UPDATE
+// UPDATE (NUEVA INSTANCIA)
 // =========================
-$db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+$dbUpdate = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
-$db->table('form_answers')
+$dbUpdate->table('form_answers')
     ->where('id', '=', $id)
     ->update([
-        'is_graduated' => $isGraduated,
-        'updated_at'   => date('Y-m-d H:i:s')
+        'is_graduated' => (int) $isGraduated,
+        'updated_at'  => date('Y-m-d H:i:s')
     ]);
 
 // =========================
-// FLASH
+// FEEDBACK
 // =========================
-flashSession($isGraduated === 1 ? 'El usuario ha sido migrado exitosamente' : 'El usuario aún no se encuentra migrado en el SIGA');
-
+if ($isGraduated === 1) {
+    flashSession('El usuario fue encontrado en SIGA y está listo para migrar');
+} else {
+    flashSession('El usuario aún NO aparece como graduado en SIGA');
+}
 
 header("Location: " . $_SERVER['HTTP_REFERER']);
 exit;
 
+
 // =========================
-// SIGA FUNCTION
+// FUNCTION SIGA
 // =========================
 function verifyIfIsGraduated(string $identification_number): int
 {
@@ -65,5 +69,9 @@ function verifyIfIsGraduated(string $identification_number): int
     $response = $curl->makeRequest();
     $decoded  = json_decode($response, true);
 
-    return (int)($decoded['data'] ?? 0);
+    if (!isset($decoded['data'])) {
+        throw new Exception('Respuesta inválida de SIGA');
+    }
+
+    return (int) $decoded['data']; // 0 o 1
 }

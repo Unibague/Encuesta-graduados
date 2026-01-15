@@ -29,20 +29,22 @@ try {
 }
 
 // =========================
-// UPDATE DB (CON CONTROL)
+// UPDATE DB (FORMA SEGURA)
 // =========================
 try {
     $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
-    $db->table('form_answers')
-        ->where('id', '=', $id)
-        ->update([
-            'is_graduated' => (int) $isGraduated,
-            'updated_at'   => date('Y-m-d H:i:s')
-        ]);
+    $db->makeQuery("
+        UPDATE form_answers
+        SET 
+            is_graduated = " . (int)$isGraduated . ",
+            updated_at = NOW()
+        WHERE id = " . $id . "
+    ");
+
 } catch (Throwable $e) {
-    error_log('[DB] ' . $e->getMessage());
-    flashSession('Error actualizando el registro en base de datos');
+    error_log('[DB UPDATE] ' . $e->getMessage());
+    flashSession('Error actualizando el registro en la base de datos');
     header("Location: " . $_SERVER['HTTP_REFERER']);
     exit;
 }
@@ -50,11 +52,8 @@ try {
 // =========================
 // FEEDBACK REAL
 // =========================
-if ($isGraduated === 1) {
-    flashSession('El usuario fue encontrado en SIGA y ahora aparece como graduado');
-} else {
-    flashSession('El usuario aún NO aparece como graduado en SIGA');
-}
+flashSession($isGraduated === 1 ? 'El usuario ha sido migrado exitosamente' : 'El usuario aún no se encuentra migrado en el SIGA');
+
 
 header("Location: " . $_SERVER['HTTP_REFERER']);
 exit;

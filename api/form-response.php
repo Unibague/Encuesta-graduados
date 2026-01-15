@@ -54,63 +54,58 @@ if (!$identificationNumber) {
  * =========================
  */
 try {
-    $isGraduated = verifyIfIsGraduated($identificationNumber); // 0 o 1
+    $isGraduated = verifyIfIsGraduated($identificationNumber);
 } catch (Exception $e) {
     error_log('SIGA error: ' . $e->getMessage());
-    $isGraduated = 0; // fallback seguro
+    $isGraduated = 0;
 }
 
 /**
  * =========================
- * DB
+ * DB READ (SOLO LECTURA)
  * =========================
  */
-$db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+$dbRead = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
-/**
- * =========================
- * CHECK EXISTING
- * =========================
- */
-$existing = $db->table('form_answers')
+$existing = $dbRead
+    ->table('form_answers')
     ->select(['id'])
     ->where('identification_number', '=', $identificationNumber)
     ->get();
 
 /**
  * =========================
- * DATA PREPARATION
+ * DATA
  * =========================
  */
 $data = [
-    'email'                     => $answers['Dirección de correo electrónico'][0] ?? null,
-    'name'                      => $answers['Nombres'][0] ?? null,
-    'last_name'                 => $answers['Apellidos'][0] ?? null,
-    'mobile_phone'              => $answers['Teléfono de contacto'][0] ?? null,
-    'alternative_mobile_phone'  => $answers['Teléfono alterno de contacto'][0] ?? null,
-    'address'                   => $answers['Dirección de correspondencia'][0] ?? null,
-    'country'                   => $answers['País'][0] ?? null,
-    'city'                      => $answers['Ciudad'][0] ?? null,
-    'answers'                   => json_encode($answers, JSON_UNESCAPED_UNICODE),
-    'is_graduated'              => (int) $isGraduated,
-
-    // 🔁 REACTIVA FLUJO
-    'is_migrated'               => 0,
-    'is_denied'                 => 0,
-    'is_deleted'                => 0,
-
-    'updated_at'                => date('Y-m-d H:i:s'),
+    'email'                    => $answers['Dirección de correo electrónico'][0] ?? null,
+    'name'                     => $answers['Nombres'][0] ?? null,
+    'last_name'                => $answers['Apellidos'][0] ?? null,
+    'mobile_phone'             => $answers['Teléfono de contacto'][0] ?? null,
+    'alternative_mobile_phone' => $answers['Teléfono alterno de contacto'][0] ?? null,
+    'address'                  => $answers['Dirección de correspondencia'][0] ?? null,
+    'country'                  => $answers['País'][0] ?? null,
+    'city'                     => $answers['Ciudad'][0] ?? null,
+    'answers'                  => json_encode($answers, JSON_UNESCAPED_UNICODE),
+    'is_graduated'             => (int) $isGraduated,
+    'is_migrated'              => 0,
+    'is_denied'                => 0,
+    'is_deleted'               => 0,
+    'updated_at'               => date('Y-m-d H:i:s'),
 ];
 
 /**
  * =========================
- * UPDATE OR INSERT
+ * DB WRITE (INSERT / UPDATE)
  * =========================
  */
+$dbWrite = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+
 if (!empty($existing)) {
 
-    // 🔁 UPDATE
-    $db->table('form_answers')
+    $dbWrite
+        ->table('form_answers')
         ->where('identification_number', '=', $identificationNumber)
         ->update($data);
 
@@ -122,11 +117,13 @@ if (!empty($existing)) {
     exit;
 }
 
-// 🆕 INSERT
+// INSERT
 $data['identification_number'] = $identificationNumber;
 $data['created_at'] = date('Y-m-d H:i:s');
 
-$db->table('form_answers')->insert($data);
+$dbWrite
+    ->table('form_answers')
+    ->insert($data);
 
 echo json_encode([
     'status' => 'inserted',
@@ -138,7 +135,7 @@ exit;
 
 /**
  * =========================
- * FUNCTION SIGA
+ * SIGA
  * =========================
  */
 function verifyIfIsGraduated(string $identification_number): int
@@ -158,5 +155,5 @@ function verifyIfIsGraduated(string $identification_number): int
         throw new Exception('Respuesta inválida de SIGA');
     }
 
-    return (int) $decoded['data']; // 0 = NO graduado, 1 = graduado
+    return (int) $decoded['data'];
 }

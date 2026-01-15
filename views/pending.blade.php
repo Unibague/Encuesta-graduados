@@ -128,5 +128,16 @@
         </nav>
 
     </div>
+@slot('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const toastEl = document.querySelector('.toast');
+        if (toastEl) {
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
+    });
+</script>
+@endslot
 
 @endcomponent

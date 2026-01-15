@@ -22,36 +22,46 @@ $identificationNumber = trim($_POST['identification_number']);
 try {
     $isGraduated = verifyIfIsGraduated($identificationNumber);
 } catch (Exception $e) {
-    error_log('SIGA error: ' . $e->getMessage());
+    error_log('[SIGA] ' . $e->getMessage());
     flashSession('Error consultando SIGA');
     header("Location: " . $_SERVER['HTTP_REFERER']);
     exit;
 }
 
 // =========================
-// UPDATE (INSTANCIA NUEVA)
+// UPDATE DB (CON CONTROL)
 // =========================
-$dbUpdate = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+try {
+    $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
-$dbUpdate->table('form_answers')
-    ->where('id', '=', $id)
-    ->update([
-        'is_graduated' => (int) $isGraduated,
-        'updated_at'   => date('Y-m-d H:i:s')
-    ]);
+    $db->table('form_answers')
+        ->where('id', '=', $id)
+        ->update([
+            'is_graduated' => (int) $isGraduated,
+            'updated_at'   => date('Y-m-d H:i:s')
+        ]);
+} catch (Throwable $e) {
+    error_log('[DB] ' . $e->getMessage());
+    flashSession('Error actualizando el registro en base de datos');
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit;
+}
 
 // =========================
-// FEEDBACK
+// FEEDBACK REAL
 // =========================
-flashSession($isGraduated === 1 ? 'El usuario ha sido migrado exitosamente' : 'El usuario aún no se encuentra migrado en el SIGA');
-
+if ($isGraduated === 1) {
+    flashSession('El usuario fue encontrado en SIGA y ahora aparece como graduado');
+} else {
+    flashSession('El usuario aún NO aparece como graduado en SIGA');
+}
 
 header("Location: " . $_SERVER['HTTP_REFERER']);
 exit;
 
 
 // =========================
-// FUNCTION SIGA
+// FUNCIÓN SIGA
 // =========================
 function verifyIfIsGraduated(string $identification_number): int
 {
@@ -70,5 +80,5 @@ function verifyIfIsGraduated(string $identification_number): int
         throw new Exception('Respuesta inválida de SIGA');
     }
 
-    return (int) $decoded['data'];
+    return (int) $decoded['data']; // 0 | 1
 }

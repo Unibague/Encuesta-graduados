@@ -41,18 +41,18 @@ $where = "
 // WHERE BUSCADOR
 // =========================
 if ($search !== '') {
-    $search = addslashes($search);
+    $searchSafe = addslashes($search);
 
     $where .= "
         AND (
-            identification_number LIKE '%$search%'
-            OR name LIKE '%$search%'
-            OR last_name LIKE '%$search%'
-            OR email LIKE '%$search%'
-            OR mobile_phone LIKE '%$search%'
-            OR alternative_mobile_phone LIKE '%$search%'
-            OR city LIKE '%$search%'
-            OR address LIKE '%$search%'
+            identification_number LIKE '%$searchSafe%'
+            OR name LIKE '%$searchSafe%'
+            OR last_name LIKE '%$searchSafe%'
+            OR email LIKE '%$searchSafe%'
+            OR mobile_phone LIKE '%$searchSafe%'
+            OR alternative_mobile_phone LIKE '%$searchSafe%'
+            OR city LIKE '%$searchSafe%'
+            OR address LIKE '%$searchSafe%'
         )
     ";
 }
@@ -73,7 +73,7 @@ $totalPages = (int) ceil($total / $limit);
 // =========================
 // DATOS (ORDENADOS)
 // =========================
-$graduatedAnswers = $db->makeQuery("
+$pendingAnswers = $db->makeQuery("
     SELECT
         id,
         identification_number,
@@ -88,7 +88,6 @@ $graduatedAnswers = $db->makeQuery("
         created_at
     FROM form_answers
     WHERE $where
-    ORDER BY created_at DESC
     LIMIT $limit OFFSET $offset
 ")->fetch_all(MYSQLI_ASSOC);
 
@@ -115,7 +114,7 @@ $blade = new BladeOne(
 // RENDER
 // =========================
 echo $blade->run('pending', [
-    'graduatedAnswers' => $graduatedAnswers,
+    'graduatedAnswers' => $pendingAnswers, // vista espera este nombre
     'page'             => $page,
     'totalPages'       => $totalPages,
     'search'           => $search,

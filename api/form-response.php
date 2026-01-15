@@ -6,11 +6,9 @@ use Ospina\EasySQL\EasySQL;
 
 header('Content-Type: application/json; charset=utf-8');
 
-/**
- * =========================
+/* =========================
  * SECURITY
- * =========================
- */
+ * ========================= */
 $receivedToken = $_SERVER['HTTP_X_API_TOKEN'] ?? '';
 $expectedToken = getenv('FORM_WEBHOOK_TOKEN');
 
@@ -20,11 +18,9 @@ if (!$expectedToken || $receivedToken !== $expectedToken) {
     exit;
 }
 
-/**
- * =========================
+/* =========================
  * INPUT
- * =========================
- */
+ * ========================= */
 $payload = json_decode(file_get_contents('php://input'), true);
 
 if (!$payload || empty($payload['answers'])) {
@@ -34,12 +30,6 @@ if (!$payload || empty($payload['answers'])) {
 }
 
 $answers = $payload['answers'];
-
-/**
- * =========================
- * IDENTIFICATION
- * =========================
- */
 $identificationNumber = $answers['Número de identificación'][0] ?? null;
 
 if (!$identificationNumber) {
@@ -48,103 +38,124 @@ if (!$identificationNumber) {
     exit;
 }
 
-/**
- * =========================
- * CONSULTAR SIGA
- * =========================
- */
+/* =========================
+ * SIGA
+ * ========================= */
 try {
     $isGraduated = verifyIfIsGraduated($identificationNumber);
-} catch (Exception $e) {
-    error_log('SIGA error: ' . $e->getMessage());
+} catch (Throwable $e) {
+    error_log('[SIGA] ' . $e->getMessage());
     $isGraduated = 0;
 }
 
-/**
- * =========================
- * DB READ (SOLO LECTURA)
- * =========================
- */
-$dbRead = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+/* =========================
+ * DB
+ * ========================= */
+$db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
-$existing = $dbRead
-    ->table('form_answers')
-    ->select(['id'])
-    ->where('identification_number', '=', $identificationNumber)
-    ->get();
+/* =========================
+ * CHECK EXISTING (ID REAL)
+ * ========================= */
+$result = $db->makeQuery("
+    SELECT id
+    FROM form_answers
+    WHERE identification_number = '" . addslashes($identificationNumber) . "'
+    ORDER BY created_at DESC
+    LIMIT 1
+");
 
-/**
- * =========================
- * DATA
- * =========================
- */
-$data = [
-    'email'                    => $answers['Dirección de correo electrónico'][0] ?? null,
-    'name'                     => $answers['Nombres'][0] ?? null,
-    'last_name'                => $answers['Apellidos'][0] ?? null,
-    'mobile_phone'             => $answers['Teléfono de contacto'][0] ?? null,
-    'alternative_mobile_phone' => $answers['Teléfono alterno de contacto'][0] ?? null,
-    'address'                  => $answers['Dirección de correspondencia'][0] ?? null,
-    'country'                  => $answers['País'][0] ?? null,
-    'city'                     => $answers['Ciudad'][0] ?? null,
-    'answers'                  => json_encode($answers, JSON_UNESCAPED_UNICODE),
-    'is_graduated'             => (int) $isGraduated,
-    'is_migrated'              => 0,
-    'is_denied'                => 0,
-    'is_deleted'               => 0,
-    'updated_at'               => date('Y-m-d H:i:s'),
-];
+$row = $result->fetch_assoc();
 
-/**
- * =========================
- * DB WRITE (INSERT / UPDATE)
- * =========================
- */
-$dbWrite = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+/* =========================
+ * DATA NORMALIZADA
+ * ========================= */
+$email   = $answers['Dirección de correo electrónico'][0] ?? null;
+$name    = $answers['Nombres'][0] ?? null;
+$last    = $answers['Apellidos'][0] ?? null;
+$phone   = $answers['Teléfono de contacto'][0] ?? null;
+$alt     = $answers['Teléfono alterno de contacto'][0] ?? null;
+$city    = $answers['Ciudad'][0] ?? null;
+$country = $answers['País'][0] ?? null;
+$address = $answers['Dirección de correspondencia'][0] ?? null;
+$now     = date('Y-m-d H:i:s');
 
-if (!empty($existing)) {
+/* =========================
+ * UPDATE O INSERT
+ * ========================= */
+if ($row) {
 
-    $dbWrite
-        ->table('form_answers')
-        ->where('identification_number', '=', $identificationNumber)
-        ->update($data);
+    // UPDATE SEGURO POR ID
+    $db->makeQuery("
+        UPDATE form_answers SET
+            email = '" . addslashes($email) . "',
+            name = '" . addslashes($name) . "',
+            last_name = '" . addslashes($last) . "',
+            mobile_phone = '" . addslashes($phone) . "',
+            alternative_mobile_phone = '" . addslashes($alt) . "',
+            city = '" . addslashes($city) . "',
+            country = '" . addslashes($country) . "',
+            address = '" . addslashes($address) . "',
+            answers = '" . addslashes(json_encode($answers, JSON_UNESCAPED_UNICODE)) . "',
+            is_graduated = " . (int)$isGraduated . ",
+            is_migrated = 0,
+            is_denied = 0,
+            is_deleted = 0,
+            updated_at = '$now'
+        WHERE id = {$row['id']}
+    ");
 
     echo json_encode([
         'status' => 'updated',
-        'identification_number' => $identificationNumber,
-        'is_graduated' => (int) $isGraduated
+        'id' => $row['id'],
+        'is_graduated' => $isGraduated
     ]);
     exit;
 }
 
-// INSERT
-$data['identification_number'] = $identificationNumber;
-$data['created_at'] = date('Y-m-d H:i:s');
-
-$dbWrite
-    ->table('form_answers')
-    ->insert($data);
+/* =========================
+ * INSERT NUEVO
+ * ========================= */
+$db->makeQuery("
+    INSERT INTO form_answers (
+        identification_number, email, name, last_name,
+        mobile_phone, alternative_mobile_phone,
+        city, country, address,
+        answers, is_graduated, is_migrated,
+        is_denied, is_deleted, created_at, updated_at
+    ) VALUES (
+        '" . addslashes($identificationNumber) . "',
+        '" . addslashes($email) . "',
+        '" . addslashes($name) . "',
+        '" . addslashes($last) . "',
+        '" . addslashes($phone) . "',
+        '" . addslashes($alt) . "',
+        '" . addslashes($city) . "',
+        '" . addslashes($country) . "',
+        '" . addslashes($address) . "',
+        '" . addslashes(json_encode($answers, JSON_UNESCAPED_UNICODE)) . "',
+        " . (int)$isGraduated . ",
+        0, 0, 0,
+        '$now', '$now'
+    )
+");
 
 echo json_encode([
     'status' => 'inserted',
-    'identification_number' => $identificationNumber,
-    'is_graduated' => (int) $isGraduated
+    'is_graduated' => $isGraduated
 ]);
-
 exit;
 
-/**
- * =========================
+/* =========================
  * SIGA
- * =========================
- */
+ * ========================= */
 function verifyIfIsGraduated(string $identification_number): int
 {
-    $endpoint = 'https://academia.unibague.edu.co/atlante/grad_ver_siga.php';
+    $curl = new \Ospina\CurlCobain\CurlCobain(
+        'https://academia.unibague.edu.co/atlante/grad_ver_siga.php'
+    );
 
-    $curl = new \Ospina\CurlCobain\CurlCobain($endpoint);
     $curl->setQueryParamsAsArray([
-        'consulta'  => 'Consultar',
+        'consulta' => 'Consultar',
         'documento' => $identification_number,
     ]);
 

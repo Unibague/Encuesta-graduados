@@ -1,7 +1,7 @@
 @component('templates.main')
 
     @slot('title')
-        Registros listos para migrar
+        Registros listos para actualizar 
     @endslot
 
     {{-- HEADER SLOT --}}

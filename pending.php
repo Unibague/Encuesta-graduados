@@ -88,6 +88,7 @@ $pendingAnswers = $db->makeQuery("
         created_at
     FROM form_answers
     WHERE $where
+    ORDER BY created_at DESC
     LIMIT $limit OFFSET $offset
 ")->fetch_all(MYSQLI_ASSOC);
 

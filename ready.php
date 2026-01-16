@@ -69,6 +69,7 @@ $graduatedAnswers = $db->makeQuery("
     SELECT *
     FROM form_answers
     WHERE $where
+    ORDER BY created_at DESC
     LIMIT $limit OFFSET $offset
 ")->fetch_all(MYSQLI_ASSOC);
 

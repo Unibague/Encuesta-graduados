@@ -1,14 +1,8 @@
 <?php
-require __DIR__ . '/autoloader.php';
+
+require 'autoloader.php';
 
 use Ospina\EasySQL\EasySQL;
-use Dotenv\Dotenv;
-
-// =========================
-// ENV
-// =========================
-$dotenv = Dotenv::createUnsafeImmutable(dirname(__DIR__, 2));
-$dotenv->load();
 
 // =========================
 // AUTH
@@ -16,28 +10,39 @@ $dotenv->load();
 verifyIsAuthenticated();
 
 // =========================
-// REQUEST
+// INPUT
 // =========================
-$request = (object) $_REQUEST;
+$id = (int) ($_POST['id'] ?? 0);
+
+if (!$id) {
+    flashSession('ID inválido');
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit;
+}
 
 // =========================
 // DB
 // =========================
-$easySQL = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+$db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
-$easySQL
-    ->table('form_answers')
-    ->where('id', '=', $request->id)
-    ->update([
-        'is_deleted' => 1,
-        'deleted_by' => user()->id,
-        'deleted_at' => date('Y-m-d H:i:s')
-    ]);
+$now = date('Y-m-d H:i:s');
 
 // =========================
-// FLASH + REDIRECT
+// UPDATE (SQL SEGURO)
 // =========================
-flashSession('Se ha rechazado el registro exitosamente');
-header("Location: ".$_SERVER['HTTP_REFERER']);
+$sql = "
+    UPDATE form_answers
+    SET
+        is_deleted = 1,
+        updated_at = '$now'
+    WHERE id = $id
+";
+
+$db->makeQuery($sql);
+
+// =========================
+// OK
+// =========================
+flashSession('Registro borrado correctamente');
+header("Location: " . $_SERVER['HTTP_REFERER']);
 exit;
-

@@ -1,4 +1,5 @@
 <?php
+
 require __DIR__ . '/app/controllers/autoloader.php';
 
 use eftec\bladeone\BladeOne;
@@ -11,41 +12,71 @@ use Dotenv\Dotenv;
 verifyIsAuthenticated();
 
 // =========================
-// ENV (FALTA ESTO)
+// ENV
 // =========================
 $dotenv = Dotenv::createUnsafeImmutable(__DIR__);
 $dotenv->load();
 
 // =========================
+// PAGINACIÓN
+// =========================
+$page   = max((int)($_GET['page'] ?? 1), 1);
+$limit  = 50;
+$offset = ($page - 1) * $limit;
+
+// =========================
 // DB
 // =========================
-$deletedConnection = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+$db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
-$deletedAnswers = $deletedConnection
-    ->table('form_answers')
-    ->select(['*'])
-    ->where('is_deleted', '=', 1)
-    ->get();
+// =========================
+// TOTAL REGISTROS
+// =========================
+$countResult = $db->makeQuery("
+    SELECT COUNT(*) AS total
+    FROM form_answers
+    WHERE is_deleted = 1
+");
+
+$totalRow   = $countResult->fetch_assoc();
+$total      = (int) ($totalRow['total'] ?? 0);
+$totalPages = (int) ceil($total / $limit);
+
+// =========================
+// DATOS
+// =========================
+$deletedAnswers = $db->makeQuery("
+    SELECT *
+    FROM form_answers
+    WHERE is_deleted = 1
+    ORDER BY created_at DESC
+    LIMIT $limit OFFSET $offset
+")->fetch_all(MYSQLI_ASSOC);
+
+// =========================
+// FLASH MESSAGE
+// =========================
+$message = $_SESSION['message'] ?? null;
+$error   = $_SESSION['error'] ?? null;
+
+unset($_SESSION['message'], $_SESSION['error']);
 
 // =========================
 // BLADE
 // =========================
-$viewsPath = __DIR__ . '/views';
-$cachePath = __DIR__ . '/cache';
-
-$blade = new BladeOne($viewsPath, $cachePath, BladeOne::MODE_AUTO);
+$blade = new BladeOne(
+    __DIR__ . '/views',
+    __DIR__ . '/cache',
+    BladeOne::MODE_AUTO
+);
 
 // =========================
 // RENDER
 // =========================
-$isPending = $_SESSION['pending'] ?? false;
-
-if ($isPending) {
-    $message = $_SESSION['message'] ?? null;
-    $_SESSION['message'] = null;
-    $_SESSION['pending'] = false;
-
-    echo $blade->run("deleted", compact('deletedAnswers', 'message'));
-} else {
-    echo $blade->run("deleted", compact('deletedAnswers'));
-}
+echo $blade->run('deleted', [
+    'deletedAnswers' => $deletedAnswers,
+    'page'           => $page,
+    'totalPages'     => $totalPages,
+    'message'        => $message,
+    'error'          => $error,
+]);

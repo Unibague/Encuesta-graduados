@@ -30,7 +30,7 @@ if (!$payload || empty($payload['answers'])) {
 }
 
 /* =========================
- * NORMALIZAR CLAVES (🔑 CLAVE DEL FIX)
+ * NORMALIZAR CLAVES
  * ========================= */
 $answers = [];
 foreach ($payload['answers'] as $key => $value) {
@@ -84,13 +84,21 @@ $address = getAnswer($answers, ['dirección de correspondencia', 'direccion de c
 $now = date('Y-m-d H:i:s');
 
 /* =========================
- * SIGA
+ * SIGA – LÓGICA CORRECTA
  * ========================= */
 try {
-    $isGraduated = verifyIfIsGraduated($identificationNumber);
+
+    if (!existsInSiga($identificationNumber)) {
+        // No existe en SIGA
+        $isGraduated = null;
+    } else {
+        // Existe en SIGA → validar si es graduado
+        $isGraduated = verifyIfIsGraduated($identificationNumber); // 0 o 1
+    }
+
 } catch (Throwable $e) {
     error_log('[SIGA] ' . $e->getMessage());
-    $isGraduated = 0;
+    $isGraduated = null;
 }
 
 /* =========================
@@ -127,7 +135,7 @@ if ($row) {
             country = '" . addslashes($country) . "',
             address = '" . addslashes($address) . "',
             answers = '" . addslashes(json_encode($answers, JSON_UNESCAPED_UNICODE)) . "',
-            is_graduated = " . (int)$isGraduated . ",
+            is_graduated = " . ($isGraduated === null ? 'NULL' : (int)$isGraduated) . ",
             is_migrated = 0,
             is_denied = 0,
             is_deleted = 0,
@@ -167,7 +175,7 @@ $db->makeQuery("
         '" . addslashes($country) . "',
         '" . addslashes($address) . "',
         '" . addslashes(json_encode($answers, JSON_UNESCAPED_UNICODE)) . "',
-        " . (int)$isGraduated . ",
+        " . ($isGraduated === null ? 'NULL' : (int)$isGraduated) . ",
         0, 0, 0,
         '$now', '$now'
     )
@@ -180,8 +188,22 @@ echo json_encode([
 exit;
 
 /* =========================
- * SIGA FUNCTION
+ * FUNCTIONS
  * ========================= */
+
+function existsInSiga(string $document): bool
+{
+    $url = "https://academia.unibague.edu.co/atlante/consulta_estudiante.php?code_user={$document}&type=I";
+    $response = @file_get_contents($url);
+
+    if (!$response) {
+        return false;
+    }
+
+    $data = json_decode($response, true);
+    return is_array($data) && count($data) > 0;
+}
+
 function verifyIfIsGraduated(string $identification_number): int
 {
     $curl = new \Ospina\CurlCobain\CurlCobain(
@@ -200,5 +222,5 @@ function verifyIfIsGraduated(string $identification_number): int
         throw new Exception('Respuesta inválida de SIGA');
     }
 
-    return (int) $decoded['data'];
+    return (int) $decoded['data']; // 0 | 1
 }

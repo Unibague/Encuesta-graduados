@@ -129,5 +129,16 @@
  </nav>
 
  </div>
+<?php  $this->slot('scripts'); ?>
+<script>
+ document.addEventListener('DOMContentLoaded', function () {
+ const toastEl = document.querySelector('.toast');
+ if (toastEl) {
+ const toast = new bootstrap.Toast(toastEl);
+ toast.show();
+ }
+ });
+</script>
+<?php  $this->endSlot(); ?>
 
 <?php echo $this->renderComponent(); ?>

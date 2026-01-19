@@ -1,7 +1,7 @@
 <?php  $this->startComponent('templates.main'); ?>
 
  <?php  $this->slot('title'); ?>
- Registros borrados
+ Registros en SIGA (No graduados)
  <?php  $this->endSlot(); ?>
 
  <?php /* HEADER SLOT */ ?>
@@ -26,7 +26,7 @@
  <?php  $this->endSlot(); ?>
 
  <?php /* =========================
- TOASTS
+ TOAST
  ========================= */ ?>
  <?php if(!empty($message)): ?>
  <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3"
@@ -43,27 +43,27 @@
  </div>
  <?php endif; ?>
 
- <?php if(!empty($error)): ?>
- <div class="toast align-items-center text-bg-danger border-0 position-fixed top-0 end-0 m-3"
- role="alert" aria-live="assertive" aria-atomic="true">
- <div class="d-flex">
- <div class="toast-body">
- <?php echo \htmlentities($error??'', ENT_QUOTES, 'UTF-8', false); ?>
-
- </div>
- <button type="button"
- class="btn-close btn-close-white me-2 m-auto"
- data-bs-dismiss="toast"></button>
- </div>
- </div>
- <?php endif; ?>
-
  <div class="page-scroll">
 
- <h1 class="text-center mb-2">Registros borrados</h1>
+ <h1 class="text-center mb-4">
+ Registros existentes en SIGA (No graduados)
+ </h1>
+
  <p class="text-center text-muted mb-4">
- Estos registros fueron eliminados y pueden ser restaurados si es necesario.
+ Estos registros existen en SIGA pero no están marcados como graduados.
  </p>
+
+ <?php /* BUSCADOR */ ?>
+ <form method="GET" class="mb-4 d-flex justify-content-center">
+ <input
+ type="text"
+ name="search"
+ value="<?php echo \htmlentities($search ?? ''??'', ENT_QUOTES, 'UTF-8', false); ?>"
+ class="form-control w-50"
+ placeholder="Buscar por cédula, nombre, correo, ciudad..."
+ >
+ <button class="btn btn-primary ms-2">Buscar</button>
+ </form>
 
  <table class="table table-striped table-hover">
  <thead>
@@ -72,9 +72,9 @@
  <th>Cédula</th>
  <th>Nombre</th>
  <th>Apellido</th>
- <th>Correo electrónico</th>
+ <th>Correo</th>
  <th>Teléfono</th>
- <th>Teléfono alterno</th>
+ <th>Tel. alterno</th>
  <th>País</th>
  <th>Ciudad</th>
  <th>Dirección</th>
@@ -84,7 +84,7 @@
  </thead>
 
  <tbody>
- <?php $__empty_1 = true; foreach($deletedAnswers as $answer): $__empty_1 = false; ?>
+ <?php $__empty_1 = true; foreach($graduatedAnswers as $answer): $__empty_1 = false; ?>
  <tr>
  <td><?php echo \htmlentities($answer['id']??'', ENT_QUOTES, 'UTF-8', false); ?></td>
  <td><?php echo \htmlentities($answer['identification_number']??'', ENT_QUOTES, 'UTF-8', false); ?></td>
@@ -97,21 +97,37 @@
  <td><?php echo \htmlentities($answer['city']??'', ENT_QUOTES, 'UTF-8', false); ?></td>
  <td><?php echo \htmlentities($answer['address']??'', ENT_QUOTES, 'UTF-8', false); ?></td>
  <td><?php echo \htmlentities($answer['created_at']??'', ENT_QUOTES, 'UTF-8', false); ?></td>
+
  <td>
- <form action="/app/controllers/undelete.php"
+ <div class="d-flex flex-column gap-1">
+
+ <?php /* RECHAZAR */ ?>
+ <form action="/app/controllers/deny.php"
  method="POST"
- onsubmit="return confirm('¿Deseas restaurar este registro?')">
+ onsubmit="return confirm('¿Deseas rechazar este registro?')">
  <input type="hidden" name="id" value="<?php echo \htmlentities($answer['id']??'', ENT_QUOTES, 'UTF-8', false); ?>">
- <button class="btn btn-success btn-sm">
- Restaurar
+ <button class="btn btn-danger btn-sm w-100">
+ Rechazar
  </button>
  </form>
+
+ <?php /* BORRAR */ ?>
+ <form action="/app/controllers/delete.php"
+ method="POST"
+ onsubmit="return confirm('Este registro será borrado')">
+ <input type="hidden" name="id" value="<?php echo \htmlentities($answer['id']??'', ENT_QUOTES, 'UTF-8', false); ?>">
+ <button class="btn btn-outline-danger btn-sm w-100">
+ Borrar
+ </button>
+ </form>
+
+ </div>
  </td>
  </tr>
  <?php endforeach; if ($__empty_1): ?>
  <tr>
  <td colspan="12" class="text-center text-muted">
- No hay registros borrados
+ No hay registros para mostrar
  </td>
  </tr>
  <?php endif; ?>
@@ -122,26 +138,23 @@
  <nav class="d-flex justify-content-center mt-4">
  <ul class="pagination">
  <li class="page-item <?php echo \htmlentities($page <= 1 ? 'disabled' : ''??'', ENT_QUOTES, 'UTF-8', false); ?>">
- <a class="page-link" href="?page=<?php echo \htmlentities($page - 1??'', ENT_QUOTES, 'UTF-8', false); ?>">«</a>
+ <a class="page-link" href="?page=<?php echo \htmlentities($page - 1??'', ENT_QUOTES, 'UTF-8', false); ?>&search=<?php echo \htmlentities($search??'', ENT_QUOTES, 'UTF-8', false); ?>">«</a>
  </li>
 
  <?php for($i = max(1,$page-3); $i <= min($totalPages,$page+3); $i++): ?>
  <li class="page-item <?php echo \htmlentities($i == $page ? 'active' : ''??'', ENT_QUOTES, 'UTF-8', false); ?>">
- <a class="page-link" href="?page=<?php echo \htmlentities($i??'', ENT_QUOTES, 'UTF-8', false); ?>"><?php echo \htmlentities($i??'', ENT_QUOTES, 'UTF-8', false); ?></a>
+ <a class="page-link" href="?page=<?php echo \htmlentities($i??'', ENT_QUOTES, 'UTF-8', false); ?>&search=<?php echo \htmlentities($search??'', ENT_QUOTES, 'UTF-8', false); ?>"><?php echo \htmlentities($i??'', ENT_QUOTES, 'UTF-8', false); ?></a>
  </li>
  <?php endfor; ?>
 
  <li class="page-item <?php echo \htmlentities($page >= $totalPages ? 'disabled' : ''??'', ENT_QUOTES, 'UTF-8', false); ?>">
- <a class="page-link" href="?page=<?php echo \htmlentities($page + 1??'', ENT_QUOTES, 'UTF-8', false); ?>">»</a>
+ <a class="page-link" href="?page=<?php echo \htmlentities($page + 1??'', ENT_QUOTES, 'UTF-8', false); ?>&search=<?php echo \htmlentities($search??'', ENT_QUOTES, 'UTF-8', false); ?>">»</a>
  </li>
  </ul>
  </nav>
 
  </div>
 
- <?php /* =========================
- SCRIPTS
- ========================= */ ?>
  <?php  $this->slot('scripts'); ?>
  <script>
  document.addEventListener('DOMContentLoaded', function () {

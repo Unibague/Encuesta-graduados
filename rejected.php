@@ -1,36 +1,77 @@
 <?php
+
 require __DIR__ . '/app/controllers/autoloader.php';
 
 use eftec\bladeone\BladeOne;
 use Ospina\EasySQL\EasySQL;
 
-//Check if is auth
+// =========================
+// AUTH
+// =========================
 verifyIsAuthenticated();
 
+// =========================
+// PAGINACIÓN
+// =========================
+$page   = max((int)($_GET['page'] ?? 1), 1);
+$limit  = 50;
+$offset = ($page - 1) * $limit;
 
-//create db object
-$notGraduatedAnswersConnection = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
-$rejectedAnswers = $notGraduatedAnswersConnection->table('form_answers')->select(['*'])
-    ->where('is_denied','=',1)
-    ->where('is_deleted','=',0)
-    ->get();
+// =========================
+// DB
+// =========================
+$db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
-$blade = new BladeOne();
-try {
-    $isPending = $_SESSION['pending'] ?? false;
-    if ($isPending) {
-        //Almacenar variable
-        $message = $_SESSION['message'];
+// =========================
+// TOTAL REGISTROS
+// =========================
+$countResult = $db->makeQuery("
+    SELECT COUNT(*) AS total
+    FROM form_answers
+    WHERE is_denied = 1
+      AND is_deleted = 0
+");
 
-        //Limpiar variables antes de renderizar
-        $_SESSION['message'] = '';
-        $_SESSION['pending'] = false;
-        echo $blade->run("rejected", compact('rejectedAnswers', 'message'));
-    } else {
-        echo $blade->run("rejected", compact('rejectedAnswers'));
-    }
+$totalRow   = $countResult->fetch_assoc();
+$total      = (int) ($totalRow['total'] ?? 0);
+$totalPages = (int) ceil($total / $limit);
 
-} catch (Exception $e) {
-    echo 'Ha ocurrido un error';
-}
+// =========================
+// DATOS
+// =========================
+$rejectedAnswers = $db->makeQuery("
+    SELECT *
+    FROM form_answers
+    WHERE is_denied = 1
+      AND is_deleted = 0
+    ORDER BY created_at DESC
+    LIMIT $limit OFFSET $offset
+")->fetch_all(MYSQLI_ASSOC);
 
+// =========================
+// FLASH MESSAGE
+// =========================
+$message = $_SESSION['message'] ?? null;
+$error   = $_SESSION['error'] ?? null;
+
+unset($_SESSION['message'], $_SESSION['error']);
+
+// =========================
+// BLADE
+// =========================
+$blade = new BladeOne(
+    __DIR__ . '/views',
+    __DIR__ . '/cache',
+    BladeOne::MODE_AUTO
+);
+
+// =========================
+// RENDER
+// =========================
+echo $blade->run('rejected', [
+    'rejectedAnswers' => $rejectedAnswers,
+    'page'            => $page,
+    'totalPages'      => $totalPages,
+    'message'         => $message,
+    'error'           => $error,
+]);

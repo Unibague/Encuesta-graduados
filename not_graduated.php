@@ -30,15 +30,16 @@ $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 // =========================
 // WHERE BASE
 // =========================
+// 👉 EXISTE EN SIGA PERO NO ES GRADUADO
 $where = "
-    is_graduated IS NULL
+    is_graduated = 0
     AND is_migrated = 0
     AND is_denied = 0
     AND is_deleted = 0
 ";
 
 // =========================
-// WHERE BUSCADOR
+// BUSCADOR GLOBAL
 // =========================
 if ($search !== '') {
     $searchSafe = addslashes($search);
@@ -71,9 +72,9 @@ $total      = (int) ($totalRow['total'] ?? 0);
 $totalPages = (int) ceil($total / $limit);
 
 // =========================
-// DATOS (ORDENADOS)
+// DATOS
 // =========================
-$pendingAnswers = $db->makeQuery("
+$notGraduatedAnswers = $db->makeQuery("
     SELECT
         id,
         identification_number,
@@ -114,8 +115,8 @@ $blade = new BladeOne(
 // =========================
 // RENDER
 // =========================
-echo $blade->run('pending', [
-    'graduatedAnswers' => $pendingAnswers, // vista espera este nombre
+echo $blade->run('not_graduated', [
+    'graduatedAnswers' => $notGraduatedAnswers, // reutilizamos la vista
     'page'             => $page,
     'totalPages'       => $totalPages,
     'search'           => $search,

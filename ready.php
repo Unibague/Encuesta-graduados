@@ -6,17 +6,32 @@ use eftec\bladeone\BladeOne;
 use Ospina\EasySQL\EasySQL;
 use Dotenv\Dotenv;
 
+// =========================
+// AUTH
+// =========================
 verifyIsAuthenticated();
 
+// =========================
+// ENV
+// =========================
 $dotenv = Dotenv::createUnsafeImmutable(__DIR__);
 $dotenv->load();
 
+// =========================
+// PAGINACIÓN
+// =========================
 $page   = max((int)($_GET['page'] ?? 1), 1);
 $limit  = 50;
 $offset = ($page - 1) * $limit;
 
+// =========================
+// BUSCADOR
+// =========================
 $search = trim($_GET['search'] ?? '');
 
+// =========================
+// DB
+// =========================
 $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
 // =========================
@@ -30,21 +45,21 @@ $where = "
 ";
 
 // =========================
-// BUSCADOR GLOBAL (SQL)
+// BUSCADOR GLOBAL
 // =========================
 if ($search !== '') {
-    $search = addslashes($search);
+    $searchSafe = addslashes($search);
 
     $where .= "
         AND (
-            identification_number LIKE '%$search%'
-            OR name LIKE '%$search%'
-            OR last_name LIKE '%$search%'
-            OR email LIKE '%$search%'
-            OR mobile_phone LIKE '%$search%'
-            OR alternative_mobile_phone LIKE '%$search%'
-            OR city LIKE '%$search%'
-            OR address LIKE '%$search%'
+            identification_number LIKE '%$searchSafe%'
+            OR name LIKE '%$searchSafe%'
+            OR last_name LIKE '%$searchSafe%'
+            OR email LIKE '%$searchSafe%'
+            OR mobile_phone LIKE '%$searchSafe%'
+            OR alternative_mobile_phone LIKE '%$searchSafe%'
+            OR city LIKE '%$searchSafe%'
+            OR address LIKE '%$searchSafe%'
         )
     ";
 }
@@ -59,8 +74,8 @@ $countResult = $db->makeQuery("
 ");
 
 $totalRow   = $countResult->fetch_assoc();
-$total      = (int)($totalRow['total'] ?? 0);
-$totalPages = (int)ceil($total / $limit);
+$total      = (int) ($totalRow['total'] ?? 0);
+$totalPages = (int) ceil($total / $limit);
 
 // =========================
 // DATOS
@@ -74,7 +89,7 @@ $graduatedAnswers = $db->makeQuery("
 ")->fetch_all(MYSQLI_ASSOC);
 
 // =========================
-// SIGA
+// SIGA (INFO OFICIAL)
 // =========================
 foreach ($graduatedAnswers as $key => $answer) {
     try {
@@ -85,15 +100,38 @@ foreach ($graduatedAnswers as $key => $answer) {
     }
 }
 
-$blade = new BladeOne(__DIR__.'/views', __DIR__.'/cache', BladeOne::MODE_AUTO);
+// =========================
+// FLASH MESSAGE (CLAVE)
+// =========================
+$message = $_SESSION['message'] ?? null;
+$error   = $_SESSION['error'] ?? null;
 
+unset($_SESSION['message'], $_SESSION['error']);
+
+// =========================
+// BLADE
+// =========================
+$blade = new BladeOne(
+    __DIR__ . '/views',
+    __DIR__ . '/cache',
+    BladeOne::MODE_AUTO
+);
+
+// =========================
+// RENDER
+// =========================
 echo $blade->run('ready', [
     'graduatedAnswers' => $graduatedAnswers,
     'page'             => $page,
     'totalPages'       => $totalPages,
-    'search'           => $search
+    'search'           => $search,
+    'message'          => $message,
+    'error'            => $error,
 ]);
 
+// =========================
+// FUNCTIONS
+// =========================
 function getUserData(string $identification_number): array
 {
     $endpoint = 'https://academia.unibague.edu.co/atlante/grad_dat_siga.php';

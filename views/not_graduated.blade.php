@@ -1,7 +1,7 @@
 @component('templates.main')
 
     @slot('title')
-        Registros rechazados
+        Registros en SIGA (No graduados)
     @endslot
 
     {{-- HEADER SLOT --}}
@@ -26,7 +26,7 @@
     @endslot
 
     {{-- =========================
-         TOASTS
+         TOAST
          ========================= --}}
     @if(!empty($message))
         <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3"
@@ -42,26 +42,27 @@
         </div>
     @endif
 
-    @if(!empty($error))
-        <div class="toast align-items-center text-bg-danger border-0 position-fixed top-0 end-0 m-3"
-             role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    {{ $error }}
-                </div>
-                <button type="button"
-                        class="btn-close btn-close-white me-2 m-auto"
-                        data-bs-dismiss="toast"></button>
-            </div>
-        </div>
-    @endif
-
     <div class="page-scroll">
 
-        <h1 class="text-center mb-2">Registros rechazados</h1>
+        <h1 class="text-center mb-4">
+            Registros existentes en SIGA (No graduados)
+        </h1>
+
         <p class="text-center text-muted mb-4">
-            Estos registros fueron rechazados y pueden ser reactivados o eliminados.
+            Estos registros existen en SIGA pero no están marcados como graduados.
         </p>
+
+        {{-- BUSCADOR --}}
+        <form method="GET" class="mb-4 d-flex justify-content-center">
+            <input
+                type="text"
+                name="search"
+                value="{{ $search ?? '' }}"
+                class="form-control w-50"
+                placeholder="Buscar por cédula, nombre, correo, ciudad..."
+            >
+            <button class="btn btn-primary ms-2">Buscar</button>
+        </form>
 
         <table class="table table-striped table-hover">
             <thead>
@@ -70,9 +71,9 @@
                 <th>Cédula</th>
                 <th>Nombre</th>
                 <th>Apellido</th>
-                <th>Correo electrónico</th>
+                <th>Correo</th>
                 <th>Teléfono</th>
-                <th>Teléfono alterno</th>
+                <th>Tel. alterno</th>
                 <th>País</th>
                 <th>Ciudad</th>
                 <th>Dirección</th>
@@ -82,7 +83,7 @@
             </thead>
 
             <tbody>
-            @forelse($rejectedAnswers as $answer)
+            @forelse($graduatedAnswers as $answer)
                 <tr>
                     <td>{{ $answer['id'] }}</td>
                     <td>{{ $answer['identification_number'] }}</td>
@@ -95,25 +96,26 @@
                     <td>{{ $answer['city'] }}</td>
                     <td>{{ $answer['address'] }}</td>
                     <td>{{ $answer['created_at'] }}</td>
-                    <td>
-                        <div class="d-flex gap-2 justify-content-center">
 
-                            {{-- REACTIVAR --}}
-                            <form action="/app/controllers/reactive.php"
+                    <td>
+                        <div class="d-flex flex-column gap-1">
+
+                            {{-- RECHAZAR --}}
+                            <form action="/app/controllers/deny.php"
                                   method="POST"
-                                  onsubmit="return confirm('¿Deseas reactivar este registro?')">
+                                  onsubmit="return confirm('¿Deseas rechazar este registro?')">
                                 <input type="hidden" name="id" value="{{ $answer['id'] }}">
-                                <button class="btn btn-primary btn-sm">
-                                    Reactivar
+                                <button class="btn btn-danger btn-sm w-100">
+                                    Rechazar
                                 </button>
                             </form>
 
                             {{-- BORRAR --}}
                             <form action="/app/controllers/delete.php"
                                   method="POST"
-                                  onsubmit="return confirm('Este registro será borrado definitivamente')">
+                                  onsubmit="return confirm('Este registro será borrado')">
                                 <input type="hidden" name="id" value="{{ $answer['id'] }}">
-                                <button class="btn btn-danger btn-sm">
+                                <button class="btn btn-outline-danger btn-sm w-100">
                                     Borrar
                                 </button>
                             </form>
@@ -124,7 +126,7 @@
             @empty
                 <tr>
                     <td colspan="12" class="text-center text-muted">
-                        No hay registros rechazados
+                        No hay registros para mostrar
                     </td>
                 </tr>
             @endforelse
@@ -135,26 +137,23 @@
         <nav class="d-flex justify-content-center mt-4">
             <ul class="pagination">
                 <li class="page-item {{ $page <= 1 ? 'disabled' : '' }}">
-                    <a class="page-link" href="?page={{ $page - 1 }}">«</a>
+                    <a class="page-link" href="?page={{ $page - 1 }}&search={{ $search }}">«</a>
                 </li>
 
                 @for($i = max(1,$page-3); $i <= min($totalPages,$page+3); $i++)
                     <li class="page-item {{ $i == $page ? 'active' : '' }}">
-                        <a class="page-link" href="?page={{ $i }}">{{ $i }}</a>
+                        <a class="page-link" href="?page={{ $i }}&search={{ $search }}">{{ $i }}</a>
                     </li>
                 @endfor
 
                 <li class="page-item {{ $page >= $totalPages ? 'disabled' : '' }}">
-                    <a class="page-link" href="?page={{ $page + 1 }}">»</a>
+                    <a class="page-link" href="?page={{ $page + 1 }}&search={{ $search }}">»</a>
                 </li>
             </ul>
         </nav>
 
     </div>
 
-    {{-- =========================
-         SCRIPTS
-         ========================= --}}
     @slot('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function () {

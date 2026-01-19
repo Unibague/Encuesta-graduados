@@ -1,7 +1,7 @@
 @component('templates.main')
 
     @slot('title')
-        Registros listos para actualizar 
+        Registros listos para actualizar
     @endslot
 
     {{-- HEADER SLOT --}}
@@ -25,24 +25,32 @@
         </style>
     @endslot
 
-    {{-- TOASTS --}}
-    @if(isset($message))
-        <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-2"
+    {{-- =========================
+         TOASTS (ÉXITO / ERROR)
+         ========================= --}}
+    @if(!empty($message))
+        <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3"
              role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
-                <div class="toast-body">{{ $message }}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                <div class="toast-body">
+                    {{ $message }}
+                </div>
+                <button type="button"
+                        class="btn-close btn-close-white me-2 m-auto"
                         data-bs-dismiss="toast"></button>
             </div>
         </div>
     @endif
 
-    @if(isset($error))
-        <div class="toast align-items-center text-bg-danger border-0 position-fixed top-0 end-0 m-2"
+    @if(!empty($error))
+        <div class="toast align-items-center text-bg-danger border-0 position-fixed top-0 end-0 m-3"
              role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
-                <div class="toast-body">{{ $error }}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                <div class="toast-body">
+                    {{ $error }}
+                </div>
+                <button type="button"
+                        class="btn-close btn-close-white me-2 m-auto"
                         data-bs-dismiss="toast"></button>
             </div>
         </div>
@@ -82,7 +90,7 @@
             </thead>
 
             <tbody>
-            @foreach($graduatedAnswers as $answer)
+            @forelse($graduatedAnswers as $answer)
                 <tr>
                     <td>{{ $answer['id'] }}</td>
 
@@ -167,7 +175,13 @@
                         </div>
                     </td>
                 </tr>
-            @endforeach
+            @empty
+                <tr>
+                    <td colspan="11" class="text-center text-muted">
+                        No hay registros para mostrar
+                    </td>
+                </tr>
+            @endforelse
             </tbody>
         </table>
 
@@ -192,8 +206,17 @@
 
     </div>
 
+    {{-- =========================
+         SCRIPTS
+         ========================= --}}
     @slot('scripts')
         <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                document.querySelectorAll('.toast').forEach(el => {
+                    new bootstrap.Toast(el, { delay: 5000 }).show();
+                });
+            });
+
             function approve(id) {
                 const checks = [...document.getElementsByClassName('select')]
                     .filter(c => c.dataset.row == id && c.checked);

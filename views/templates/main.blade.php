@@ -4,49 +4,146 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{!! $title !!} - Unibagué</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx"
+          crossorigin="anonymous">
+
     <script src="/tablefilter/tablefilter.js"></script>
 
-    {{--SCRIPTS AND CSS--}}
+    {{-- ESTILOS BASE DEL NAVBAR --}}
+    <style>
+        /* Brand */
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .navbar-brand img {
+            height: 42px;
+            width: auto;
+        }
+
+        /* Navegación */
+        .navbar-nav {
+            gap: 1rem;
+        }
+
+        .navbar-nav .nav-link {
+            padding: 0.5rem 0.9rem;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            border-radius: 6px;
+        }
+
+        .navbar-nav .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-nav .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+
+        /* Botón cerrar sesión */
+        .navbar .btn-logout {
+            margin-left: 1.5rem;
+            white-space: nowrap;
+        }
+
+        /* Mobile */
+        @media (max-width: 992px) {
+            .navbar-nav {
+                gap: 0.25rem;
+                margin-top: 1rem;
+            }
+
+            .btn-logout {
+                margin: 1rem 0 0 0;
+                width: 100%;
+            }
+        }
+    </style>
+
+    {{-- SCRIPTS Y CSS ESPECÍFICOS DE CADA VISTA --}}
     {!! $header !!}
 </head>
-<body class="d-flex flex-column justify-content-between h-100">
+
+<body class="d-flex flex-column h-100">
+
 <header>
     <nav class="navbar navbar-dark bg-dark navbar-expand-lg">
         <div class="container">
+
+            {{-- BRAND --}}
             <a class="navbar-brand" href="/">
-                <img src="https://www.unibague.edu.co/images/2022/Unibague-4.0.png"
-                     alt="">
-                <span class="h3 ms-2">Encuesta de egresados</span>
+                <img src="https://www.unibague.edu.co/images/2022/Unibague-4.0.png" alt="Unibagué">
+                <span class="h5 mb-0">Encuesta de egresados</span>
             </a>
 
+            {{-- BOTÓN MOBILE --}}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#mainNavbar" aria-controls="mainNavbar"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            {{-- NAV --}}
             @if(auth())
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                <div class="collapse navbar-collapse" id="mainNavbar">
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="/ready.php">Listos para actualizar</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/pending.php">No están en SIGA</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/rejected.php">Rechazados</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/deleted.php">Borrados</a>
-                    </li>
-                </ul>
-                <div class="d-flex align-items-center">
-                    <form action="/app/controllers/logout.php" method="POST">
-                        <button type="submit" class="btn btn-dark">Cerrar sesión</button>
+                    <ul class="navbar-nav ms-auto align-items-lg-center">
+                        <li class="nav-item">
+                            <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'ready.php' ? 'active' : '' }}"
+                               href="/ready.php">
+                                Listos para actualizar
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'pending.php' ? 'active' : '' }}"
+                               href="/pending.php">
+                                No están en SIGA
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'not_graduated.php' ? 'active' : '' }}"
+                               href="/not_graduated.php">
+                                Egresados
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'rejected.php' ? 'active' : '' }}"
+                               href="/rejected.php">
+                                Rechazados
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'deleted.php' ? 'active' : '' }}"
+                               href="/deleted.php">
+                                Borrados
+                            </a>
+                        </li>
+                    </ul>
+
+                    {{-- LOGOUT --}}
+                    <form action="/app/controllers/logout.php" method="POST" class="btn-logout">
+                        <button type="submit" class="btn btn-outline-light btn-sm">
+                            Cerrar sesión
+                        </button>
                     </form>
-                </div>
 
+                </div>
             @endif
         </div>
     </nav>
 </header>
+
 <main class="flex-grow-1 py-3">
     <div class="container h-100">
         {!! $slot !!}
@@ -54,18 +151,17 @@
 </main>
 
 <footer class="footer mt-auto py-3 bg-dark">
-    <div class="container">
-        <span class="h3 text-white">Universidad de Ibagué ©</span>
+    <div class="container text-center">
+        <span class="text-white">Universidad de Ibagué ©</span>
     </div>
 </footer>
 
-{{--extra scripts--}}
-
+{{-- SCRIPTS EXTRA --}}
 {!! $scripts ?? '' !!}
 
-{{--BOOTSTRAP JS--}}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa"
         crossorigin="anonymous"></script>
+
 </body>
 </html>

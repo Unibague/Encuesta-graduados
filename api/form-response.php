@@ -29,14 +29,59 @@ if (!$payload || empty($payload['answers'])) {
     exit;
 }
 
-$answers = $payload['answers'];
-$identificationNumber = $answers['Número de identificación'][0] ?? null;
+/* =========================
+ * NORMALIZAR CLAVES (🔑 CLAVE DEL FIX)
+ * ========================= */
+$answers = [];
+foreach ($payload['answers'] as $key => $value) {
+    $normalizedKey = mb_strtolower(trim($key), 'UTF-8');
+    $answers[$normalizedKey] = $value;
+}
+
+/* =========================
+ * HELPER
+ * ========================= */
+function getAnswer(array $answers, array $possibleNames): ?string
+{
+    foreach ($possibleNames as $name) {
+        $key = mb_strtolower(trim($name), 'UTF-8');
+        if (!empty($answers[$key][0])) {
+            return trim((string)$answers[$key][0]);
+        }
+    }
+    return null;
+}
+
+/* =========================
+ * IDENTIFICATION
+ * ========================= */
+$identificationNumber = getAnswer($answers, [
+    'número de identificación',
+    'documento de identidad',
+    'documento',
+    'cédula',
+    'cedula'
+]);
 
 if (!$identificationNumber) {
     http_response_code(422);
     echo json_encode(['error' => 'Missing identification number']);
     exit;
 }
+
+/* =========================
+ * NORMALIZED DATA
+ * ========================= */
+$email   = getAnswer($answers, ['dirección de correo electrónico', 'email address', 'correo electrónico', 'correo']);
+$name    = getAnswer($answers, ['nombres', 'nombre']);
+$last    = getAnswer($answers, ['apellidos', 'apellido']);
+$phone   = getAnswer($answers, ['teléfono de contacto', 'telefono de contacto', 'teléfono']);
+$alt     = getAnswer($answers, ['teléfono alterno de contacto', 'telefono alterno de contacto']);
+$city    = getAnswer($answers, ['ciudad', 'city']);
+$country = getAnswer($answers, ['país', 'pais', 'country']);
+$address = getAnswer($answers, ['dirección de correspondencia', 'direccion de correspondencia', 'dirección', 'direccion']);
+
+$now = date('Y-m-d H:i:s');
 
 /* =========================
  * SIGA
@@ -54,7 +99,7 @@ try {
 $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
 /* =========================
- * CHECK EXISTING (ID REAL)
+ * CHECK EXISTING
  * ========================= */
 $result = $db->makeQuery("
     SELECT id
@@ -67,24 +112,10 @@ $result = $db->makeQuery("
 $row = $result->fetch_assoc();
 
 /* =========================
- * DATA NORMALIZADA
- * ========================= */
-$email   = $answers['Dirección de correo electrónico'][0] ?? null;
-$name    = $answers['Nombres'][0] ?? null;
-$last    = $answers['Apellidos'][0] ?? null;
-$phone   = $answers['Teléfono de contacto'][0] ?? null;
-$alt     = $answers['Teléfono alterno de contacto'][0] ?? null;
-$city    = $answers['Ciudad'][0] ?? null;
-$country = $answers['País'][0] ?? null;
-$address = $answers['Dirección de correspondencia'][0] ?? null;
-$now     = date('Y-m-d H:i:s');
-
-/* =========================
- * UPDATE O INSERT
+ * UPDATE
  * ========================= */
 if ($row) {
 
-    // UPDATE SEGURO POR ID
     $db->makeQuery("
         UPDATE form_answers SET
             email = '" . addslashes($email) . "',
@@ -113,15 +144,18 @@ if ($row) {
 }
 
 /* =========================
- * INSERT NUEVO
+ * INSERT
  * ========================= */
 $db->makeQuery("
     INSERT INTO form_answers (
-        identification_number, email, name, last_name,
+        identification_number,
+        email, name, last_name,
         mobile_phone, alternative_mobile_phone,
         city, country, address,
-        answers, is_graduated, is_migrated,
-        is_denied, is_deleted, created_at, updated_at
+        answers,
+        is_graduated, is_migrated,
+        is_denied, is_deleted,
+        created_at, updated_at
     ) VALUES (
         '" . addslashes($identificationNumber) . "',
         '" . addslashes($email) . "',
@@ -146,7 +180,7 @@ echo json_encode([
 exit;
 
 /* =========================
- * SIGA
+ * SIGA FUNCTION
  * ========================= */
 function verifyIfIsGraduated(string $identification_number): int
 {
@@ -155,7 +189,7 @@ function verifyIfIsGraduated(string $identification_number): int
     );
 
     $curl->setQueryParamsAsArray([
-        'consulta' => 'Consultar',
+        'consulta'  => 'Consultar',
         'documento' => $identification_number,
     ]);
 

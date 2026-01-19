@@ -120,7 +120,7 @@ $result = $db->makeQuery("
 $row = $result->fetch_assoc();
 
 /* =========================
- * UPDATE
+ * UPDATE (EXISTE)
  * ========================= */
 if ($row) {
 
@@ -139,6 +139,7 @@ if ($row) {
             is_migrated = 0,
             is_denied = 0,
             is_deleted = 0,
+            created_at = '$now',
             updated_at = '$now'
         WHERE id = {$row['id']}
     ");
@@ -152,7 +153,7 @@ if ($row) {
 }
 
 /* =========================
- * INSERT
+ * INSERT (NO EXISTE)
  * ========================= */
 $db->makeQuery("
     INSERT INTO form_answers (
@@ -161,8 +162,8 @@ $db->makeQuery("
         mobile_phone, alternative_mobile_phone,
         city, country, address,
         answers,
-        is_graduated, is_migrated,
-        is_denied, is_deleted,
+        is_graduated,
+        is_migrated, is_denied, is_deleted,
         created_at, updated_at
     ) VALUES (
         '" . addslashes($identificationNumber) . "',

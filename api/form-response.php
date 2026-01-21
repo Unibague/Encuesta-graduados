@@ -94,7 +94,12 @@ appLog("Documento recibido: {$identificationNumber}");
 /* =========================
  * DATOS NORMALIZADOS
  * ========================= */
-$email   = getAnswer($answers, ['correo electrónico', 'email', 'dirección de correo electrónico']);
+$email = getAnswer($answers, [
+    'email address',          
+    'correo electrónico',
+    'correo electronico',
+    'email'
+]);
 $name    = getAnswer($answers, ['nombres', 'nombre']);
 $last    = getAnswer($answers, ['apellidos', 'apellido']);
 $phone   = getAnswer($answers, ['teléfono de contacto', 'telefono']);

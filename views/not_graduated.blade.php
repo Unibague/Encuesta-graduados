@@ -25,18 +25,12 @@
         </style>
     @endslot
 
-    {{-- =========================
-         TOAST
-         ========================= --}}
+    {{-- TOASTS --}}
     @if(!empty($message))
-        <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3"
-             role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3">
             <div class="d-flex">
-                <div class="toast-body">
-                    {{ $message }}
-                </div>
-                <button type="button"
-                        class="btn-close btn-close-white me-2 m-auto"
+                <div class="toast-body">{{ $message }}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto"
                         data-bs-dismiss="toast"></button>
             </div>
         </div>
@@ -44,23 +38,18 @@
 
     <div class="page-scroll">
 
-        <h1 class="text-center mb-4">
-            Registros existentes en SIGA (No graduados)
-        </h1>
+        <h1 class="text-center mb-3">Registros en SIGA (No graduados)</h1>
 
         <p class="text-center text-muted mb-4">
-            Estos registros existen en SIGA pero no están marcados como graduados.
+            Estos registros existen en SIGA, pero no están marcados como graduados.
+            Puedes actualizarlos o rechazarlos.
         </p>
 
         {{-- BUSCADOR --}}
         <form method="GET" class="mb-4 d-flex justify-content-center">
-            <input
-                type="text"
-                name="search"
-                value="{{ $search ?? '' }}"
-                class="form-control w-50"
-                placeholder="Buscar por cédula, nombre, correo, ciudad..."
-            >
+            <input type="text" name="search" value="{{ $search ?? '' }}"
+                   class="form-control w-50"
+                   placeholder="Buscar por cédula, nombre, correo, ciudad...">
             <button class="btn btn-primary ms-2">Buscar</button>
         </form>
 
@@ -73,8 +62,7 @@
                 <th>Apellido</th>
                 <th>Correo</th>
                 <th>Teléfono</th>
-                <th>Tel. alterno</th>
-                <th>País</th>
+                <th>Teléfono alterno</th>
                 <th>Ciudad</th>
                 <th>Dirección</th>
                 <th>Fecha</th>
@@ -89,43 +77,79 @@
                     <td>{{ $answer['identification_number'] }}</td>
                     <td>{{ $answer['name'] }}</td>
                     <td>{{ $answer['last_name'] }}</td>
-                    <td>{{ $answer['email'] }}</td>
-                    <td>{{ $answer['mobile_phone'] }}</td>
-                    <td>{{ $answer['alternative_mobile_phone'] ?: '—' }}</td>
-                    <td>{{ $answer['country'] }}</td>
-                    <td>{{ $answer['city'] }}</td>
-                    <td>{{ $answer['address'] }}</td>
+
+                    <td>
+                        {{ $answer['email'] }}
+                        <br>
+                        <input type="checkbox" class="select" name="email"
+                               value="{{ $answer['email'] }}"
+                               data-row="{{ $answer['id'] }}" checked>
+                    </td>
+
+                    <td>
+                        {{ $answer['mobile_phone'] }}
+                        <br>
+                        <input type="checkbox" class="select" name="mobile_phone"
+                               value="{{ $answer['mobile_phone'] }}"
+                               data-row="{{ $answer['id'] }}" checked>
+                    </td>
+
+                    <td>
+                        {{ $answer['alternative_mobile_phone'] ?: '—' }}
+                        <br>
+                        <input type="checkbox" class="select" name="alternative_mobile_phone"
+                               value="{{ $answer['alternative_mobile_phone'] }}"
+                               data-row="{{ $answer['id'] }}" checked>
+                    </td>
+
+                    <td>
+                        {{ $answer['city'] }}
+                        <br>
+                        <input type="checkbox" class="select" name="city"
+                               value="{{ $answer['city'] }}"
+                               data-row="{{ $answer['id'] }}" checked>
+                    </td>
+
+                    <td>
+                        {{ $answer['address'] }}
+                        <br>
+                        <input type="checkbox" class="select" name="address"
+                               value="{{ $answer['address'] }}"
+                               data-row="{{ $answer['id'] }}" checked>
+                    </td>
+
                     <td>{{ $answer['created_at'] }}</td>
 
                     <td>
-                        <div class="d-flex flex-column gap-1">
+                        <div class="d-flex gap-2">
+                            {{-- ACTUALIZAR --}}
+                            <form action="/app/controllers/approve.php"
+                                  method="POST"
+                                  onsubmit="return approve({{ $answer['id'] }})"
+                                  id="form-{{ $answer['id'] }}">
+                                <input type="hidden" name="id" value="{{ $answer['id'] }}">
+                                <input type="hidden" name="identification_number"
+                                       value="{{ $answer['identification_number'] }}">
+                                <button class="btn btn-success btn-sm">
+                                    Actualizar
+                                </button>
+                            </form>
 
                             {{-- RECHAZAR --}}
                             <form action="/app/controllers/deny.php"
                                   method="POST"
                                   onsubmit="return confirm('¿Deseas rechazar este registro?')">
                                 <input type="hidden" name="id" value="{{ $answer['id'] }}">
-                                <button class="btn btn-danger btn-sm w-100">
+                                <button class="btn btn-danger btn-sm">
                                     Rechazar
                                 </button>
                             </form>
-
-                            {{-- BORRAR --}}
-                            <form action="/app/controllers/delete.php"
-                                  method="POST"
-                                  onsubmit="return confirm('Este registro será borrado')">
-                                <input type="hidden" name="id" value="{{ $answer['id'] }}">
-                                <button class="btn btn-outline-danger btn-sm w-100">
-                                    Borrar
-                                </button>
-                            </form>
-
                         </div>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="12" class="text-center text-muted">
+                    <td colspan="11" class="text-center text-muted">
                         No hay registros para mostrar
                     </td>
                 </tr>
@@ -161,6 +185,23 @@
                     new bootstrap.Toast(el, { delay: 5000 }).show();
                 });
             });
+
+            function approve(id) {
+                const checks = [...document.getElementsByClassName('select')]
+                    .filter(c => c.dataset.row == id && c.checked);
+
+                const form = document.getElementById('form-' + id);
+
+                checks.forEach(c => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = c.name;
+                    input.value = c.value;
+                    form.appendChild(input);
+                });
+
+                return true;
+            }
         </script>
     @endslot
 

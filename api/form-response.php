@@ -7,12 +7,29 @@ use Ospina\EasySQL\EasySQL;
 header('Content-Type: application/json; charset=utf-8');
 
 /* =========================
+ * LOG
+ * ========================= */
+function appLog(string $message, string $level = 'INFO'): void
+{
+    $date = date('Y-m-d H:i:s');
+    $line = "[$date][$level] $message" . PHP_EOL;
+
+    $logDir = __DIR__ . '/../logs';
+    if (!is_dir($logDir)) {
+        mkdir($logDir, 0777, true);
+    }
+
+    file_put_contents($logDir . '/form.log', $line, FILE_APPEND);
+}
+
+/* =========================
  * SECURITY
  * ========================= */
 $receivedToken = $_SERVER['HTTP_X_API_TOKEN'] ?? '';
 $expectedToken = getenv('FORM_WEBHOOK_TOKEN');
 
 if (!$expectedToken || $receivedToken !== $expectedToken) {
+    appLog('Token inválido o ausente', 'ERROR');
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit;
@@ -24,18 +41,20 @@ if (!$expectedToken || $receivedToken !== $expectedToken) {
 $payload = json_decode(file_get_contents('php://input'), true);
 
 if (!$payload || empty($payload['answers'])) {
+    appLog('Payload inválido', 'ERROR');
     http_response_code(400);
     echo json_encode(['error' => 'Invalid payload']);
     exit;
 }
 
+appLog('Formulario recibido');
+
 /* =========================
- * NORMALIZAR CLAVES
+ * NORMALIZAR RESPUESTAS
  * ========================= */
 $answers = [];
 foreach ($payload['answers'] as $key => $value) {
-    $normalizedKey = mb_strtolower(trim($key), 'UTF-8');
-    $answers[$normalizedKey] = $value;
+    $answers[mb_strtolower(trim($key), 'UTF-8')] = $value;
 }
 
 /* =========================
@@ -53,7 +72,7 @@ function getAnswer(array $answers, array $possibleNames): ?string
 }
 
 /* =========================
- * IDENTIFICATION
+ * IDENTIFICACIÓN
  * ========================= */
 $identificationNumber = getAnswer($answers, [
     'número de identificación',
@@ -64,42 +83,27 @@ $identificationNumber = getAnswer($answers, [
 ]);
 
 if (!$identificationNumber) {
+    appLog('Formulario sin documento', 'ERROR');
     http_response_code(422);
     echo json_encode(['error' => 'Missing identification number']);
     exit;
 }
 
+appLog("Documento recibido: {$identificationNumber}");
+
 /* =========================
- * NORMALIZED DATA
+ * DATOS NORMALIZADOS
  * ========================= */
-$email   = getAnswer($answers, ['dirección de correo electrónico', 'email address', 'correo electrónico', 'correo']);
+$email   = getAnswer($answers, ['correo electrónico', 'email', 'dirección de correo electrónico']);
 $name    = getAnswer($answers, ['nombres', 'nombre']);
 $last    = getAnswer($answers, ['apellidos', 'apellido']);
-$phone   = getAnswer($answers, ['teléfono de contacto', 'telefono de contacto', 'teléfono']);
-$alt     = getAnswer($answers, ['teléfono alterno de contacto', 'telefono alterno de contacto']);
-$city    = getAnswer($answers, ['ciudad', 'city']);
-$country = getAnswer($answers, ['país', 'pais', 'country']);
-$address = getAnswer($answers, ['dirección de correspondencia', 'direccion de correspondencia', 'dirección', 'direccion']);
+$phone   = getAnswer($answers, ['teléfono de contacto', 'telefono']);
+$alt     = getAnswer($answers, ['teléfono alterno de contacto']);
+$city    = getAnswer($answers, ['ciudad']);
+$country = getAnswer($answers, ['país', 'pais']);
+$address = getAnswer($answers, ['dirección de correspondencia', 'direccion']);
 
 $now = date('Y-m-d H:i:s');
-
-/* =========================
- * SIGA – LÓGICA CORRECTA
- * ========================= */
-try {
-
-    if (!existsInSiga($identificationNumber)) {
-        // No existe en SIGA
-        $isGraduated = null;
-    } else {
-        // Existe en SIGA → validar si es graduado
-        $isGraduated = verifyIfIsGraduated($identificationNumber); // 0 o 1
-    }
-
-} catch (Throwable $e) {
-    error_log('[SIGA] ' . $e->getMessage());
-    $isGraduated = null;
-}
 
 /* =========================
  * DB
@@ -107,22 +111,51 @@ try {
 $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
 /* =========================
- * CHECK EXISTING
+ * BUSCAR REGISTRO EXISTENTE
  * ========================= */
 $result = $db->makeQuery("
-    SELECT id
+    SELECT id, is_graduated
     FROM form_answers
     WHERE identification_number = '" . addslashes($identificationNumber) . "'
-    ORDER BY created_at DESC
     LIMIT 1
 ");
 
 $row = $result->fetch_assoc();
 
+$currentIsGraduated = $row ? (int)$row['is_graduated'] : null;
+
 /* =========================
- * UPDATE (EXISTE)
+ * SIGA
+ * ========================= */
+$sigaGraduated = null;
+
+try {
+    appLog("Consultando SIGA para {$identificationNumber}");
+
+    if (existsInSiga($identificationNumber)) {
+        $sigaGraduated = verifyIfIsGraduated($identificationNumber); // 0 | 1
+    }
+} catch (Throwable $e) {
+    appLog("Error SIGA {$identificationNumber}: {$e->getMessage()}", 'ERROR');
+}
+
+/* =========================
+ * REGLA DE NEGOCIO FINAL
+ * ========================= */
+if ($currentIsGraduated === 1) {
+    $finalIsGraduated = 1;
+} elseif ($sigaGraduated === 1) {
+    $finalIsGraduated = 1;
+} else {
+    $finalIsGraduated = $currentIsGraduated;
+}
+
+/* =========================
+ * UPDATE
  * ========================= */
 if ($row) {
+
+    appLog("ACTUALIZANDO ID {$row['id']} | is_graduated={$finalIsGraduated}");
 
     $db->makeQuery("
         UPDATE form_answers SET
@@ -135,11 +168,10 @@ if ($row) {
             country = '" . addslashes($country) . "',
             address = '" . addslashes($address) . "',
             answers = '" . addslashes(json_encode($answers, JSON_UNESCAPED_UNICODE)) . "',
-            is_graduated = " . ($isGraduated === null ? 'NULL' : (int)$isGraduated) . ",
+            is_graduated = " . ($finalIsGraduated === null ? 'NULL' : (int)$finalIsGraduated) . ",
             is_migrated = 0,
             is_denied = 0,
             is_deleted = 0,
-            created_at = '$now',
             updated_at = '$now'
         WHERE id = {$row['id']}
     ");
@@ -147,14 +179,16 @@ if ($row) {
     echo json_encode([
         'status' => 'updated',
         'id' => $row['id'],
-        'is_graduated' => $isGraduated
+        'is_graduated' => $finalIsGraduated
     ]);
     exit;
 }
 
 /* =========================
- * INSERT (NO EXISTE)
+ * INSERT
  * ========================= */
+appLog("INSERTANDO nuevo registro | Documento {$identificationNumber}");
+
 $db->makeQuery("
     INSERT INTO form_answers (
         identification_number,
@@ -176,7 +210,7 @@ $db->makeQuery("
         '" . addslashes($country) . "',
         '" . addslashes($address) . "',
         '" . addslashes(json_encode($answers, JSON_UNESCAPED_UNICODE)) . "',
-        " . ($isGraduated === null ? 'NULL' : (int)$isGraduated) . ",
+        " . ($finalIsGraduated === null ? 'NULL' : (int)$finalIsGraduated) . ",
         0, 0, 0,
         '$now', '$now'
     )
@@ -184,7 +218,7 @@ $db->makeQuery("
 
 echo json_encode([
     'status' => 'inserted',
-    'is_graduated' => $isGraduated
+    'is_graduated' => $finalIsGraduated
 ]);
 exit;
 
@@ -197,9 +231,7 @@ function existsInSiga(string $document): bool
     $url = "https://academia.unibague.edu.co/atlante/consulta_estudiante.php?code_user={$document}&type=I";
     $response = @file_get_contents($url);
 
-    if (!$response) {
-        return false;
-    }
+    if (!$response) return false;
 
     $data = json_decode($response, true);
     return is_array($data) && count($data) > 0;
@@ -223,5 +255,5 @@ function verifyIfIsGraduated(string $identification_number): int
         throw new Exception('Respuesta inválida de SIGA');
     }
 
-    return (int) $decoded['data']; // 0 | 1
+    return (int)$decoded['data']; // 0 | 1
 }

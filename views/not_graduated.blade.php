@@ -130,9 +130,16 @@
                                 <input type="hidden" name="id" value="{{ $answer['id'] }}">
                                 <input type="hidden" name="identification_number"
                                        value="{{ $answer['identification_number'] }}">
-                                <button class="btn btn-success btn-sm">
-                                    Actualizar
-                                </button>
+                               <button
+    type="submit"
+    class="btn btn-success btn-sm btn-approve"
+    data-loading-text="Actualizando...">
+    <span class="btn-text">Actualizar</span>
+    <span class="spinner-border spinner-border-sm d-none ms-1"
+          role="status"
+          aria-hidden="true"></span>
+</button>
+
                             </form>
 
                             {{-- RECHAZAR --}}
@@ -178,31 +185,48 @@
 
     </div>
 
-    @slot('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                document.querySelectorAll('.toast').forEach(el => {
-                    new bootstrap.Toast(el, { delay: 5000 }).show();
-                });
+  @slot('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // TOASTS
+        document.querySelectorAll('.toast').forEach(el => {
+            new bootstrap.Toast(el, { delay: 5000 }).show();
+        });
+
+        // LOADING PARA ACTUALIZAR
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function () {
+
+                const btn = form.querySelector('.btn-approve');
+                if (!btn) return; 
+                btn.disabled = true;
+
+                btn.querySelector('.btn-text').textContent =
+                    btn.dataset.loadingText || 'Cargando...';
+
+                btn.querySelector('.spinner-border').classList.remove('d-none');
             });
+        });
+    });
 
-            function approve(id) {
-                const checks = [...document.getElementsByClassName('select')]
-                    .filter(c => c.dataset.row == id && c.checked);
+    function approve(id) {
+        const checks = [...document.getElementsByClassName('select')]
+            .filter(c => c.dataset.row == id && c.checked);
 
-                const form = document.getElementById('form-' + id);
+        const form = document.getElementById('form-' + id);
 
-                checks.forEach(c => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = c.name;
-                    input.value = c.value;
-                    form.appendChild(input);
-                });
+        checks.forEach(c => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = c.name;
+            input.value = c.value;
+            form.appendChild(input);
+        });
 
-                return true;
-            }
-        </script>
-    @endslot
+        return true;
+    }
+</script>
+@endslot
 
 @endcomponent

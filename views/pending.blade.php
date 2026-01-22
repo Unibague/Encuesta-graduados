@@ -89,9 +89,16 @@
                             <input type="hidden" name="id" value="{{ $answer['id'] }}">
                             <input type="hidden" name="identification_number"
                                    value="{{ $answer['identification_number'] }}">
-                            <button class="btn btn-primary btn-sm w-100">
-                                Sincronizar
-                            </button>
+                            <button
+    type="submit"
+    class="btn btn-primary btn-sm w-100 btn-sync"
+    data-loading-text="Sincronizando...">
+    <span class="btn-text">Sincronizar</span>
+    <span class="spinner-border spinner-border-sm d-none ms-1"
+          role="status"
+          aria-hidden="true"></span>
+</button>
+
                         </form>
 
                         <form action="/app/controllers/deny.php"
@@ -131,13 +138,31 @@
 @slot('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+
+        // TOAST
         const toastEl = document.querySelector('.toast');
         if (toastEl) {
             const toast = new bootstrap.Toast(toastEl);
             toast.show();
         }
+
+        // LOADING BUTTON SOLO PARA SINCRONIZAR
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function () {
+                const btn = form.querySelector('.btn-sync');
+                if (!btn) return;
+
+                btn.disabled = true;
+
+                btn.querySelector('.btn-text').textContent =
+                    btn.dataset.loadingText || 'Cargando...';
+
+                btn.querySelector('.spinner-border').classList.remove('d-none');
+            });
+        });
     });
 </script>
 @endslot
+
 
 @endcomponent

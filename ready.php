@@ -21,7 +21,7 @@ $dotenv->load();
 // PAGINACIÓN
 // =========================
 $page   = max((int)($_GET['page'] ?? 1), 1);
-$limit  = 50;
+$limit  = 10;
 $offset = ($page - 1) * $limit;
 
 // =========================

@@ -74,14 +74,13 @@ if (!$affected) {
     exit;
 }
 
-$successMessage = 'El registro se actualizo correctamente a SIGA';
+$successMessage = 'El registro se actualizo correctamente a SIGA.';
 if (($response->warning ?? null) !== null) {
     approveLog(
         'SIGA actualizo con advertencia para documento ' . $request->identification_number .
         ' | warning=' . $response->warning,
         'WARNING_REMOTE'
     );
-    $successMessage .= '. SIGA respondio con advertencias remotas';
 }
 
 flashSession($successMessage);

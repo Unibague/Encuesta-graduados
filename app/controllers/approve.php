@@ -2,15 +2,14 @@
 
 require 'autoloader.php';
 
-use Ospina\EasySQL\EasySQL;
 use Dotenv\Dotenv;
+use Ospina\EasySQL\EasySQL;
 
 // =========================
 // AUTH + ENV
 // =========================
 verifyIsAuthenticated();
 
-// Cargar .env desde la raíz del proyecto
 $dotenv = Dotenv::createUnsafeImmutable(dirname(__DIR__, 2));
 $dotenv->safeLoad();
 
@@ -19,12 +18,9 @@ $dotenv->safeLoad();
 // =========================
 $request = parseRequest();
 
-if (
-    empty($request->id) ||
-    empty($request->identification_number)
-) {
+if (empty($request->id) || empty($request->identification_number)) {
     flashSession('Datos incompletos para actualizar');
-    header("Location: " . $_SERVER['HTTP_REFERER']);
+    header('Location: ' . $_SERVER['HTTP_REFERER']);
     exit;
 }
 
@@ -36,22 +32,29 @@ $response = updateUserData($request->identification_number, $request);
 if (
     !$response ||
     isset($response->error) ||
-    (isset($response->success) && $response->success === false)
+    (isset($response->success) && $response->success === false) ||
+    ($response->ok ?? false) !== true
 ) {
+    approveLog(
+        'Fallo al actualizar SIGA para documento ' . $request->identification_number .
+        ' | detalle=' . ($response->debug ?? 'sin detalle'),
+        'ERROR'
+    );
+
     flashSession(
         'Error al actualizar SIGA. ' .
-        ($response->error ?? 'Respuesta no válida del servicio')
+        ($response->error ?? 'Respuesta no valida del servicio')
     );
-    header("Location: " . $_SERVER['HTTP_REFERER']);
+    header('Location: ' . $_SERVER['HTTP_REFERER']);
     exit;
 }
 
 // =========================
-// UPDATE DB (SQL PLANO, SEGURO)
+// UPDATE DB
 // =========================
 $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
-$id     = (int) $request->id;
+$id = (int) $request->id;
 $userId = (int) user()->id;
 
 $sql = "
@@ -67,20 +70,40 @@ $affected = $db->makeQuery($sql);
 
 if (!$affected) {
     flashSession('No se pudo actualizar el registro');
-    header("Location: " . $_SERVER['HTTP_REFERER']);
+    header('Location: ' . $_SERVER['HTTP_REFERER']);
     exit;
 }
 
-// =========================
-// OK
-// =========================
-flashSession('El registro se actualizó correctamente a SIGA');
-header("Location: " . $_SERVER['HTTP_REFERER']);
+$successMessage = 'El registro se actualizo correctamente a SIGA';
+if (($response->warning ?? null) !== null) {
+    approveLog(
+        'SIGA actualizo con advertencia para documento ' . $request->identification_number .
+        ' | warning=' . $response->warning,
+        'WARNING_REMOTE'
+    );
+    $successMessage .= '. SIGA respondio con advertencias remotas';
+}
+
+flashSession($successMessage);
+header('Location: ' . $_SERVER['HTTP_REFERER']);
 exit;
 
 // =========================
 // FUNCTIONS
 // =========================
+
+function approveLog(string $message, string $level = 'INFO'): void
+{
+    $date = date('Y-m-d H:i:s');
+    $line = "[$date][$level] $message" . PHP_EOL;
+    $logDir = dirname(__DIR__, 2) . '/logs';
+
+    if (!is_dir($logDir)) {
+        mkdir($logDir, 0777, true);
+    }
+
+    file_put_contents($logDir . '/approve.log', $line, FILE_APPEND);
+}
 
 function updateUserData(string $identification_number, object $request): ?object
 {
@@ -88,22 +111,21 @@ function updateUserData(string $identification_number, object $request): ?object
     $curl = new \Ospina\CurlCobain\CurlCobain($endpoint);
 
     $data = [
-        'consulta'  => 'Modificar',
+        'consulta' => 'Modificar',
         'documento' => $identification_number,
-        'token'     => md5($identification_number) . getenv('SECURE_TOKEN'),
+        'token' => md5($identification_number) . getenv('SECURE_TOKEN'),
     ];
 
     if (!empty($request->email)) {
         $data['correo'] = $request->email;
     }
-if (!empty($request->city)) {
-    $ciudad = normalizarCiudadParaSiga($request->city);
 
-    if ($ciudad !== null) {
-        $data['ciudad'] = $ciudad;
+    if (!empty($request->city)) {
+        $city = normalizarCiudadParaSiga($request->city);
+        if ($city !== null) {
+            $data['ciudad'] = $city;
+        }
     }
-}
-
 
     if (!empty($request->address)) {
         $data['direccion'] = $request->address;
@@ -117,180 +139,152 @@ if (!empty($request->city)) {
         $data['tel_alterno'] = $request->alternative_mobile_phone;
     }
 
+    approveLog(
+        'Payload SIGA documento ' . $identification_number . ' | data=' .
+        json_encode($data, JSON_UNESCAPED_UNICODE)
+    );
+
     $curl->setQueryParamsAsArray($data);
-    $response = $curl->makeRequest();
+    $response = trim((string) $curl->makeRequest());
+    $warning = extractWarningText($response);
 
-    return $response ? json_decode($response, false) : null;
-}
+    approveLog(
+        'Respuesta SIGA documento ' . $identification_number . ' | body=' .
+        substr(str_replace(["\r", "\n"], ['\\r', '\\n'], $response), 0, 1200)
+    );
 
-function convertir(string $text): string
-{
-    $text = strtoupper(trim($text));
+    if ($response === '') {
+        return (object) [
+            'ok' => false,
+            'error' => 'El servicio SIGA no devolvio contenido',
+            'debug' => 'respuesta vacia',
+        ];
+    }
 
-    return strtr($text, [
-        'Á' => 'A', 'É' => 'E', 'Í' => 'I',
-        'Ó' => 'O', 'Ú' => 'U',
-        'á' => 'A', 'é' => 'E', 'í' => 'I',
-        'ó' => 'O', 'ú' => 'U',
-        'ñ' => 'N', 'Ñ' => 'N',
-    ]);
+    $jsonPayload = extractJsonObject($response);
+    $decoded = $jsonPayload !== null ? json_decode($jsonPayload, false) : null;
+
+    if (json_last_error() === JSON_ERROR_NONE && is_object($decoded)) {
+        if (isset($decoded->error) && $decoded->error) {
+            $decoded->ok = false;
+            $decoded->debug = $response;
+            $decoded->warning = $warning;
+            return $decoded;
+        }
+
+        if (isset($decoded->success)) {
+            $decoded->ok = $decoded->success !== false;
+            $decoded->debug = $response;
+            $decoded->warning = $warning;
+            return $decoded;
+        }
+
+        if (isset($decoded->status)) {
+            $status = strtoupper((string) $decoded->status);
+            $decoded->ok = !in_array($status, ['ERROR', 'FAIL', 'FAILED'], true);
+            $decoded->debug = $response;
+            $decoded->warning = $warning;
+            return $decoded;
+        }
+
+        if (isset($decoded->message) || isset($decoded->mensaje) || isset($decoded->data)) {
+            $decoded->ok = true;
+            $decoded->debug = $response;
+            $decoded->warning = $warning;
+            return $decoded;
+        }
+    }
+
+    $normalized = mb_strtolower($response, 'UTF-8');
+    $hasPositiveSignal = str_contains($normalized, 'actualizado')
+        || str_contains($normalized, 'actualizada')
+        || str_contains($normalized, 'modificado')
+        || str_contains($normalized, 'modificada')
+        || str_contains($normalized, 'exito')
+        || str_contains($normalized, 'ok');
+
+    if ($hasPositiveSignal) {
+        return (object) [
+            'ok' => true,
+            'message' => $response,
+            'debug' => $response,
+            'warning' => $warning,
+        ];
+    }
+
+    return (object) [
+        'ok' => false,
+        'error' => 'Respuesta no valida del servicio',
+        'debug' => $response,
+        'warning' => $warning,
+    ];
 }
 
 function normalizarCiudadParaSiga(string $city): ?string
 {
-    // 1. Normalizar texto base
     $city = strtoupper(trim($city));
-
-    // 2. Eliminar tildes y caracteres especiales
-    $city = strtr($city, [
-        'Á' => 'A', 'É' => 'E', 'Í' => 'I',
-        'Ó' => 'O', 'Ú' => 'U',
-        'Ñ' => 'N'
-    ]);
-
-    // 3. Eliminar texto adicional (departamento, país, etc.)
-    // Ej: "BOGOTA, D.C." → "BOGOTA"
-    // Ej: "IBAGUE - TOLIMA" → "IBAGUE"
+    $city = removeAccents($city);
     $city = preg_split('/[-,]/', $city)[0];
-    $city = preg_replace('/\s+D\.?C\.?/','',$city);
+    $city = preg_replace('/\s+D\.?C\.?/', '', $city);
     $city = trim($city);
 
-    // 4. Catálogo de ciudades aceptadas por SIGA
     $allowed = [
-        'BOGOTA',
-        'MEDELLIN',
-        'CALI',
-        'BARRANQUILLA',
-        'CARTAGENA',
-        'SOACHA',
-        'CUCUTA',
-        'SOLEDAD',
-        'BUCARAMANGA',
-        'BELLO',
-        'VALLEDUPAR',
-        'VILLAVICENCIO',
-        'SANTA MARTA',
-        'IBAGUE',
-        'MONTERIA',
-        'PEREIRA',
-        'MANIZALES',
-        'PASTO',
-        'NEIVA',
-        'PALMIRA',
-        'POPAYAN',
-        'BUENAVENTURA',
-        'ARMENIA',
-        'FLORIDABLANCA',
-        'SINCELEJO',
-        'ITAGUI',
-        'TUMACO',
-        'ENVIGADO',
-        'DOSQUEBRADAS',
-        'TULUA',
-        'BARRANCABERMEJA',
-        'RIOHACHA',
-        'URIBIA',
-        'MAICAO',
-        'PIEDECUESTA',
-        'TUNJA',
-        'YOPAL',
-        'FLORENCIA',
-        'GIRON',
-        'FACATATIVA',
-        'JAMUNDI',
-        'FUSAGASUGA',
-        'MOSQUERA',
-        'CHIA',
-        'ZIPAQUIRA',
-        'RIONEGRO',
-        'MALAMBO',
-        'MAGANGUE',
-        'MADRID',
-        'CARTAGO',
-        'TURBO',
-        'QUIBDO',
-        'APARTADO',
-        'SOGAMOSO',
-        'OCANA',
-        'PITALITO',
-        'BUGA',
-        'DUITAMA',
-        'CIENAGA',
-        'AGUACHICA',
-        'GIRARDOT',
-        'LORICA',
-        'TURBACO',
-        'IPIALES',
-        'FUNZA',
-        'SANTANDER DE QUILICHAO',
-        'VILLA DEL ROSARIO',
-        'SAHAGUN',
-        'YUMBO',
-        'CERETE',
-        'SABANALARGA',
-        'CAJICA',
-        'ARAUCA',
-        'CAUCASIA',
-        'LOS PATIOS',
-        'MANAURE',
-        'TIERRALTA',
-        'CANDELARIA',
-        'ACACIAS',
-        'SABANETA',
-        'MONTELIBANO',
-        'CALDAS',
-        'COPACABANA',
-        'CUMARIBO',
-        'SANTA ROSA DE CABAL',
-        'LA ESTRELLA',
-        'CALARCA',
-        'ZONA BANANERA',
-        'ARJONA',
-        'LA DORADA',
-        'GARZON',
-        'EL CARMEN DE BOLIVAR',
-        'COROZAL',
-        'FUNDACION',
-        'GRANADA',
-        'EL BANCO',
-        'LA CEJA',
-        'ESPINAL',
-        'MARINILLA',
-        'PUERTO ASIS',
-        'BARANOA',
-        'GALAPA',
-        'VILLAMARIA',
-        'AGUSTIN CODAZZI',
-        'PLATO',
-        'PLANETA RICA',
-        'SARAVENA',
-        'EL CARMEN DE VIBORAL',
-        'LA PLATA',
-        'CHIGORODO',
-        'SAN MARCOS',
-        'CIENAGA DE ORO',
-        'MOCOA',
-        'SAN GIL',
-        'GUARNE',
-        'TIBU',
-        'SAN JOSE DEL GUAVIARE',
-        'SAN ANDRES',
-        'FLORIDA',
-        'CHIQUINQUIRA',
-        'ARAUQUITA',
-        'EL CERRITO',
-        'GIRARDOTA',
-        'BARBOSA',
-        'BARBACOAS',
-        'EL BAGRE',
-        'TUCHIN',
-        'PUERTO COLOMBIA'
+        'BOGOTA', 'MEDELLIN', 'CALI', 'BARRANQUILLA', 'CARTAGENA', 'SOACHA',
+        'CUCUTA', 'SOLEDAD', 'BUCARAMANGA', 'BELLO', 'VALLEDUPAR', 'VILLAVICENCIO',
+        'SANTA MARTA', 'IBAGUE', 'MONTERIA', 'PEREIRA', 'MANIZALES', 'PASTO',
+        'NEIVA', 'PALMIRA', 'POPAYAN', 'BUENAVENTURA', 'ARMENIA', 'FLORIDABLANCA',
+        'SINCELEJO', 'ITAGUI', 'TUMACO', 'ENVIGADO', 'DOSQUEBRADAS', 'TULUA',
+        'BARRANCABERMEJA', 'RIOHACHA', 'URIBIA', 'MAICAO', 'PIEDECUESTA', 'TUNJA',
+        'YOPAL', 'FLORENCIA', 'GIRON', 'FACATATIVA', 'JAMUNDI', 'FUSAGASUGA',
+        'MOSQUERA', 'CHIA', 'ZIPAQUIRA', 'RIONEGRO', 'MALAMBO', 'MAGANGUE',
+        'MADRID', 'CARTAGO', 'TURBO', 'QUIBDO', 'APARTADO', 'SOGAMOSO', 'OCANA',
+        'PITALITO', 'BUGA', 'DUITAMA', 'CIENAGA', 'AGUACHICA', 'GIRARDOT',
+        'LORICA', 'TURBACO', 'IPIALES', 'FUNZA', 'SANTANDER DE QUILICHAO',
+        'VILLA DEL ROSARIO', 'SAHAGUN', 'YUMBO', 'CERETE', 'SABANALARGA', 'CAJICA',
+        'ARAUCA', 'CAUCASIA', 'LOS PATIOS', 'MANAURE', 'TIERRALTA', 'CANDELARIA',
+        'ACACIAS', 'SABANETA', 'MONTELIBANO', 'CALDAS', 'COPACABANA', 'CUMARIBO',
+        'SANTA ROSA DE CABAL', 'LA ESTRELLA', 'CALARCA', 'ZONA BANANERA', 'ARJONA',
+        'LA DORADA', 'GARZON', 'EL CARMEN DE BOLIVAR', 'COROZAL', 'FUNDACION',
+        'GRANADA', 'EL BANCO', 'LA CEJA', 'ESPINAL', 'MARINILLA', 'PUERTO ASIS',
+        'BARANOA', 'GALAPA', 'VILLAMARIA', 'AGUSTIN CODAZZI', 'PLATO', 'PLANETA RICA',
+        'SARAVENA', 'EL CARMEN DE VIBORAL', 'LA PLATA', 'CHIGORODO', 'SAN MARCOS',
+        'CIENAGA DE ORO', 'MOCOA', 'SAN GIL', 'GUARNE', 'TIBU', 'SAN JOSE DEL GUAVIARE',
+        'SAN ANDRES', 'FLORIDA', 'CHIQUINQUIRA', 'ARAUQUITA', 'EL CERRITO',
+        'GIRARDOTA', 'BARBOSA', 'BARBACOAS', 'EL BAGRE', 'TUCHIN', 'PUERTO COLOMBIA',
     ];
 
-    // 5. Validación final
     return in_array($city, $allowed, true) ? $city : null;
 }
 
+function removeAccents(string $text): string
+{
+    return strtr($text, [
+        'Á' => 'A', 'É' => 'E', 'Í' => 'I', 'Ó' => 'O', 'Ú' => 'U',
+        'á' => 'A', 'é' => 'E', 'í' => 'I', 'ó' => 'O', 'ú' => 'U',
+        'Ñ' => 'N', 'ñ' => 'N',
+    ]);
+}
+
+function extractJsonObject(string $response): ?string
+{
+    $start = strpos($response, '{');
+    $end = strrpos($response, '}');
+
+    if ($start === false || $end === false || $end < $start) {
+        return null;
+    }
+
+    return substr($response, $start, $end - $start + 1);
+}
+
+function extractWarningText(string $response): ?string
+{
+    $jsonStart = strpos($response, '{');
+    $prefix = $jsonStart === false ? $response : substr($response, 0, $jsonStart);
+    $prefix = trim($prefix);
+
+    return $prefix !== '' ? $prefix : null;
+}
 
 function parseRequest(): object
 {

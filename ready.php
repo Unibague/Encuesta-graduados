@@ -2,9 +2,9 @@
 
 require __DIR__ . '/app/controllers/autoloader.php';
 
+use Dotenv\Dotenv;
 use eftec\bladeone\BladeOne;
 use Ospina\EasySQL\EasySQL;
-use Dotenv\Dotenv;
 
 // =========================
 // AUTH
@@ -18,14 +18,14 @@ $dotenv = Dotenv::createUnsafeImmutable(__DIR__);
 $dotenv->load();
 
 // =========================
-// PAGINACIÓN
+// PAGINATION
 // =========================
-$page   = max((int)($_GET['page'] ?? 1), 1);
-$limit  = 10;
+$page = max((int) ($_GET['page'] ?? 1), 1);
+$limit = 10;
 $offset = ($page - 1) * $limit;
 
 // =========================
-// BUSCADOR
+// SEARCH
 // =========================
 $search = trim($_GET['search'] ?? '');
 
@@ -35,7 +35,7 @@ $search = trim($_GET['search'] ?? '');
 $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
 // =========================
-// WHERE BASE
+// BASE WHERE
 // =========================
 $where = "
     is_graduated = 1
@@ -44,9 +44,6 @@ $where = "
     AND is_deleted = 0
 ";
 
-// =========================
-// BUSCADOR GLOBAL
-// =========================
 if ($search !== '') {
     $searchSafe = addslashes($search);
 
@@ -65,7 +62,7 @@ if ($search !== '') {
 }
 
 // =========================
-// TOTAL REGISTROS
+// COUNT
 // =========================
 $countResult = $db->makeQuery("
     SELECT COUNT(*) AS total
@@ -73,12 +70,12 @@ $countResult = $db->makeQuery("
     WHERE $where
 ");
 
-$totalRow   = $countResult->fetch_assoc();
-$total      = (int) ($totalRow['total'] ?? 0);
+$totalRow = $countResult->fetch_assoc();
+$total = (int) ($totalRow['total'] ?? 0);
 $totalPages = (int) ceil($total / $limit);
 
 // =========================
-// DATOS
+// DATA
 // =========================
 $graduatedAnswers = $db->makeQuery("
     SELECT *
@@ -89,22 +86,26 @@ $graduatedAnswers = $db->makeQuery("
 ")->fetch_all(MYSQLI_ASSOC);
 
 // =========================
-// SIGA (INFO OFICIAL)
+// OFFICIAL DATA FROM SIGA
 // =========================
 foreach ($graduatedAnswers as $key => $answer) {
     try {
-        $graduatedAnswers[$key]['official_answers'] =
-            getUserData($answer['identification_number']);
-    } catch (Exception $e) {
+        $graduatedAnswers[$key]['official_answers'] = getUserData($answer['identification_number']);
+    } catch (Throwable $e) {
+        readyLog(
+            'Fallo consultando SIGA para documento ' . $answer['identification_number'] .
+            ' | error=' . $e->getMessage(),
+            'ERROR'
+        );
         $graduatedAnswers[$key]['official_answers'] = [];
     }
 }
 
 // =========================
-// FLASH MESSAGE (CLAVE)
+// FLASH MESSAGE
 // =========================
 $message = $_SESSION['message'] ?? null;
-$error   = $_SESSION['error'] ?? null;
+$error = $_SESSION['error'] ?? null;
 
 unset($_SESSION['message'], $_SESSION['error']);
 
@@ -122,11 +123,11 @@ $blade = new BladeOne(
 // =========================
 echo $blade->run('ready', [
     'graduatedAnswers' => $graduatedAnswers,
-    'page'             => $page,
-    'totalPages'       => $totalPages,
-    'search'           => $search,
-    'message'          => $message,
-    'error'            => $error,
+    'page' => $page,
+    'totalPages' => $totalPages,
+    'search' => $search,
+    'message' => $message,
+    'error' => $error,
 ]);
 
 // =========================
@@ -138,12 +139,67 @@ function getUserData(string $identification_number): array
 
     $curl = new \Ospina\CurlCobain\CurlCobain($endpoint);
     $curl->setQueryParamsAsArray([
-        'consulta'  => 'Consultar',
+        'consulta' => 'Consultar',
         'documento' => $identification_number,
-        'dia'       => 'N.A',
-        'mes'       => 'N.A',
-        'token'     => md5($identification_number) . getenv('SECURE_TOKEN'),
+        'dia' => 'N.A',
+        'mes' => 'N.A',
+        'token' => md5($identification_number) . getenv('SECURE_TOKEN'),
     ]);
 
-    return json_decode($curl->makeRequest(), true) ?? [];
+    $response = trim((string) $curl->makeRequest());
+
+    readyLog(
+        'Respuesta grad_dat_siga documento ' . $identification_number . ' | body=' .
+        substr(str_replace(["\r", "\n"], ['\\r', '\\n'], $response), 0, 1200)
+    );
+
+    if ($response === '') {
+        return [];
+    }
+
+    $jsonPayload = extractJsonObject($response);
+    if ($jsonPayload === null) {
+        return [];
+    }
+
+    $decoded = json_decode($jsonPayload, true);
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+        readyLog(
+            'JSON invalido grad_dat_siga documento ' . $identification_number .
+            ' | json=' . $jsonPayload,
+            'ERROR'
+        );
+        return [];
+    }
+
+    if (isset($decoded['data']) && is_array($decoded['data'])) {
+        return $decoded['data'];
+    }
+
+    return $decoded;
+}
+
+function extractJsonObject(string $response): ?string
+{
+    $start = strpos($response, '{');
+    $end = strrpos($response, '}');
+
+    if ($start === false || $end === false || $end < $start) {
+        return null;
+    }
+
+    return substr($response, $start, $end - $start + 1);
+}
+
+function readyLog(string $message, string $level = 'INFO'): void
+{
+    $date = date('Y-m-d H:i:s');
+    $line = "[$date][$level] $message" . PHP_EOL;
+    $logDir = __DIR__ . '/logs';
+
+    if (!is_dir($logDir)) {
+        mkdir($logDir, 0777, true);
+    }
+
+    file_put_contents($logDir . '/ready.log', $line, FILE_APPEND);
 }

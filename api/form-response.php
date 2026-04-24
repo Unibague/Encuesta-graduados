@@ -127,7 +127,7 @@ $result = $db->makeQuery("
 
 $row = $result->fetch_assoc();
 
-$currentIsGraduated = $row ? (int)$row['is_graduated'] : null;
+$currentIsGraduated = ($row && $row['is_graduated'] !== null) ? (int)$row['is_graduated'] : null;
 
 /* =========================
  * SIGA
@@ -151,6 +151,8 @@ if ($currentIsGraduated === 1) {
     $finalIsGraduated = 1;
 } elseif ($sigaGraduated === 1) {
     $finalIsGraduated = 1;
+} elseif ($sigaGraduated === 0) {
+    $finalIsGraduated = 0;
 } else {
     $finalIsGraduated = $currentIsGraduated;
 }
@@ -174,7 +176,7 @@ if ($row) {
             address = '" . addslashes($address) . "',
             answers = '" . addslashes(json_encode($answers, JSON_UNESCAPED_UNICODE)) . "',
             is_graduated = " . ($finalIsGraduated === null ? 'NULL' : (int)$finalIsGraduated) . ",
-            is_migrated = 0,
+            is_migrated = CASE WHEN is_migrated = 1 THEN 1 ELSE 0 END,
             is_denied = 0,
             is_deleted = 0,
             updated_at = '$now'

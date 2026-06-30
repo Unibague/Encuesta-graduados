@@ -117,6 +117,13 @@
                         </li>
 
                         <li class="nav-item">
+                            <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'migrated.php' ? 'active' : '' }}"
+                               href="/migrated.php">
+                                Historial SIGA
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'rejected.php' ? 'active' : '' }}"
                                href="/rejected.php">
                                 Rechazados

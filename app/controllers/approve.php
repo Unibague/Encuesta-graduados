@@ -24,6 +24,16 @@ if (empty($request->id) || empty($request->identification_number)) {
     exit;
 }
 
+if (!hasUpdateData($request)) {
+    $db     = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+    $userId = (int) user()->id;
+    $identSafe = addslashes(trim($request->identification_number));
+    $db->makeQuery("UPDATE form_answers SET is_migrated = 1, migrated_by = $userId, updated_at = NOW() WHERE identification_number = '$identSafe'");
+    flashSession('El registro no tenía datos de contacto para enviar a SIGA y fue marcado como procesado.');
+    header('Location: ' . $_SERVER['HTTP_REFERER']);
+    exit;
+}
+
 // =========================
 // ACTUALIZAR EN SIGA
 // =========================
@@ -54,8 +64,8 @@ if (
 // =========================
 $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
-$id = (int) $request->id;
-$userId = (int) user()->id;
+$userId    = (int) user()->id;
+$identSafe = addslashes(trim($request->identification_number));
 
 $sql = "
     UPDATE form_answers
@@ -63,7 +73,7 @@ $sql = "
         is_migrated = 1,
         migrated_by = $userId,
         updated_at  = NOW()
-    WHERE id = $id
+    WHERE identification_number = '$identSafe'
 ";
 
 $affected = $db->makeQuery($sql);
@@ -217,6 +227,17 @@ function updateUserData(string $identification_number, object $request): ?object
         'debug' => $response,
         'warning' => $warning,
     ];
+}
+
+function hasUpdateData(object $request): bool
+{
+    foreach (['email', 'city', 'address', 'mobile_phone', 'alternative_mobile_phone'] as $field) {
+        if (!empty($request->{$field})) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function normalizarCiudadParaSiga(string $city): ?string

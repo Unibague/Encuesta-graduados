@@ -1,0 +1,60 @@
+[2026-06-30 15:19:37][ERROR] Error Google Sheets: {
+  "error": {
+    "code": 400,
+    "message": "This operation is not supported for this document. The document must not be an Office file.",
+    "errors": [
+      {
+        "message": "This operation is not supported for this document. The document must not be an Office file.",
+        "domain": "global",
+        "reason": "failedPrecondition"
+      }
+    ],
+    "status": "FAILED_PRECONDITION"
+  }
+}
+
+[2026-06-30 19:23:59][ERROR] Error Google Sheets: {
+  "error": {
+    "code": 400,
+    "message": "This operation is not supported for this document. The document must not be an Office file.",
+    "errors": [
+      {
+        "message": "This operation is not supported for this document. The document must not be an Office file.",
+        "domain": "global",
+        "reason": "failedPrecondition"
+      }
+    ],
+    "status": "FAILED_PRECONDITION"
+  }
+}
+
+[2026-06-30 21:26:57][ERROR] Error Google Sheets: {
+  "error": {
+    "code": 400,
+    "message": "This operation is not supported for this document. The document must not be an Office file.",
+    "errors": [
+      {
+        "message": "This operation is not supported for this document. The document must not be an Office file.",
+        "domain": "global",
+        "reason": "failedPrecondition"
+      }
+    ],
+    "status": "FAILED_PRECONDITION"
+  }
+}
+
+[2026-06-30 21:32:26][ERROR] Error Google Sheets: {
+  "error": {
+    "code": 400,
+    "message": "This operation is not supported for this document. The document must not be an Office file.",
+    "errors": [
+      {
+        "message": "This operation is not supported for this document. The document must not be an Office file.",
+        "domain": "global",
+        "reason": "failedPrecondition"
+      }
+    ],
+    "status": "FAILED_PRECONDITION"
+  }
+}
+

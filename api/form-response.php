@@ -52,10 +52,7 @@ appLog('Formulario recibido');
 /* =========================
  * NORMALIZAR RESPUESTAS
  * ========================= */
-$answers = [];
-foreach ($payload['answers'] as $key => $value) {
-    $answers[mb_strtolower(trim($key), 'UTF-8')] = $value;
-}
+$answers = normalizeAnswers($payload['answers']);
 
 /* =========================
  * HELPER
@@ -69,6 +66,47 @@ function getAnswer(array $answers, array $possibleNames): ?string
         }
     }
     return null;
+}
+
+function normalizeAnswers(array $rawAnswers): array
+{
+    $normalized = [];
+
+    foreach ($rawAnswers as $key => $value) {
+        $normalized[mb_strtolower(trim((string) $key), 'UTF-8')] = is_array($value)
+            ? $value
+            : [$value];
+    }
+
+    return $normalized;
+}
+
+function keepExistingIfMissing(?string $incomingValue, ?array $existingRow, string $column): string
+{
+    if ($incomingValue !== null) {
+        return $incomingValue;
+    }
+
+    return (string) ($existingRow[$column] ?? '');
+}
+
+function extractNormalizedFields(array $answers): array
+{
+    return [
+        'email' => getAnswer($answers, [
+            'email address',
+            "correo electr\u{00F3}nico",
+            'correo electronico',
+            'email'
+        ]),
+        'name' => getAnswer($answers, ['nombres', 'nombre']),
+        'last' => getAnswer($answers, ['apellidos', 'apellido']),
+        'phone' => getAnswer($answers, ["tel\u{00E9}fono de contacto", 'telefono']),
+        'alt' => getAnswer($answers, ["tel\u{00E9}fono alterno de contacto"]),
+        'city' => getAnswer($answers, ['ciudad']),
+        'country' => getAnswer($answers, ["pa\u{00ED}s", 'pais']),
+        'address' => getAnswer($answers, ["direcci\u{00F3}n de correspondencia", 'direccion']),
+    ];
 }
 
 /* =========================
@@ -94,19 +132,15 @@ appLog("Documento recibido: {$identificationNumber}");
 /* =========================
  * DATOS NORMALIZADOS
  * ========================= */
-$email = getAnswer($answers, [
-    'email address',          
-    'correo electrónico',
-    'correo electronico',
-    'email'
-]);
-$name    = getAnswer($answers, ['nombres', 'nombre']);
-$last    = getAnswer($answers, ['apellidos', 'apellido']);
-$phone   = getAnswer($answers, ['teléfono de contacto', 'telefono']);
-$alt     = getAnswer($answers, ['teléfono alterno de contacto']);
-$city    = getAnswer($answers, ['ciudad']);
-$country = getAnswer($answers, ['país', 'pais']);
-$address = getAnswer($answers, ['dirección de correspondencia', 'direccion']);
+$fields = extractNormalizedFields($answers);
+$email   = $fields['email'];
+$name    = $fields['name'];
+$last    = $fields['last'];
+$phone   = $fields['phone'];
+$alt     = $fields['alt'];
+$city    = $fields['city'];
+$country = $fields['country'];
+$address = $fields['address'];
 
 $now = date('Y-m-d H:i:s');
 
@@ -119,7 +153,18 @@ $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
  * BUSCAR REGISTRO EXISTENTE
  * ========================= */
 $result = $db->makeQuery("
-    SELECT id, is_graduated
+    SELECT
+        id,
+        is_graduated,
+        email,
+        name,
+        last_name,
+        mobile_phone,
+        alternative_mobile_phone,
+        city,
+        country,
+        address,
+        answers
     FROM form_answers
     WHERE identification_number = '" . addslashes($identificationNumber) . "'
     LIMIT 1
@@ -128,6 +173,36 @@ $result = $db->makeQuery("
 $row = $result->fetch_assoc();
 
 $currentIsGraduated = ($row && $row['is_graduated'] !== null) ? (int)$row['is_graduated'] : null;
+$isDocumentOnlyPayload = count($answers) === 1;
+
+if ($row && !$isDocumentOnlyPayload && !empty($row['answers'])) {
+    $storedAnswers = json_decode((string) $row['answers'], true);
+
+    if (is_array($storedAnswers)) {
+        $answers = array_replace(normalizeAnswers($storedAnswers), $answers);
+    }
+}
+
+$fields = extractNormalizedFields($answers);
+$email   = $fields['email'];
+$name    = $fields['name'];
+$last    = $fields['last'];
+$phone   = $fields['phone'];
+$alt     = $fields['alt'];
+$city    = $fields['city'];
+$country = $fields['country'];
+$address = $fields['address'];
+
+if ($row) {
+    $email   = keepExistingIfMissing($email, $row, 'email');
+    $name    = keepExistingIfMissing($name, $row, 'name');
+    $last    = keepExistingIfMissing($last, $row, 'last_name');
+    $phone   = keepExistingIfMissing($phone, $row, 'mobile_phone');
+    $alt     = keepExistingIfMissing($alt, $row, 'alternative_mobile_phone');
+    $city    = keepExistingIfMissing($city, $row, 'city');
+    $country = keepExistingIfMissing($country, $row, 'country');
+    $address = keepExistingIfMissing($address, $row, 'address');
+}
 
 /* =========================
  * SIGA
@@ -162,6 +237,24 @@ if ($currentIsGraduated === 1) {
  * ========================= */
 if ($row) {
 
+    if ($isDocumentOnlyPayload) {
+        appLog("RESINCRONIZANDO ID {$row['id']} sin sobrescribir datos | is_graduated={$finalIsGraduated}");
+
+        $db->makeQuery("
+            UPDATE form_answers SET
+                is_graduated = " . ($finalIsGraduated === null ? 'NULL' : (int)$finalIsGraduated) . ",
+                updated_at = '$now'
+            WHERE id = {$row['id']}
+        ");
+
+        echo json_encode([
+            'status' => 'resynced',
+            'id' => $row['id'],
+            'is_graduated' => $finalIsGraduated
+        ]);
+        exit;
+    }
+
     appLog("ACTUALIZANDO ID {$row['id']} | is_graduated={$finalIsGraduated}");
 
     $db->makeQuery("
@@ -176,7 +269,7 @@ if ($row) {
             address = '" . addslashes($address) . "',
             answers = '" . addslashes(json_encode($answers, JSON_UNESCAPED_UNICODE)) . "',
             is_graduated = " . ($finalIsGraduated === null ? 'NULL' : (int)$finalIsGraduated) . ",
-            is_migrated = CASE WHEN is_migrated = 1 THEN 1 ELSE 0 END,
+            is_migrated = 0,
             is_denied = 0,
             is_deleted = 0,
             updated_at = '$now'
@@ -194,6 +287,17 @@ if ($row) {
 /* =========================
  * INSERT
  * ========================= */
+if ($isDocumentOnlyPayload) {
+    appLog("OMITIDO documento {$identificationNumber}: payload minimo sin registro existente", 'WARNING');
+    http_response_code(202);
+    echo json_encode([
+        'status' => 'skipped',
+        'reason' => 'document-only payload cannot create a complete record',
+        'is_graduated' => $finalIsGraduated
+    ]);
+    exit;
+}
+
 appLog("INSERTANDO nuevo registro | Documento {$identificationNumber}");
 
 $db->makeQuery("

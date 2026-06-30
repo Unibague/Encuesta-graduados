@@ -26,30 +26,46 @@ const htmlOut = path.join(__dirname, '..', 'qr-encuentro.html');
 
 console.log('[QR] Generando código para:', url);
 
-QRCode.toDataURL(url, {
-  width: 400,
+// SVG para visualización (vectorial, escala perfecta)
+QRCode.toString(url, {
+  type: 'svg',
+  width: 300,
   margin: 2,
   color: { dark: '#1a1a2e', light: '#ffffff' },
   errorCorrectionLevel: 'H',
-}, (err, dataUrl) => {
-  if (err) { console.error('[QR] Error:', err); process.exit(1); }
+}, (err, svg) => {
+  if (err) { console.error('[QR] Error SVG:', err); process.exit(1); }
 
-  // Leer y actualizar el HTML
-  let html = fs.readFileSync(htmlOut, 'utf8');
+  // PNG alta resolución para descarga
+  QRCode.toDataURL(url, {
+    width: 600,
+    margin: 2,
+    scale: 8,
+    color: { dark: '#1a1a2e', light: '#ffffff' },
+    errorCorrectionLevel: 'H',
+  }, (err2, pngDataUrl) => {
+    if (err2) { console.error('[QR] Error PNG:', err2); process.exit(1); }
 
-  // Actualizar la data URI del QR
-  html = html.replace(
-    /const QR_B64 = 'data:image\/png;base64,[^']+'/,
-    `const QR_B64 = '${dataUrl}'`
-  );
+    let html = fs.readFileSync(htmlOut, 'utf8');
 
-  // Actualizar la etiqueta de URL
-  html = html.replace(
-    /<div class="url-text"[^>]*>.*?<\/div>/,
-    `<div class="url-text" id="urlLabel">${url}</div>`
-  );
+    // Reemplazar el bloque SVG inline
+    html = html.replace(/<svg[\s\S]*?<\/svg>/, svg);
 
-  fs.writeFileSync(htmlOut, html, 'utf8');
-  console.log('[QR] Listo. Abre qr-encuentro.html en tu navegador para imprimir.');
-  console.log('[QR] O visita: http://localhost:8000/qr-encuentro.html');
+    // Reemplazar el PNG para descarga
+    html = html.replace(
+      /const PNG_DATA = '[^']+'/,
+      `const PNG_DATA = '${pngDataUrl}'`
+    );
+
+    // Actualizar la etiqueta de URL
+    html = html.replace(
+      /<div class="url-text">[^<]+<\/div>/,
+      `<div class="url-text">${url}</div>`
+    );
+
+    fs.writeFileSync(htmlOut, html, 'utf8');
+    const sizeKB = (fs.statSync(htmlOut).size / 1024).toFixed(1);
+    console.log(`[QR] Listo (${sizeKB} KB). Abre qr-encuentro.html en tu navegador.`);
+    console.log('[QR] O visita: http://localhost:8000/qr-encuentro.html');
+  });
 });

@@ -58,3 +58,23 @@
   }
 }
 
+[2026-07-01 22:46:48][ERROR] Error Google Sheets: {
+  "error": {
+    "code": 403,
+    "message": "The caller does not have permission",
+    "errors": [
+      {
+        "message": "The caller does not have permission",
+        "domain": "global",
+        "reason": "forbidden"
+      }
+    ],
+    "status": "PERMISSION_DENIED"
+  }
+}
+
+[2026-07-01 22:49:40][INFO] Registrado en Sheets: Mariana Millán Meneses | 1005839105
+[2026-07-01 22:55:26][INFO] Registrado en Sheets: Mariana Millán Meneses | 1005839105
+[2026-07-01 22:55:51][INFO] Payload SIGA documento 1005839105 | {"consulta":"Modificar","documento":"1005839105","token":"8d2e1f7b4e13d83c22d4c25f22b8af81YHyd?B'r8R7ejTRN","correo":"mmillan0978@gmail.com","telefono":"3505386324","tel_alterno":"3208553968","direccion":"Cra 18A No 72 75 Angeles del Vergel Apt 605","ciudad":"IBAGUE"}
+[2026-07-01 22:55:54][INFO] Respuesta SIGA documento 1005839105 | {"message":"Actualizacion exitosa"}
+[2026-07-01 22:55:54][INFO] Datos actualizados en SIGA para documento 1005839105

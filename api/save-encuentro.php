@@ -157,43 +157,48 @@ function registrarEnSheets(
     string $correo,
     int    $acompanantes
 ): void {
-    $spreadsheetId = '1IbNNjyG_981ME1DrTq-novVYR-wr4CvX';
-    $targetGid     = 499868909;
+    $webAppUrl = getenv('APPS_SCRIPT_URL');
 
-    $client = new Google_Client();
-    $client->setAuthConfig(getenv('GOOGLE_CREDENTIALS_PATH'));
-    $client->addScope(Google_Service_Sheets::SPREADSHEETS);
-
-    $service = new Google_Service_Sheets($client);
-
-    // Buscar el nombre de la hoja por su gid
-    $spreadsheet = $service->spreadsheets->get($spreadsheetId);
-    $sheetName   = null;
-
-    foreach ($spreadsheet->getSheets() as $sheet) {
-        if ((int) $sheet->getProperties()->getSheetId() === $targetGid) {
-            $sheetName = $sheet->getProperties()->getTitle();
-            break;
-        }
+    if (!$webAppUrl) {
+        throw new RuntimeException('APPS_SCRIPT_URL no está configurado en .env');
     }
 
-    if (!$sheetName) {
-        throw new RuntimeException("No se encontró la hoja con gid={$targetGid}");
+    $payload = json_encode([
+        'nombres'       => $nombres,
+        'apellidos'     => $apellidos,
+        'identificacion'=> $identificacion,
+        'celular'       => $celular,
+        'correo'        => $correo,
+        'acompanantes'  => $acompanantes,
+        'fecha'         => date('d/m/Y H:i'),
+    ]);
+
+    $ch = curl_init($webAppUrl);
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_SSL_VERIFYPEER => false,
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr  = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlErr) {
+        throw new RuntimeException("cURL error: {$curlErr}");
     }
 
-    $fila = [[
-        $nombres . ' ' . $apellidos,
-        $identificacion,
-        $celular,
-        $correo,
-        $acompanantes === 0 ? 'Sin acompañante' : "{$acompanantes} acompañante(s)",
-        date('d/m/Y H:i'),
-    ]];
+    $json = json_decode($response, true);
 
-    $body   = new Google_Service_Sheets_ValueRange(['values' => $fila]);
-    $params = ['valueInputOption' => 'USER_ENTERED'];
-
-    $service->spreadsheets_values->append($spreadsheetId, $sheetName, $body, $params);
+    if ($httpCode !== 200 || !empty($json['error'])) {
+        $msg = $json['error'] ?? "HTTP {$httpCode}: {$response}";
+        throw new RuntimeException("Apps Script error: {$msg}");
+    }
 
     encuentroLog("Registrado en Sheets: {$nombres} {$apellidos} | {$identificacion}");
 }

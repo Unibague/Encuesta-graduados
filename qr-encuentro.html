@@ -1,3 +1,8 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QR - Encuentro de Graduados 2026</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -9,7 +14,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh
 h1{font-size:1.45rem;font-weight:700;color:#1a3a6b;margin-bottom:8px}
 .date-badge{display:inline-block;background:linear-gradient(90deg,#1a3a6b,#2563eb);color:#fff;border-radius:20px;padding:5px 20px;font-size:.85rem;font-weight:600;margin-bottom:28px}
 .qr-wrap{background:#fff;border:3px solid #e8ecf3;border-radius:16px;padding:16px;display:inline-block;margin-bottom:18px;line-height:0}
-.qr-wrap svg{width:260px;height:260px;display:block}
+.qr-wrap canvas,.qr-wrap img{width:260px;height:260px;display:block}
 .url-text{font-size:.78rem;color:#64748b;word-break:break-all;margin-bottom:22px;background:#f8fafc;border-radius:8px;padding:8px 12px}
 .cta{font-size:1rem;color:#334155;margin-bottom:4px;font-weight:600}
 .cta-sub{font-size:.85rem;color:#94a3b8;margin-bottom:28px}
@@ -21,6 +26,8 @@ h1{font-size:1.45rem;font-weight:700;color:#1a3a6b;margin-bottom:8px}
 .note{margin-top:18px;font-size:.75rem;color:#94a3b8}
 @media print{body{background:#fff;padding:0}.card{box-shadow:none;border:1px solid #ddd;max-width:100%}.btn-row,.note{display:none}}
 </style>
+</head>
+<body>
 <div class="card">
   <div class="logo-bar">
     <div class="uni-rect">UNIBAGUE</div>
@@ -28,11 +35,8 @@ h1{font-size:1.45rem;font-weight:700;color:#1a3a6b;margin-bottom:8px}
   </div>
   <h1>Encuentro de Graduados</h1>
   <div class="date-badge">19 de septiembre de 2026</div>
-  <div class="qr-wrap" id="qrContainer">
-    <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 41 41" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h41v41H0z"/><path stroke="#1a1a2e" d="M2 2.5h7m1 0h1m3 0h1m2 0h4m1 0h3m1 0h1m2 0h2m1 0h7M2 3.5h1m5 0h1m3 0h1m7 0h2m2 0h1m2 0h3m2 0h1m5 0h1M2 4.5h1m1 0h3m1 0h1m2 0h1m1 0h2m3 0h5m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1M2 5.5h1m1 0h3m1 0h1m1 0h2m2 0h1m1 0h3m2 0h2m1 0h1m3 0h1m3 0h1m1 0h3m1 0h1M2 6.5h1m1 0h3m1 0h1m2 0h1m2 0h2m2 0h1m5 0h1m1 0h1m2 0h1m2 0h1m1 0h3m1 0h1M2 7.5h1m5 0h1m2 0h3m2 0h1m2 0h1m1 0h2m1 0h1m2 0h1m1 0h2m1 0h1m5 0h1M2 8.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M16 9.5h2m1 0h1m2 0h3m1 0h3m1 0h1M4 10.5h1m1 0h3m1 0h3m2 0h1m2 0h1m1 0h2m1 0h3m2 0h4m3 0h1m2 0h1M2 11.5h2m1 0h3m2 0h2m1 0h1m2 0h1m1 0h1m1 0h1m2 0h3m2 0h3m2 0h1m1 0h4M4 12.5h2m1 0h2m1 0h1m2 0h2m1 0h1m3 0h2m1 0h1m1 0h1m3 0h2m1 0h3m1 0h3M2 13.5h2m1 0h1m1 0h1m1 0h2m5 0h1m1 0h1m1 0h3m2 0h3m2 0h2m1 0h1m4 0h1M8 14.5h1m2 0h1m6 0h7m2 0h1m1 0h1m2 0h2m1 0h1m1 0h1M4 15.5h2m1 0h1m1 0h10m2 0h2m1 0h2m1 0h1m2 0h1m1 0h1m2 0h4M2 16.5h1m1 0h1m2 0h4m1 0h2m1 0h2m1 0h3m1 0h1m3 0h1m1 0h1m1 0h1m1 0h2m2 0h3M3 17.5h5m2 0h2m3 0h3m5 0h2m1 0h2m2 0h1m1 0h2M3 18.5h2m2 0h2m1 0h1m2 0h1m1 0h2m2 0h2m1 0h4m1 0h3m1 0h3m1 0h1m2 0h1M2 19.5h1m1 0h4m3 0h1m1 0h2m2 0h5m1 0h3m1 0h2m3 0h1m3 0h3M6 20.5h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m2 0h1m2 0h2m2 0h2m1 0h4m2 0h3M2 21.5h1m1 0h1m1 0h1m6 0h2m1 0h3m2 0h7m6 0h1m3 0h1M2 22.5h3m1 0h1m1 0h1m2 0h1m1 0h1m1 0h2m5 0h6m1 0h5m4 0h1M2 23.5h2m1 0h1m4 0h1m1 0h1m2 0h2m3 0h7m4 0h2m4 0h2M3 24.5h3m1 0h2m1 0h1m1 0h5m1 0h1m5 0h1m2 0h1m3 0h1m2 0h5M2 25.5h5m2 0h1m5 0h2m1 0h1m3 0h3m1 0h1m3 0h3m4 0h1M3 26.5h1m1 0h1m1 0h3m3 0h1m1 0h1m1 0h2m4 0h1m2 0h1m2 0h1m1 0h1m2 0h1m3 0h1M3 27.5h2m1 0h1m2 0h1m1 0h1m1 0h1m1 0h3m3 0h3m1 0h2m2 0h1m1 0h1m2 0h2m1 0h2M2 28.5h1m1 0h1m2 0h5m1 0h2m3 0h2m1 0h1m2 0h4m8 0h1m1 0h1M3 29.5h1m2 0h1m10 0h8m1 0h4m1 0h2m1 0h2m1 0h1M2 30.5h1m2 0h1m2 0h1m1 0h1m1 0h7m1 0h1m4 0h1m1 0h1m2 0h5m1 0h1m1 0h1M10 31.5h2m1 0h2m2 0h4m3 0h1m1 0h2m1 0h2m3 0h1m2 0h2M2 32.5h7m3 0h1m2 0h2m1 0h1m1 0h5m1 0h1m1 0h3m1 0h1m1 0h1m1 0h3M2 33.5h1m5 0h1m1 0h2m1 0h1m1 0h1m1 0h4m1 0h2m2 0h2m2 0h1m3 0h1m3 0h1M2 34.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h1m2 0h1m1 0h2m1 0h2m1 0h6m2 0h1M2 35.5h1m1 0h3m1 0h1m2 0h1m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1m2 0h1m2 0h1m2 0h1m1 0h6M2 36.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h3m1 0h2m2 0h1m1 0h2m2 0h2m1 0h1m1 0h1M2 37.5h1m5 0h1m3 0h2m3 0h2m1 0h1m1 0h4m1 0h2m1 0h1m2 0h2m2 0h1M2 38.5h7m5 0h1m1 0h3m4 0h1m2 0h3m1 0h1m1 0h2m3 0h2"/></svg>
-
-  </div>
-  <div class="url-text">http://localhost:8000/encuentro.php</div>
+  <div class="qr-wrap" id="qrContainer"></div>
+  <div class="url-text" id="urlText"></div>
   <p class="cta">Escanea y registrate</p>
   <p class="cta-sub">Confirma tu asistencia y actualiza tus datos</p>
   <div class="btn-row">
@@ -41,14 +45,41 @@ h1{font-size:1.45rem;font-weight:700;color:#1a3a6b;margin-bottom:8px}
   </div>
   <p class="note">Apunta la camara al codigo para acceder al formulario de registro</p>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-const PNG_DATA = 'data:image/png;base64,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';
-function downloadQR(){
+const TARGET_URL = 'https://encuestas-graduados.unibague.edu.co/encuentro.php';
+
+document.getElementById('urlText').textContent = TARGET_URL;
+
+new QRCode(document.getElementById('qrContainer'), {
+  text: TARGET_URL,
+  width: 260,
+  height: 260,
+  colorDark: '#1a1a2e',
+  colorLight: '#ffffff',
+  correctLevel: QRCode.CorrectLevel.M
+});
+
+function downloadQR() {
+  const canvas = document.querySelector('#qrContainer canvas');
+  if (!canvas) {
+    const img = document.querySelector('#qrContainer img');
+    if (img) {
+      const a = document.createElement('a');
+      a.href = img.src;
+      a.download = 'qr-encuentro-graduados-2026.png';
+      a.click();
+    }
+    return;
+  }
   const a = document.createElement('a');
-  a.href = PNG_DATA;
+  a.href = canvas.toDataURL('image/png');
   a.download = 'qr-encuentro-graduados-2026.png';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
 }
 </script>
+</body>
+</html>

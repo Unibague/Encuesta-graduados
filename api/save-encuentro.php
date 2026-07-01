@@ -157,48 +157,34 @@ function registrarEnSheets(
     string $correo,
     int    $acompanantes
 ): void {
-    $webAppUrl = getenv('APPS_SCRIPT_URL');
+    $spreadsheetId = '1LockLyDz0texEzDypaRyhqL1uniy4Fpus_FPCPOv2Ec';
+    $targetGid     = 1419700379;
 
-    if (!$webAppUrl) {
-        throw new RuntimeException('APPS_SCRIPT_URL no está configurado en .env');
+    $client = new Google_Client();
+    $client->setAuthConfig(getenv('GOOGLE_CREDENTIALS_PATH'));
+    $client->addScope(Google_Service_Sheets::SPREADSHEETS);
+
+    $service = new Google_Service_Sheets($client);
+
+    // Buscar nombre de la hoja por gid
+    $spreadsheet = $service->spreadsheets->get($spreadsheetId);
+    $sheetName   = null;
+    foreach ($spreadsheet->getSheets() as $sheet) {
+        if ((int) $sheet->getProperties()->getSheetId() === $targetGid) {
+            $sheetName = $sheet->getProperties()->getTitle();
+            break;
+        }
     }
 
-    $payload = json_encode([
-        'nombres'       => $nombres,
-        'apellidos'     => $apellidos,
-        'identificacion'=> $identificacion,
-        'celular'       => $celular,
-        'correo'        => $correo,
-        'acompanantes'  => $acompanantes,
-        'fecha'         => date('d/m/Y H:i'),
-    ]);
-
-    $ch = curl_init($webAppUrl);
-    curl_setopt_array($ch, [
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => $payload,
-        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_SSL_VERIFYPEER => false,
-    ]);
-
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlErr  = curl_error($ch);
-    curl_close($ch);
-
-    if ($curlErr) {
-        throw new RuntimeException("cURL error: {$curlErr}");
+    if (!$sheetName) {
+        throw new RuntimeException("No se encontró la hoja con gid={$targetGid}");
     }
 
-    $json = json_decode($response, true);
+    // Solo escribe el nombre completo (columna A)
+    $body   = new Google_Service_Sheets_ValueRange(['values' => [[$nombres . ' ' . $apellidos]]]);
+    $params = ['valueInputOption' => 'USER_ENTERED'];
 
-    if ($httpCode !== 200 || !empty($json['error'])) {
-        $msg = $json['error'] ?? "HTTP {$httpCode}: {$response}";
-        throw new RuntimeException("Apps Script error: {$msg}");
-    }
+    $service->spreadsheets_values->append($spreadsheetId, $sheetName, $body, $params);
 
     encuentroLog("Registrado en Sheets: {$nombres} {$apellidos} | {$identificacion}");
 }

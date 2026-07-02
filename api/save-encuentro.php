@@ -105,22 +105,30 @@ if ($existente) {
 }
 
 /* =========================
- * DATOS ACTUALES EN form_answers
+ * DATOS ACTUALES (SIGA en vivo, con form_answers como respaldo)
  * ========================= */
 $datosActuales = [];
 
-$row = $db->makeQuery("
-    SELECT
-        name, last_name, email,
-        mobile_phone, alternative_mobile_phone,
-        city, address
-    FROM form_answers
-    WHERE identification_number = '$idSafe'
-    LIMIT 1
-")->fetch_assoc();
+try {
+    $datosActuales = consultarSiga($identificacion);
+} catch (Throwable $e) {
+    encuentroLog('Error consultando SIGA para prefill: ' . $e->getMessage(), 'WARNING');
+}
 
-if ($row) {
-    $datosActuales = $row;
+if (!array_filter($datosActuales)) {
+    $row = $db->makeQuery("
+        SELECT
+            name, last_name, email,
+            mobile_phone, alternative_mobile_phone,
+            city, address
+        FROM form_answers
+        WHERE identification_number = '$idSafe'
+        LIMIT 1
+    ")->fetch_assoc();
+
+    if ($row) {
+        $datosActuales = $row;
+    }
 }
 
 /* =========================
@@ -148,6 +156,54 @@ exit;
 /* =========================
  * FUNCTIONS
  * ========================= */
+
+function consultarSiga(string $identificacion): array
+{
+    $endpoint = 'https://academia.unibague.edu.co/atlante/grad_dat_siga.php';
+
+    $curl = new \Ospina\CurlCobain\CurlCobain($endpoint);
+    $curl->setQueryParamsAsArray([
+        'consulta'  => 'Consultar',
+        'documento' => $identificacion,
+        'dia'       => 'N.A',
+        'mes'       => 'N.A',
+        'token'     => md5($identificacion) . getenv('SECURE_TOKEN'),
+    ]);
+
+    $response = trim((string) $curl->makeRequest());
+
+    encuentroLog('Respuesta grad_dat_siga documento ' . $identificacion . ' | body=' .
+        substr(str_replace(["\r", "\n"], ['\\r', '\\n'], $response), 0, 1200));
+
+    if ($response === '') {
+        return [];
+    }
+
+    $start = strpos($response, '{');
+    $end   = strrpos($response, '}');
+    if ($start === false || $end === false || $end < $start) {
+        return [];
+    }
+
+    $decoded = json_decode(substr($response, $start, $end - $start + 1), true);
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+        return [];
+    }
+
+    if (isset($decoded['data']) && is_array($decoded['data'])) {
+        $decoded = $decoded['data'];
+    }
+
+    return [
+        'name'                     => $decoded['Nombres']                       ?? '',
+        'last_name'                => $decoded['Apellidos']                     ?? '',
+        'email'                    => $decoded['Correo']                        ?? '',
+        'mobile_phone'             => $decoded['Telefono de contacto']          ?? '',
+        'alternative_mobile_phone' => $decoded['Telefono alterno']              ?? '',
+        'city'                     => $decoded['Ciudad residencia']             ?? '',
+        'address'                  => $decoded['Direccion de correspondencia']  ?? '',
+    ];
+}
 
 function registrarEnSheets(
     string $nombres,

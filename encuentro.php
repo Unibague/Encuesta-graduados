@@ -982,10 +982,6 @@
                             <span class="spin" id="btnActualizarSpinner"></span>
                         </button>
 
-                        <button type="button" class="btn-skip" id="btnOmitir">
-                            Omitir por ahora
-                        </button>
-
                     </form>
                 </div>
             </div>
@@ -1148,12 +1144,6 @@ $('formActualizar').addEventListener('submit', async e => {
         $('btnActualizarSpinner').style.display = 'none';
         btn.disabled = false;
     }
-});
-
-$('btnOmitir').addEventListener('click', () => {
-    $('step-actualizar').style.display = 'none';
-    $('step-done').style.display = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 /* Bloquear acompañantes si elige No */

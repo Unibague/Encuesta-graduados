@@ -475,8 +475,8 @@ function drawWheel(angle) {
 
     if (n === 0) {
         ctx.beginPath(); ctx.arc(CX, CY, R, 0, 2*Math.PI);
-        ctx.fillStyle = '#1e293b'; ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,.3)';
+        ctx.fillStyle = '#f5f0e6'; ctx.fill();
+        ctx.fillStyle = 'rgba(26,58,107,.4)';
         ctx.font = 'bold 16px Inter, sans-serif';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText('Sin participantes', CX, CY);

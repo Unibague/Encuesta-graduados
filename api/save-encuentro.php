@@ -130,7 +130,7 @@ $sheetsError = null;
 
 if ($asistencia === 'si') {
     try {
-        registrarEnSheets($nombres, $apellidos, $identificacion, $celular, $correo, $asistencia, $acompanantes);
+        registrarEnSheets($nombres, $apellidos, $identificacion, $acompanantes);
     } catch (Throwable $e) {
         $sheetsError = $e->getMessage();
         encuentroLog('Error Google Sheets: ' . $e->getMessage(), 'ERROR');
@@ -153,9 +153,6 @@ function registrarEnSheets(
     string $nombres,
     string $apellidos,
     string $identificacion,
-    string $celular,
-    string $correo,
-    string $asistencia,
     int    $acompanantes
 ): void {
     $spreadsheetId = '1LockLyDz0texEzDypaRyhqL1uniy4Fpus_FPCPOv2Ec';
@@ -181,17 +178,36 @@ function registrarEnSheets(
         throw new RuntimeException("No se encontró la hoja con gid={$targetGid}");
     }
 
-    // Columna A: Nombre | Columna B: Acompañantes | Columna C: ¿Asistió?
-    $body   = new Google_Service_Sheets_ValueRange(['values' => [[
-        $nombres . ' ' . $apellidos,
-        $acompanantes,
-        $asistencia === 'si' ? 'Sí' : 'No',
-    ]]]);
-    $params = ['valueInputOption' => 'USER_ENTERED'];
+    $nombreCompleto = trim($nombres . ' ' . $apellidos);
+    $params         = ['valueInputOption' => 'USER_ENTERED'];
 
-    $service->spreadsheets_values->append($spreadsheetId, $sheetName, $body, $params);
+    // Buscar si esta persona ya tiene fila (evitar duplicados al reenviar el registro)
+    $existentes = $service->spreadsheets_values->get($spreadsheetId, "{$sheetName}!A4:A");
+    $filas      = $existentes->getValues() ?? [];
 
-    encuentroLog("Registrado en Sheets: {$nombres} {$apellidos} | {$identificacion}");
+    $numeroFila = null;
+    foreach ($filas as $i => $fila) {
+        $nombreFila = trim($fila[0] ?? '');
+        if ($nombreFila !== '' && mb_strtolower($nombreFila, 'UTF-8') === mb_strtolower($nombreCompleto, 'UTF-8')) {
+            $numeroFila = $i + 4; // A4 es la primera fila de datos
+            break;
+        }
+    }
+
+    if ($numeroFila !== null) {
+        // Ya existe: solo actualizar el número de acompañantes (columna B), sin tocar ¿Asistió?
+        $body = new Google_Service_Sheets_ValueRange(['values' => [[$acompanantes]]]);
+        $service->spreadsheets_values->update($spreadsheetId, "{$sheetName}!B{$numeroFila}", $body, $params);
+
+        encuentroLog("Actualizado en Sheets (ya existía): {$nombreCompleto} | {$identificacion}");
+        return;
+    }
+
+    // Columna A: Nombre | Columna B: Acompañantes (no se escribe ¿Asistió?)
+    $body = new Google_Service_Sheets_ValueRange(['values' => [[$nombreCompleto, $acompanantes]]]);
+    $service->spreadsheets_values->append($spreadsheetId, "{$sheetName}!A:B", $body, $params);
+
+    encuentroLog("Registrado en Sheets: {$nombreCompleto} | {$identificacion}");
 }
 
 function encuentroLog(string $message, string $level = 'INFO'): void

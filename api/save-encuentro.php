@@ -181,11 +181,11 @@ function registrarEnSheets(
         throw new RuntimeException("No se encontró la hoja con gid={$targetGid}");
     }
 
-    // Columna A: nombre completo | Columna B: ¿Asistió? | Columna C: acompañantes
+    // Columna A: Nombre | Columna B: Acompañantes | Columna C: ¿Asistió?
     $body   = new Google_Service_Sheets_ValueRange(['values' => [[
         $nombres . ' ' . $apellidos,
-        $asistencia === 'si' ? 'Sí' : 'No',
         $acompanantes,
+        $asistencia === 'si' ? 'Sí' : 'No',
     ]]]);
     $params = ['valueInputOption' => 'USER_ENTERED'];
 

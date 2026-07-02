@@ -30,17 +30,17 @@ try {
         throw new RuntimeException('Hoja no encontrada en el Sheet.');
     }
 
-    // Leer columnas A (Nombre) y B (¿Asistió?) desde fila 4 en adelante
+    // Leer columnas A (Nombre) y C (¿Asistió?) desde fila 4 en adelante
     $response = $service->spreadsheets_values->get(
         $spreadsheetId,
-        $sheetName . '!A4:B'
+        $sheetName . '!A4:C'
     );
     $filas = $response->getValues() ?? [];
 
     $participantes = [];
     foreach ($filas as $fila) {
         $nombre  = trim($fila[0] ?? '');
-        $asistio = mb_strtolower(trim($fila[1] ?? ''), 'UTF-8');
+        $asistio = mb_strtolower(trim($fila[2] ?? ''), 'UTF-8');
 
         // Solo incluir si columna B dice "sí" o "si"
         if ($nombre !== '' && in_array($asistio, ['sí', 'si'], true)) {

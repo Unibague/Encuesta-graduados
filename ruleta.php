@@ -343,7 +343,7 @@ canvas#wheel {
 footer {
     position: relative; z-index: 1;
     text-align: center; padding: 1.5rem;
-    color: #cbd5e1; font-size: .75rem;
+    color: #1a3a6b; font-size: .75rem;
     border-top: 1px solid #e2e8f0;
 }
 
@@ -557,8 +557,20 @@ function spin() {
                 setCurrentWinner(winner);
                 addToHistory(winner);
                 showModal(winner);
-                btn.disabled = false;
-                btn.textContent = 'GIRAR OTRA VEZ';
+
+                // Sacar al ganador de la rueda para que no pueda volver a salir
+                participants.splice(idx, 1);
+                document.getElementById('totalNum').textContent = participants.length;
+                currentAngle = 0;
+                drawWheel(currentAngle);
+
+                if (participants.length >= 2) {
+                    btn.disabled = false;
+                    btn.textContent = 'GIRAR OTRA VEZ';
+                } else {
+                    btn.disabled = true;
+                    btn.textContent = participants.length === 1 ? '¡Solo 1 participante!' : 'Sin participantes';
+                }
             }, 500);
         }
     }

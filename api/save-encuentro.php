@@ -138,7 +138,7 @@ $sheetsError = null;
 
 if ($asistencia === 'si') {
     try {
-        registrarEnSheets($nombres, $apellidos, $identificacion, $acompanantes);
+        registrarEnSheets($nombres, $apellidos, $identificacion, $correo, $acompanantes);
     } catch (Throwable $e) {
         $sheetsError = $e->getMessage();
         encuentroLog('Error Google Sheets: ' . $e->getMessage(), 'ERROR');
@@ -209,6 +209,7 @@ function registrarEnSheets(
     string $nombres,
     string $apellidos,
     string $identificacion,
+    string $correo,
     int    $acompanantes
 ): void {
     $spreadsheetId = '1LockLyDz0texEzDypaRyhqL1uniy4Fpus_FPCPOv2Ec';
@@ -251,17 +252,17 @@ function registrarEnSheets(
     }
 
     if ($numeroFila !== null) {
-        // Ya existe: solo actualizar el número de acompañantes (columna B), sin tocar ¿Asistió?
-        $body = new Google_Service_Sheets_ValueRange(['values' => [[$acompanantes]]]);
-        $service->spreadsheets_values->update($spreadsheetId, "{$sheetName}!B{$numeroFila}", $body, $params);
+        // Ya existe: solo actualizar correo y acompañantes (columnas B y C), sin tocar ¿Asistió?
+        $body = new Google_Service_Sheets_ValueRange(['values' => [[$correo, $acompanantes]]]);
+        $service->spreadsheets_values->update($spreadsheetId, "{$sheetName}!B{$numeroFila}:C{$numeroFila}", $body, $params);
 
         encuentroLog("Actualizado en Sheets (ya existía): {$nombreCompleto} | {$identificacion}");
         return;
     }
 
-    // Columna A: Nombre | Columna B: Acompañantes (no se escribe ¿Asistió?)
-    $body = new Google_Service_Sheets_ValueRange(['values' => [[$nombreCompleto, $acompanantes]]]);
-    $service->spreadsheets_values->append($spreadsheetId, "{$sheetName}!A:B", $body, $params);
+    // Columna A: Nombre | Columna B: Correo | Columna C: Acompañantes (no se escribe ¿Asistió?)
+    $body = new Google_Service_Sheets_ValueRange(['values' => [[$nombreCompleto, $correo, $acompanantes]]]);
+    $service->spreadsheets_values->append($spreadsheetId, "{$sheetName}!A:C", $body, $params);
 
     encuentroLog("Registrado en Sheets: {$nombreCompleto} | {$identificacion}");
 }

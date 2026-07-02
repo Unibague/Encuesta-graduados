@@ -130,7 +130,7 @@ $sheetsError = null;
 
 if ($asistencia === 'si') {
     try {
-        registrarEnSheets($nombres, $apellidos, $identificacion, $celular, $correo, $acompanantes);
+        registrarEnSheets($nombres, $apellidos, $identificacion, $celular, $correo, $asistencia, $acompanantes);
     } catch (Throwable $e) {
         $sheetsError = $e->getMessage();
         encuentroLog('Error Google Sheets: ' . $e->getMessage(), 'ERROR');
@@ -155,6 +155,7 @@ function registrarEnSheets(
     string $identificacion,
     string $celular,
     string $correo,
+    string $asistencia,
     int    $acompanantes
 ): void {
     $spreadsheetId = '1LockLyDz0texEzDypaRyhqL1uniy4Fpus_FPCPOv2Ec';
@@ -180,8 +181,12 @@ function registrarEnSheets(
         throw new RuntimeException("No se encontró la hoja con gid={$targetGid}");
     }
 
-    // Solo escribe el nombre completo (columna A)
-    $body   = new Google_Service_Sheets_ValueRange(['values' => [[$nombres . ' ' . $apellidos]]]);
+    // Columna A: nombre completo | Columna B: ¿Asistió? | Columna C: acompañantes
+    $body   = new Google_Service_Sheets_ValueRange(['values' => [[
+        $nombres . ' ' . $apellidos,
+        $asistencia === 'si' ? 'Sí' : 'No',
+        $acompanantes,
+    ]]]);
     $params = ['valueInputOption' => 'USER_ENTERED'];
 
     $service->spreadsheets_values->append($spreadsheetId, $sheetName, $body, $params);

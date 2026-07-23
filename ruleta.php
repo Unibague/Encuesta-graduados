@@ -286,16 +286,17 @@ canvas#wheel {
 }
 .wr-num {
     width: 30px; height: 30px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--indigo), var(--purple));
+    background: linear-gradient(135deg, #c4b5fd, #93c5fd);
+    color: #3730a3;
     display: flex; align-items: center; justify-content: center;
     font-size: .72rem; font-weight: 800; flex-shrink: 0;
 }
 .winner-row:first-child .wr-num {
-    background: linear-gradient(135deg, #d97706, #f59e0b);
+    background: linear-gradient(135deg, #fde68a, #fcd34d);
+    color: #92400e;
 }
 .wr-name { flex: 1; font-size: .9rem; font-weight: 700; color: #1e293b; }
 .wr-time { font-size: .72rem; color: #94a3b8; flex-shrink: 0; }
-.wr-trophy { font-size: 1.1rem; }
 
 /* ── Winner Modal ── */
 .modal-overlay {
@@ -596,7 +597,6 @@ function addToHistory(name) {
         <div class="wr-num">${winners.length}</div>
         <div class="wr-name">${name}</div>
         <div class="wr-time">${time}</div>
-        <span class="wr-trophy">🏆</span>
     `;
     list.prepend(row);
 

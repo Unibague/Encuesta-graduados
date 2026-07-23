@@ -27,8 +27,8 @@ if (!$input) {
 $cedula     = trim(preg_replace('/[^0-9]/', '', $input['cedula']       ?? ''));
 $correoRaw  = trim($input['correo']     ?? '');
 $correo     = filter_var($correoRaw, FILTER_VALIDATE_EMAIL) ? $correoRaw : null;
-$celular    = trim(preg_replace('/[^0-9+\s\-]/', '', $input['celular']     ?? '')) ?: null;
-$celularAlt = trim(preg_replace('/[^0-9+\s\-]/', '', $input['celular_alt'] ?? '')) ?: null;
+$celular    = normalizarCelular($input['celular']     ?? '');
+$celularAlt = normalizarCelular($input['celular_alt'] ?? '');
 $ciudad     = trim(strip_tags($input['ciudad']    ?? '')) ?: null;
 $direccion  = trim(strip_tags($input['direccion'] ?? '')) ?: null;
 
@@ -177,6 +177,15 @@ function enviarASiga(
         'message' => $response,
         'error'   => $ok ? null : 'Respuesta no válida de SIGA',
     ];
+}
+
+function normalizarCelular(string $celular): ?string
+{
+    $celular = preg_replace('/[^0-9]/', '', $celular);
+    if (strlen($celular) === 12 && substr($celular, 0, 2) === '57') {
+        $celular = substr($celular, 2);
+    }
+    return $celular ?: null;
 }
 
 function normalizarCiudad(string $city): ?string

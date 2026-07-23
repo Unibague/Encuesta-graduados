@@ -27,7 +27,10 @@ if (!$input) {
 $nombres        = trim(strip_tags($input['nombres']        ?? ''));
 $apellidos      = trim(strip_tags($input['apellidos']      ?? ''));
 $identificacion = trim(preg_replace('/[^0-9]/', '', $input['identificacion'] ?? ''));
-$celular        = trim(preg_replace('/[^0-9+\s\-]/', '', $input['celular']   ?? ''));
+$celular        = preg_replace('/[^0-9]/', '', $input['celular'] ?? '');
+if (strlen($celular) === 12 && substr($celular, 0, 2) === '57') {
+    $celular = substr($celular, 2);
+}
 $correoRaw      = trim($input['correo'] ?? '');
 $correo         = filter_var($correoRaw, FILTER_VALIDATE_EMAIL) ? $correoRaw : '';
 $asistencia     = in_array($input['asistencia'] ?? '', ['si', 'no'], true) ? $input['asistencia'] : '';

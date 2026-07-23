@@ -331,6 +331,52 @@ canvas#wheel {
 }
 .btn-close:hover { background: rgba(255,255,255,.22); }
 
+/* ── Confirm Modal ── */
+.confirm-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 2.25rem 2.25rem 1.75rem;
+    text-align: center;
+    max-width: 380px; width: 100%;
+    box-shadow: 0 24px 64px rgba(15,23,42,.25);
+    animation: popIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+.confirm-icon {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.1rem;
+    font-size: 1.3rem;
+}
+.confirm-title {
+    font-size: 1.1rem; font-weight: 800; color: #1e293b;
+    margin-bottom: .5rem;
+}
+.confirm-text {
+    font-size: .85rem; color: #94a3b8; line-height: 1.6;
+    margin-bottom: 1.75rem;
+}
+.confirm-actions { display: flex; gap: .7rem; }
+.confirm-actions button {
+    flex: 1; height: 44px;
+    border-radius: 10px;
+    font-family: inherit; font-size: .85rem; font-weight: 700;
+    cursor: pointer; transition: all .15s;
+}
+.btn-confirm-cancel {
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #64748b;
+}
+.btn-confirm-cancel:hover { border-color: #cbd5e1; background: #f8fafc; }
+.btn-confirm-ok {
+    border: none;
+    background: linear-gradient(135deg, #f43f5e, #e11d48);
+    color: #fff;
+}
+.btn-confirm-ok:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(225,29,72,.3); }
+
 /* ── Confetti ── */
 .confetti-piece {
     position: fixed; top: -20px; opacity: 0;
@@ -386,7 +432,7 @@ footer {
 
     <!-- Ganador actual -->
     <div class="current-winner" id="currentWinner">
-        <div class="tag">🏆 &nbsp;Ganador actual</div>
+        <div class="tag">Ganador actual</div>
         <div class="cw-name" id="currentWinnerName"></div>
     </div>
 
@@ -426,6 +472,19 @@ footer {
         <div class="winner-label">¡Ganador!</div>
         <div class="winner-name" id="winnerName"></div>
         <button class="btn-close" onclick="closeModal()">Continuar</button>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirmModal" style="display:none;">
+    <div class="confirm-card">
+        <div class="confirm-icon">🗑️</div>
+        <div class="confirm-title">¿Limpiar el historial?</div>
+        <p class="confirm-text">Se borrarán todos los ganadores registrados. Esta acción no se puede deshacer.</p>
+        <div class="confirm-actions">
+            <button class="btn-confirm-cancel" onclick="closeConfirmModal()">Cancelar</button>
+            <button class="btn-confirm-ok" onclick="confirmClearHistory()">Sí, limpiar</button>
+        </div>
     </div>
 </div>
 
@@ -606,7 +665,15 @@ function addToHistory(name) {
 }
 
 function clearHistory() {
-    if (!winners.length || !confirm('¿Limpiar el historial de ganadores?')) return;
+    if (!winners.length) return;
+    document.getElementById('confirmModal').style.display = 'flex';
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirmModal').style.display = 'none';
+}
+
+function confirmClearHistory() {
     winners = [];
     document.getElementById('winnersList').innerHTML =
         `<div class="empty-state" id="emptyState">
@@ -617,6 +684,7 @@ function clearHistory() {
     document.getElementById('btnPdf').disabled   = true;
     document.getElementById('btnClear').disabled = true;
     document.getElementById('currentWinner').classList.remove('visible');
+    closeConfirmModal();
 }
 
 function downloadPDF() {

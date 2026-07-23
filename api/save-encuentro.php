@@ -139,13 +139,15 @@ if (!array_filter($datosActuales)) {
  * ========================= */
 $sheetsError = null;
 
-if ($asistencia === 'si') {
-    try {
+try {
+    if ($asistencia === 'si') {
         registrarEnSheets($nombres, $apellidos, $identificacion, $celular, $correo, $acompanantes);
-    } catch (Throwable $e) {
-        $sheetsError = $e->getMessage();
-        encuentroLog('Error Google Sheets: ' . $e->getMessage(), 'ERROR');
+    } else {
+        registrarEnHojaNoAsistentes($nombres, $apellidos, $identificacion, $celular, $correo);
     }
+} catch (Throwable $e) {
+    $sheetsError = $e->getMessage();
+    encuentroLog('Error Google Sheets: ' . $e->getMessage(), 'ERROR');
 }
 
 echo json_encode([
@@ -269,6 +271,68 @@ function registrarEnSheets(
     $service->spreadsheets_values->append($spreadsheetId, "{$sheetName}!A:D", $body, $params);
 
     encuentroLog("Registrado en Sheets: {$nombreCompleto} | {$identificacion}");
+}
+
+function registrarEnHojaNoAsistentes(
+    string $nombres,
+    string $apellidos,
+    string $identificacion,
+    string $celular,
+    string $correo
+): void {
+    $spreadsheetId = '1LockLyDz0texEzDypaRyhqL1uniy4Fpus_FPCPOv2Ec';
+    $targetTitle   = 'No asistentes';
+
+    $client = new Google_Client();
+    $client->setAuthConfig(getenv('GOOGLE_CREDENTIALS_PATH'));
+    $client->addScope(Google_Service_Sheets::SPREADSHEETS);
+
+    $service = new Google_Service_Sheets($client);
+
+    // Buscar la hoja por título
+    $spreadsheet = $service->spreadsheets->get($spreadsheetId);
+    $sheetName   = null;
+    foreach ($spreadsheet->getSheets() as $sheet) {
+        if (mb_strtolower($sheet->getProperties()->getTitle(), 'UTF-8') === mb_strtolower($targetTitle, 'UTF-8')) {
+            $sheetName = $sheet->getProperties()->getTitle();
+            break;
+        }
+    }
+
+    if (!$sheetName) {
+        throw new RuntimeException("No se encontró la hoja '{$targetTitle}'");
+    }
+
+    $nombreCompleto = trim($nombres . ' ' . $apellidos);
+    $params         = ['valueInputOption' => 'USER_ENTERED'];
+
+    // Buscar si esta persona ya tiene fila (evitar duplicados al reenviar el registro)
+    $existentes = $service->spreadsheets_values->get($spreadsheetId, "{$sheetName}!A4:A");
+    $filas      = $existentes->getValues() ?? [];
+
+    $numeroFila = null;
+    foreach ($filas as $i => $fila) {
+        $nombreFila = trim($fila[0] ?? '');
+        if ($nombreFila !== '' && mb_strtolower($nombreFila, 'UTF-8') === mb_strtolower($nombreCompleto, 'UTF-8')) {
+            $numeroFila = $i + 4; // A4 es la primera fila de datos
+            break;
+        }
+    }
+
+    if ($numeroFila !== null) {
+        // Ya existe: solo actualizar celular y correo (columnas B y C)
+        $body = new Google_Service_Sheets_ValueRange(['values' => [[$celular, $correo]]]);
+        $service->spreadsheets_values->update($spreadsheetId, "{$sheetName}!B{$numeroFila}:C{$numeroFila}", $body, $params);
+
+        encuentroLog("Actualizado en 'No asistentes': {$nombreCompleto} | {$identificacion}");
+        return;
+    }
+
+    // Columna A: Nombre | Columna B: Celular | Columna C: Correo
+    $body = new Google_Service_Sheets_ValueRange(['values' => [[$nombreCompleto, $celular, $correo]]]);
+    $service->spreadsheets_values->append($spreadsheetId, "{$sheetName}!A:C", $body, $params);
+
+    encuentroLog("Registrado en 'No asistentes': {$nombreCompleto} | {$identificacion}");
 }
 
 function encuentroLog(string $message, string $level = 'INFO'): void

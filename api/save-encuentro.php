@@ -73,10 +73,14 @@ $idSafe = addslashes($identificacion);
 
 /* ¿Ya se registró con esta cédula? */
 $existente = $db->makeQuery("
-    SELECT id FROM encuentro_2026
+    SELECT id, asistencia FROM encuentro_2026
     WHERE identificacion = '$idSafe'
     LIMIT 1
 ")->fetch_assoc();
+
+/* No se bloquea una respuesta repetida: se vuelve a sincronizar con Google Sheets.
+   Esto permite reparar una fila faltante si una sincronización anterior falló. */
+$mismaRespuesta = $existente && $existente['asistencia'] === $asistencia;
 
 if ($existente) {
     $db->makeQuery("
@@ -142,19 +146,45 @@ $sheetsError = null;
 try {
     if ($asistencia === 'si') {
         registrarEnSheets($nombres, $apellidos, $identificacion, $celular, $correo, $acompanantes);
+        eliminarDeHojaNoAsistentes($nombres, $apellidos, $identificacion, $correo);
     } else {
         registrarEnHojaNoAsistentes($nombres, $apellidos, $identificacion, $celular, $correo);
+        eliminarDeHojaAsistentes($nombres, $apellidos, $identificacion, $correo);
     }
 } catch (Throwable $e) {
     $sheetsError = $e->getMessage();
     encuentroLog('Error Google Sheets: ' . $e->getMessage(), 'ERROR');
 }
 
+/* La base de datos queda guardada para no perder la respuesta, pero no se informa
+   éxito mientras Google Sheets siga pendiente. Al reenviar, la fila se repara. */
+if ($sheetsError !== null) {
+    http_response_code(502);
+    echo json_encode([
+        'error'   => true,
+        'message' => 'Guardamos tu respuesta, pero no pudimos actualizar la lista de asistencia. Por favor, vuelve a presionar "Confirmar registro".',
+    ]);
+    exit;
+}
+
+/* Primero se verifican y reparan las hojas; luego se informa que la misma
+   respuesta ya estaba registrada para que el formulario muestre el aviso. */
+if ($mismaRespuesta) {
+    http_response_code(409);
+    echo json_encode([
+        'error'   => true,
+        'message' => $asistencia === 'si'
+            ? 'Ya estás registrado para el Encuentro de Graduados 2026. Si necesitas actualizar tus datos de contacto, contacta al correo graduados@unibague.edu.co.'
+            : 'Ya habías indicado que no podrás asistir. Si cambiaste de opinión, marca "Sí, asistiré" para registrarte.',
+    ]);
+    exit;
+}
+
 echo json_encode([
     'success'        => true,
     'message'        => 'Registro exitoso',
     'datos_actuales' => $datosActuales,
-    'sheets_error'   => $sheetsError, // null = OK, string = fallo no crítico
+    'sheets_error'   => $sheetsError, // null = sincronización correcta
 ]);
 exit;
 
@@ -222,7 +252,7 @@ function registrarEnSheets(
     $targetGid     = 1419700379;
 
     $client = new Google_Client();
-    $client->setAuthConfig(getenv('GOOGLE_CREDENTIALS_PATH'));
+    $client->setAuthConfig(googleCredentialsPath());
     $client->addScope(Google_Service_Sheets::SPREADSHEETS);
 
     $service = new Google_Service_Sheets($client);
@@ -284,7 +314,7 @@ function registrarEnHojaNoAsistentes(
     $targetTitle   = 'No asistentes';
 
     $client = new Google_Client();
-    $client->setAuthConfig(getenv('GOOGLE_CREDENTIALS_PATH'));
+    $client->setAuthConfig(googleCredentialsPath());
     $client->addScope(Google_Service_Sheets::SPREADSHEETS);
 
     $service = new Google_Service_Sheets($client);
@@ -333,6 +363,154 @@ function registrarEnHojaNoAsistentes(
     $service->spreadsheets_values->append($spreadsheetId, "{$sheetName}!A:C", $body, $params);
 
     encuentroLog("Registrado en 'No asistentes': {$nombreCompleto} | {$identificacion}");
+}
+
+/**
+ * Mantiene las dos listas como grupos excluyentes. Si la persona ahora asiste,
+ * se retira de "No asistentes"; si ahora no asiste, se retira de "Asistentes".
+ */
+function eliminarDeHojaNoAsistentes(
+    string $nombres,
+    string $apellidos,
+    string $identificacion,
+    string $correo
+): void {
+    eliminarPersonaDeHoja(
+        $nombres,
+        $apellidos,
+        $identificacion,
+        $correo,
+        null,
+        'No asistentes'
+    );
+}
+
+function eliminarDeHojaAsistentes(
+    string $nombres,
+    string $apellidos,
+    string $identificacion,
+    string $correo
+): void {
+    eliminarPersonaDeHoja(
+        $nombres,
+        $apellidos,
+        $identificacion,
+        $correo,
+        1419700379,
+        null
+    );
+}
+
+function eliminarPersonaDeHoja(
+    string $nombres,
+    string $apellidos,
+    string $identificacion,
+    string $correo,
+    ?int $targetGid,
+    ?string $targetTitle
+): void {
+    $spreadsheetId = '1LockLyDz0texEzDypaRyhqL1uniy4Fpus_FPCPOv2Ec';
+
+    $client = new Google_Client();
+    $client->setAuthConfig(googleCredentialsPath());
+    $client->addScope(Google_Service_Sheets::SPREADSHEETS);
+
+    $service     = new Google_Service_Sheets($client);
+    $spreadsheet = $service->spreadsheets->get($spreadsheetId);
+    $sheetName   = null;
+    $sheetId     = null;
+
+    foreach ($spreadsheet->getSheets() as $sheet) {
+        $properties = $sheet->getProperties();
+        $coincideGid = $targetGid !== null && (int) $properties->getSheetId() === $targetGid;
+        $coincideTitulo = $targetTitle !== null
+            && mb_strtolower(trim($properties->getTitle()), 'UTF-8') === mb_strtolower(trim($targetTitle), 'UTF-8');
+
+        if ($coincideGid || $coincideTitulo) {
+            $sheetName = $properties->getTitle();
+            $sheetId   = (int) $properties->getSheetId();
+            break;
+        }
+    }
+
+    if ($sheetName === null || $sheetId === null) {
+        throw new RuntimeException('No se encontró la hoja opuesta para actualizar la asistencia.');
+    }
+
+    /* Se lee hasta C porque ambas hojas guardan Nombre, Celular y Correo. */
+    $response = $service->spreadsheets_values->get($spreadsheetId, "{$sheetName}!A4:C");
+    $filas    = $response->getValues() ?? [];
+
+    $nombreCompleto = trim($nombres . ' ' . $apellidos);
+    $nombreBuscado  = mb_strtolower(preg_replace('/\s+/', ' ', $nombreCompleto), 'UTF-8');
+    $correoBuscado  = mb_strtolower(trim($correo), 'UTF-8');
+    $filasABorrar   = [];
+
+    foreach ($filas as $indice => $fila) {
+        $nombreFila = mb_strtolower(preg_replace('/\s+/', ' ', trim($fila[0] ?? '')), 'UTF-8');
+        $correoFila = mb_strtolower(trim($fila[2] ?? ''), 'UTF-8');
+
+        /* El correo es la clave principal. El nombre solo respalda filas sin correo. */
+        $coincide = $correoFila !== ''
+            ? $correoFila === $correoBuscado
+            : ($nombreFila !== '' && $nombreFila === $nombreBuscado);
+
+        if ($coincide) {
+            $filasABorrar[] = $indice + 4;
+        }
+    }
+
+    if (!$filasABorrar) {
+        encuentroLog("Sin coincidencias para retirar de '{$sheetName}': {$nombreCompleto} | {$identificacion}");
+        return;
+    }
+
+    /* De abajo hacia arriba para que los índices no cambien durante el borrado. */
+    rsort($filasABorrar);
+    $requests = [];
+
+    foreach ($filasABorrar as $numeroFila) {
+        $requests[] = new Google_Service_Sheets_Request([
+            'deleteDimension' => [
+                'range' => [
+                    'sheetId'    => $sheetId,
+                    'dimension'  => 'ROWS',
+                    'startIndex' => $numeroFila - 1,
+                    'endIndex'   => $numeroFila,
+                ],
+            ],
+        ]);
+    }
+
+    $body = new Google_Service_Sheets_BatchUpdateSpreadsheetRequest(['requests' => $requests]);
+    $service->spreadsheets->batchUpdate($spreadsheetId, $body);
+
+    encuentroLog(
+        "Retirado de '{$sheetName}': {$nombreCompleto} | {$identificacion} | filas: " .
+        implode(', ', $filasABorrar)
+    );
+}
+
+/**
+ * Usa la ruta configurada en el servidor y, al trabajar en localhost, recurre
+ * al credentials.json ubicado en la raíz del proyecto.
+ */
+function googleCredentialsPath(): string
+{
+    $configuredPath = trim((string) getenv('GOOGLE_CREDENTIALS_PATH'));
+
+    if ($configuredPath !== '' && is_file($configuredPath)) {
+        return $configuredPath;
+    }
+
+    $localPath = dirname(__DIR__) . '/credentials.json';
+    if (is_file($localPath)) {
+        return $localPath;
+    }
+
+    throw new RuntimeException(
+        'No se encontró el archivo de credenciales de Google Sheets.'
+    );
 }
 
 function encuentroLog(string $message, string $level = 'INFO'): void

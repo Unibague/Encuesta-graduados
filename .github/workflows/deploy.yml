@@ -91,19 +91,3 @@ jobs:
           git remote set-url origin https://${REPO_URL}
         "
       
-    - name: Build project on remote server
-      env:
-          INTERNAL_SSH_PASSWORD: ${{ secrets.INTERNAL_SSH_PASSWORD }}
-          INTERNAL_USER: ${{ secrets.INTERNAL_USER }}
-          INTERNAL_RESOURCE_IP: ${{ secrets.INTERNAL_RESOURCE_IP }} 
-      run: |
-        sshpass -p "$INTERNAL_SSH_PASSWORD" ssh -vvv -o StrictHostKeyChecking=no "$INTERNAL_USER@$INTERNAL_RESOURCE_IP" '
-          echo "SSH connection successful"
-          cd "'"$WORKSPACE_PATH"'" || exit;
-          if [ -f package.json ]; then
-            npm install;
-            npm run prod;
-          else
-            echo "Error: package.json not found in '"${WORKSPACE_PATH}"'"
-            exit 1;
-          fi'

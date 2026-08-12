@@ -90,4 +90,17 @@ jobs:
 
           git remote set-url origin https://${REPO_URL}
         "
-      
+
+    - name: Fix cache folder permissions
+      env:
+        INTERNAL_SSH_PASSWORD: ${{ secrets.INTERNAL_SSH_PASSWORD }}
+        INTERNAL_USER: ${{ secrets.INTERNAL_USER }}
+        INTERNAL_RESOURCE_IP: ${{ secrets.INTERNAL_RESOURCE_IP }}
+      run: |
+        sshpass -p "$INTERNAL_SSH_PASSWORD" ssh -vvv -o StrictHostKeyChecking=no "$INTERNAL_USER@$INTERNAL_RESOURCE_IP" "
+          set -euo pipefail
+          mkdir -p '$WORKSPACE_PATH/cache'
+          find '$WORKSPACE_PATH/cache' -type f -name '*.bladec' -exec chmod 664 {} \;
+          chmod 2775 '$WORKSPACE_PATH/cache'
+        "
+

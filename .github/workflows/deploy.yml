@@ -90,7 +90,3 @@ jobs:
 
           git remote set-url origin https://${REPO_URL}
         "
-
-          chmod 2775 '$WORKSPACE_PATH/cache'
-        "
-

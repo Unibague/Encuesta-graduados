@@ -316,7 +316,7 @@
 <footer class="footer mt-auto py-3 bg-dark w-100">
     <div class="container text-center">
         <span class="text-white">
-            Universidad de Ibagué - ©
+            Universidad de Ibagué ©
         </span>
     </div>
 </footer>

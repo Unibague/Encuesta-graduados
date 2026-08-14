@@ -85,7 +85,7 @@ jobs:
           git pull --rebase
 
           if [[ \"\$STASHED\" == \"true\" ]]; then
-            git stash pop || echo 'Warning: nothing to pop'
+            git stash pop
           fi
 
           git remote set-url origin https://${REPO_URL}

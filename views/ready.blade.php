@@ -4,23 +4,300 @@
         Registros listos para actualizar
     @endslot
 
-    {{-- HEADER SLOT --}}
     @slot('header')
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
+            :root {
+                --primary: #FCBD00;
+                --primary-dark: #D9A200;
+                --primary-light: #FFF8E0;
+                --success: #16a672;
+                --success-light: #e4f7f0;
+                --danger: #ef4444;
+                --danger-light: #fef2f2;
+                --text: #1f2333;
+                --text-muted: #7c8093;
+                --border: #e6e5f1;
+                --shadow: 0 20px 45px -20px rgba(252, 189, 0, 0.25);
+            }
+
+            .ready-page {
+                font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+                color: var(--text);
+                padding: 10px 0 40px;
+            }
+
+            .ready-page h1 {
+                font-size: 1.75rem;
+                font-weight: 800;
+                letter-spacing: -0.02em;
+                margin: 0 0 6px;
+                text-align: center;
+            }
+
+            .ready-subtitle {
+                text-align: center;
+                color: var(--text-muted);
+                font-size: 0.95rem;
+                margin-bottom: 28px;
+            }
+
+            .ready-card {
+                background: #ffffff;
+                border-radius: 22px;
+                padding: 28px 24px;
+                box-shadow: var(--shadow);
+                border: 1px solid rgba(252, 189, 0, 0.12);
+            }
+
+            .search-wrap {
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                margin-bottom: 24px;
+                flex-wrap: wrap;
+            }
+
+            .search-wrap input {
+                max-width: 420px;
+                width: 100%;
+                padding: 12px 16px;
+                border: 2px solid var(--border);
+                border-radius: 14px;
+                font-size: 0.95rem;
+                font-family: inherit;
+                background: #fbfbfe;
+                color: var(--text);
+                transition: border-color 0.2s, box-shadow 0.2s;
+            }
+
+            .search-wrap input:focus {
+                outline: none;
+                border-color: var(--primary);
+                background: #fff;
+                box-shadow: 0 0 0 4px rgba(252, 189, 0, 0.18);
+            }
+
+            .search-wrap input::placeholder {
+                color: #b3b4c6;
+            }
+
+            .btn-search {
+                background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                color: #1f2333;
+                border: none;
+                border-radius: 13px;
+                padding: 12px 22px;
+                font-weight: 700;
+                font-size: 14px;
+                font-family: inherit;
+                cursor: pointer;
+                box-shadow: 0 8px 18px -8px rgba(252, 189, 0, 0.5);
+                transition: filter 0.2s, transform 0.1s;
+            }
+
+            .btn-search:hover {
+                filter: brightness(1.05);
+            }
+
+            .btn-search:active {
+                transform: scale(0.97);
+            }
+
+            /* Tabla */
             .page-scroll {
                 overflow-x: auto;
                 width: 100%;
+                border-radius: 16px;
             }
 
-            table {
+            .ready-table {
                 min-width: 1600px;
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                font-size: 0.88rem;
             }
 
-            th, td {
+            .ready-table thead th {
+                background: var(--primary-light);
+                color: var(--primary-dark);
+                font-weight: 800;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                padding: 14px 12px;
+                border-bottom: 2px solid rgba(252, 189, 0, 0.25);
                 white-space: nowrap;
                 text-align: center;
                 vertical-align: middle;
-                height: 50px;
+            }
+
+            .ready-table thead th:first-child {
+                border-radius: 12px 0 0 0;
+            }
+
+            .ready-table thead th:last-child {
+                border-radius: 0 12px 0 0;
+            }
+
+            .ready-table tbody td {
+                padding: 14px 12px;
+                border-bottom: 1px solid #f0f0f7;
+                white-space: nowrap;
+                text-align: center;
+                vertical-align: middle;
+                height: auto;
+                color: var(--text);
+            }
+
+            .ready-table tbody tr:hover {
+                background: #fafafd;
+            }
+
+            .ready-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .ready-table td p {
+                margin: 0;
+                font-weight: 600;
+                color: var(--text);
+            }
+
+            .ready-table td hr {
+                margin: 6px 0;
+                border: none;
+                border-top: 1px dashed #e6e5f1;
+            }
+
+            .ready-table td p + hr + p {
+                font-weight: 500;
+                color: var(--text-muted);
+                font-size: 0.82rem;
+            }
+
+            .ready-table input[type="checkbox"] {
+                accent-color: var(--primary);
+                width: 16px;
+                height: 16px;
+                margin-top: 6px;
+                cursor: pointer;
+            }
+
+            .btn-approve {
+                background: linear-gradient(135deg, var(--success), #12855e) !important;
+                color: #fff !important;
+                border: none !important;
+                border-radius: 10px !important;
+                padding: 8px 14px !important;
+                font-weight: 700 !important;
+                font-size: 12.5px !important;
+                font-family: inherit !important;
+                box-shadow: 0 6px 14px -6px rgba(22, 166, 114, 0.45);
+                transition: filter 0.2s, transform 0.1s;
+            }
+
+            .btn-approve:hover {
+                filter: brightness(1.06);
+            }
+
+            .btn-approve:disabled {
+                opacity: 0.75;
+                cursor: not-allowed;
+            }
+
+            .btn-deny {
+                background: #fff !important;
+                color: var(--danger) !important;
+                border: 2px solid #fecaca !important;
+                border-radius: 10px !important;
+                padding: 7px 14px !important;
+                font-weight: 700 !important;
+                font-size: 12.5px !important;
+                font-family: inherit !important;
+                transition: background 0.2s, border-color 0.2s;
+            }
+
+            .btn-deny:hover {
+                background: var(--danger-light) !important;
+                border-color: var(--danger) !important;
+            }
+
+            .actions-cell {
+                display: flex;
+                gap: 8px;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 48px 20px !important;
+                color: var(--text-muted) !important;
+                font-weight: 600;
+                font-size: 0.95rem;
+            }
+
+            .ready-pagination {
+                display: flex;
+                justify-content: center;
+                margin-top: 28px;
+                gap: 4px;
+                list-style: none;
+                padding: 0;
+            }
+
+            .ready-pagination .page-item .page-link {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 38px;
+                height: 38px;
+                padding: 0 12px;
+                border-radius: 11px;
+                border: 2px solid var(--border);
+                background: #fff;
+                color: var(--text);
+                font-weight: 700;
+                font-size: 13.5px;
+                text-decoration: none;
+                transition: all 0.15s;
+                font-family: inherit;
+            }
+
+            .ready-pagination .page-item .page-link:hover {
+                border-color: var(--primary);
+                color: var(--primary-dark);
+                background: var(--primary-light);
+            }
+
+            .ready-pagination .page-item.active .page-link {
+                background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                border-color: transparent;
+                color: #1f2333;
+                box-shadow: 0 6px 14px -6px rgba(252, 189, 0, 0.5);
+            }
+
+            .ready-pagination .page-item.disabled .page-link {
+                opacity: 0.4;
+                pointer-events: none;
+            }
+
+            .toast.text-bg-success {
+                background: var(--success) !important;
+                border-radius: 14px !important;
+                font-family: 'Manrope', sans-serif;
+                font-weight: 600;
+            }
+
+            .toast.text-bg-danger {
+                background: var(--danger) !important;
+                border-radius: 14px !important;
+                font-family: 'Manrope', sans-serif;
+                font-weight: 600;
             }
         </style>
     @endslot
@@ -56,183 +333,182 @@
         </div>
     @endif
 
-    <div class="page-scroll">
+    <div class="ready-page">
 
-        <h1 class="text-center mb-4">Registros listos para actualizar</h1>
+        <h1>Registros listos para actualizar</h1>
+        <p class="ready-subtitle">Revisa y aprueba los datos enviados por los egresados</p>
 
-        {{-- BUSCADOR GLOBAL --}}
-        <form method="GET" class="mb-4 d-flex justify-content-center">
-            <input
-                type="text"
-                name="search"
-                value="{{ $search ?? '' }}"
-                class="form-control w-50"
-                placeholder="Buscar por cédula, nombre, correo, ciudad..."
-            >
-            <button class="btn btn-primary ms-2">Buscar</button>
-        </form>
+        <div class="ready-card">
 
-        <table class="table table-striped table-hover">
-            <thead>
-            <tr>
-                <th>#ID</th>
-                <th>Cédula</th>
-                <th>Nombre</th>
-                <th>Apellido</th>
-                <th>Correo electrónico</th>
-                <th>Teléfono</th>
-                <th>Teléfono alterno</th>
-                <th>Ciudad</th>
-                <th>Dirección</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
-            </tr>
-            </thead>
+            {{-- BUSCADOR GLOBAL --}}
+            <form method="GET" class="search-wrap">
+                <input
+                    type="text"
+                    name="search"
+                    value="{{ $search ?? '' }}"
+                    placeholder="Buscar por cédula, nombre, correo, ciudad..."
+                >
+                <button type="submit" class="btn-search">Buscar</button>
+            </form>
 
-            <tbody>
-            @forelse($graduatedAnswers as $answer)
-                <tr>
-                    <td>{{ $answer['id'] }}</td>
+            <div class="page-scroll">
+                <table class="ready-table">
+                    <thead>
+                    <tr>
+                        <th>#ID</th>
+                        <th>Cédula</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Correo electrónico</th>
+                        <th>Teléfono</th>
+                        <th>Teléfono alterno</th>
+                        <th>Ciudad</th>
+                        <th>Dirección</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                    </thead>
 
-                    <td>
-                        <p>{{ $answer['identification_number'] }}</p>
-                        <hr>
-                        <p>{{ $answer['official_answers']['Numero de identificacion'] ?? '' }}</p>
-                    </td>
+                    <tbody>
+                    @forelse($graduatedAnswers as $answer)
+                        <tr>
+                            <td>{{ $answer['id'] }}</td>
 
-                    <td>
-                        <p>{{ $answer['name'] }}</p>
-                        <hr>
-                        <p>{{ $answer['official_answers']['Nombres'] ?? '' }}</p>
-                    </td>
+                            <td>
+                                <p>{{ $answer['identification_number'] }}</p>
+                                <hr>
+                                <p>{{ $answer['official_answers']['Numero de identificacion'] ?? '' }}</p>
+                            </td>
 
-                    <td>
-                        <p>{{ $answer['last_name'] }}</p>
-                        <hr>
-                        <p>{{ $answer['official_answers']['Apellidos'] ?? '' }}</p>
-                    </td>
+                            <td>
+                                <p>{{ $answer['name'] }}</p>
+                                <hr>
+                                <p>{{ $answer['official_answers']['Nombres'] ?? '' }}</p>
+                            </td>
 
-                    <td>
-                        <p>{{ $answer['email'] }}</p>
-                        <hr>
-                        <p>{{ $answer['official_answers']['Correo'] ?? '' }}</p>
-                        <input type="checkbox" class="select" name="email"
-                               value="{{ $answer['email'] }}" data-row="{{ $answer['id'] }}" checked>
-                    </td>
+                            <td>
+                                <p>{{ $answer['last_name'] }}</p>
+                                <hr>
+                                <p>{{ $answer['official_answers']['Apellidos'] ?? '' }}</p>
+                            </td>
 
-                    <td>
-                        <p>{{ $answer['mobile_phone'] }}</p>
-                        <hr>
-                        <p>{{ $answer['official_answers']['Telefono de contacto'] ?? '' }}</p>
-                        <input type="checkbox" class="select" name="mobile_phone"
-                               value="{{ $answer['mobile_phone'] }}" data-row="{{ $answer['id'] }}" checked>
-                    </td>
+                            <td>
+                                <p>{{ $answer['email'] }}</p>
+                                <hr>
+                                <p>{{ $answer['official_answers']['Correo'] ?? '' }}</p>
+                                <input type="checkbox" class="select" name="email"
+                                       value="{{ $answer['email'] }}" data-row="{{ $answer['id'] }}" checked>
+                            </td>
 
-                    <td>
-                        <p>{{ $answer['alternative_mobile_phone'] ?: 'No proporcionado' }}</p>
-                        <hr>
-                        <p>{{ $answer['official_answers']['Telefono alterno'] ?? '' }}</p>
-                        <input type="checkbox" class="select" name="alternative_mobile_phone"
-                               value="{{ $answer['alternative_mobile_phone'] }}" data-row="{{ $answer['id'] }}" checked>
-                    </td>
+                            <td>
+                                <p>{{ $answer['mobile_phone'] }}</p>
+                                <hr>
+                                <p>{{ $answer['official_answers']['Telefono de contacto'] ?? '' }}</p>
+                                <input type="checkbox" class="select" name="mobile_phone"
+                                       value="{{ $answer['mobile_phone'] }}" data-row="{{ $answer['id'] }}" checked>
+                            </td>
 
-                    <td>
-                        <p>{{ $answer['city'] }}</p>
-                        <hr>
-                        <p>{{ $answer['official_answers']['Ciudad residencia'] ?? '' }}</p>
-                        <input type="checkbox" class="select" name="city"
-                               value="{{ $answer['city'] }}" data-row="{{ $answer['id'] }}" checked>
-                    </td>
+                            <td>
+                                <p>{{ $answer['alternative_mobile_phone'] ?: 'No proporcionado' }}</p>
+                                <hr>
+                                <p>{{ $answer['official_answers']['Telefono alterno'] ?? '' }}</p>
+                                <input type="checkbox" class="select" name="alternative_mobile_phone"
+                                       value="{{ $answer['alternative_mobile_phone'] }}" data-row="{{ $answer['id'] }}" checked>
+                            </td>
 
-                    <td>
-                        <p>{{ $answer['address'] }}</p>
-                        <hr>
-                        <p>{{ $answer['official_answers']['Direccion de correspondencia'] ?? '' }}</p>
-                        <input type="checkbox" class="select" name="address"
-                               value="{{ $answer['address'] }}" data-row="{{ $answer['id'] }}" checked>
-                    </td>
+                            <td>
+                                <p>{{ $answer['city'] }}</p>
+                                <hr>
+                                <p>{{ $answer['official_answers']['Ciudad residencia'] ?? '' }}</p>
+                                <input type="checkbox" class="select" name="city"
+                                       value="{{ $answer['city'] }}" data-row="{{ $answer['id'] }}" checked>
+                            </td>
 
-                    <td>{{ $answer['created_at'] }}</td>
+                            <td>
+                                <p>{{ $answer['address'] }}</p>
+                                <hr>
+                                <p>{{ $answer['official_answers']['Direccion de correspondencia'] ?? '' }}</p>
+                                <input type="checkbox" class="select" name="address"
+                                       value="{{ $answer['address'] }}" data-row="{{ $answer['id'] }}" checked>
+                            </td>
 
-                    <td>
-                        <div class="d-flex gap-2">
-                            <form action="/app/controllers/approve.php"
-                                  method="POST"
-                                  onsubmit="return approve({{ $answer['id'] }})"
-                                  id="form-{{ $answer['id'] }}">
-                                <input type="hidden" name="id" value="{{ $answer['id'] }}">
-                                <input type="hidden" name="identification_number"
-                                       value="{{ $answer['identification_number'] }}">
-                               <button
-    type="submit"
-    class="btn btn-success btn-sm btn-approve"
-    data-loading-text="Aprobando...">
-    <span class="btn-text">Aprobar</span>
-    <span class="spinner-border spinner-border-sm d-none ms-1"
-          role="status"
-          aria-hidden="true"></span>
-</button>
+                            <td>{{ $answer['created_at'] }}</td>
 
-                            </form>
+                            <td>
+                                <div class="actions-cell">
+                                    <form action="/app/controllers/approve.php"
+                                          method="POST"
+                                          onsubmit="return approve({{ $answer['id'] }})"
+                                          id="form-{{ $answer['id'] }}">
+                                        <input type="hidden" name="id" value="{{ $answer['id'] }}">
+                                        <input type="hidden" name="identification_number"
+                                               value="{{ $answer['identification_number'] }}">
+                                        <button
+                                            type="submit"
+                                            class="btn btn-success btn-sm btn-approve"
+                                            data-loading-text="Aprobando...">
+                                            <span class="btn-text">Aprobar</span>
+                                            <span class="spinner-border spinner-border-sm d-none ms-1"
+                                                  role="status"
+                                                  aria-hidden="true"></span>
+                                        </button>
+                                    </form>
 
-                            <form action="/app/controllers/deny.php"
-                                  method="POST"
-                                  onsubmit="return confirm('¿Estás seguro de rechazar este registro?')">
-                                <input type="hidden" name="id" value="{{ $answer['id'] }}">
-                                <button class="btn btn-danger btn-sm">Rechazar</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="11" class="text-center text-muted">
-                        No hay registros para mostrar
-                    </td>
-                </tr>
-            @endforelse
-            </tbody>
-        </table>
+                                    <form action="/app/controllers/deny.php"
+                                          method="POST"
+                                          onsubmit="return confirm('¿Estás seguro de rechazar este registro?')">
+                                        <input type="hidden" name="id" value="{{ $answer['id'] }}">
+                                        <button class="btn btn-danger btn-sm btn-deny">Rechazar</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="11" class="empty-state">
+                                No hay registros para mostrar
+                            </td>
+                        </tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
 
-        {{-- PAGINACIÓN --}}
-        <nav class="d-flex justify-content-center mt-4">
-            <ul class="pagination">
-                <li class="page-item {{ $page <= 1 ? 'disabled' : '' }}">
-                    <a class="page-link" href="?page={{ $page - 1 }}&search={{ $search }}">«</a>
-                </li>
-
-                @for($i = max(1,$page-3); $i <= min($totalPages,$page+3); $i++)
-                    <li class="page-item {{ $i == $page ? 'active' : '' }}">
-                        <a class="page-link" href="?page={{ $i }}&search={{ $search }}">{{ $i }}</a>
+            {{-- PAGINACIÓN --}}
+            <nav class="d-flex justify-content-center mt-4">
+                <ul class="pagination ready-pagination">
+                    <li class="page-item {{ $page <= 1 ? 'disabled' : '' }}">
+                        <a class="page-link" href="?page={{ $page - 1 }}&search={{ $search }}">«</a>
                     </li>
-                @endfor
 
-                <li class="page-item {{ $page >= $totalPages ? 'disabled' : '' }}">
-                    <a class="page-link" href="?page={{ $page + 1 }}&search={{ $search }}">»</a>
-                </li>
-            </ul>
-        </nav>
+                    @for($i = max(1,$page-3); $i <= min($totalPages,$page+3); $i++)
+                        <li class="page-item {{ $i == $page ? 'active' : '' }}">
+                            <a class="page-link" href="?page={{ $i }}&search={{ $search }}">{{ $i }}</a>
+                        </li>
+                    @endfor
 
+                    <li class="page-item {{ $page >= $totalPages ? 'disabled' : '' }}">
+                        <a class="page-link" href="?page={{ $page + 1 }}&search={{ $search }}">»</a>
+                    </li>
+                </ul>
+            </nav>
+
+        </div>
     </div>
 
-    {{-- =========================
-         SCRIPTS
-         ========================= --}}
-   @slot('scripts')
+    @slot('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 
-        // TOASTS
         document.querySelectorAll('.toast').forEach(el => {
             new bootstrap.Toast(el, { delay: 5000 }).show();
         });
 
-        // LOADING PARA APROBAR
         document.querySelectorAll('form').forEach(form => {
             form.addEventListener('submit', function () {
 
                 const btn = form.querySelector('.btn-approve');
-                if (!btn) return; // solo aplica a Aprobar
+                if (!btn) return; 
 
                 btn.disabled = true;
 
@@ -244,7 +520,6 @@
         });
     });
 
-    // LÓGICA EXISTENTE (NO SE TOCA)
     function approve(id) {
         const checks = [...document.getElementsByClassName('select')]
             .filter(c => c.dataset.row == id && c.checked);
@@ -263,6 +538,5 @@
     }
 </script>
 @endslot
-
 
 @endcomponent

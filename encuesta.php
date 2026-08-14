@@ -6,11 +6,6 @@ use Dotenv\Dotenv;
 use eftec\bladeone\BladeOne;
 
 // =========================
-// AUTH
-// =========================
-verifyIsAuthenticated();
-
-// =========================
 // ENV
 // =========================
 $dotenv = Dotenv::createUnsafeImmutable(__DIR__);

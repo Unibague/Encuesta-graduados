@@ -26,16 +26,24 @@
             }
 
             .login-shell {
-                min-height: 100vh;
+                width: 100%;
+                flex: 1;
+                min-height: 0;
+                box-sizing: border-box;
+
                 padding: 40px 16px;
+
                 background:
                     radial-gradient(circle at 12% 8%, rgba(252, 189, 0, 0.18), transparent 40%),
                     radial-gradient(circle at 88% 92%, rgba(22, 166, 114, 0.14), transparent 42%),
                     #f6f6fb;
+
                 display: flex;
                 align-items: center;
                 justify-content: center;
             }
+
+
 
             .login-card {
                 background: #ffffff;

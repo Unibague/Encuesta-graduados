@@ -147,13 +147,25 @@
             width: 100%;
             min-width: 0;
             overflow-x: hidden;
+
+            display: flex;
+            flex-direction: column;
+
+            min-height: 0;
         }
 
         main > .container {
             width: 100%;
             max-width: 100%;
             min-width: 0;
+
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+
+            min-height: 0;
         }
+
 
         /* ===== Footer ===== */
         footer {

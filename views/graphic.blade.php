@@ -5,17 +5,127 @@
     @endslot
 
     @slot('header')
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
-            .page-scroll { overflow-x: auto; width: 100%; }
+            :root {
+                --primary: #FCBD00;
+                --primary-dark: #D9A200;
+                --primary-light: #FFF8E0;
+                --success: #16a672;
+                --success-light: #e4f7f0;
+                --danger: #ef4444;
+                --danger-light: #fef2f2;
+                --text: #1f2333;
+                --text-muted: #7c8093;
+                --border: #e6e5f1;
+                --shadow: 0 20px 45px -20px rgba(252, 189, 0, 0.35);
+            }
+
+            .graphic-page {
+                min-height: 100vh;
+                padding: 40px 16px 60px;
+                background:
+                    radial-gradient(circle at 12% 8%, rgba(252, 189, 0, 0.18), transparent 40%),
+                    radial-gradient(circle at 88% 92%, rgba(22, 166, 114, 0.14), transparent 42%),
+                    #f6f6fb;
+                font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+                color: var(--text);
+            }
+
+            .graphic-container {
+                max-width: 1100px;
+                width: 100%;
+                margin: 0 auto;
+            }
+
+            .graphic-intro {
+                text-align: center;
+                margin-bottom: 28px;
+            }
+
+            .graphic-intro h1 {
+                font-size: 1.9rem;
+                font-weight: 800;
+                letter-spacing: -0.02em;
+                margin: 0 0 8px;
+            }
+
+            .graphic-intro p {
+                color: var(--text-muted);
+                font-size: .95rem;
+                margin: 0;
+            }
+
+            .charts-card {
+                background: #fff;
+                border-radius: 26px;
+                padding: 32px;
+                box-shadow: var(--shadow);
+                border: 1px solid rgba(252, 189, 0, 0.12);
+            }
+
             .chart-card {
                 background: #fff;
-                border-radius: .5rem;
-                box-shadow: 0 1px 4px rgba(0,0,0,.08);
-                padding: 1.25rem;
+                border-radius: 20px;
+                box-shadow: 0 10px 30px -18px rgba(31,35,51,.3);
+                border: 1px solid var(--border);
+                padding: 24px;
                 height: 100%;
+                transition: transform .2s ease, box-shadow .2s ease;
             }
-            .chart-wrap { position: relative; height: 320px; }
-            .chart-total { font-size: .9rem; color: #6c757d; }
+
+            .chart-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 16px 34px -18px rgba(31,35,51,.35);
+            }
+
+            .chart-card h5 {
+                color: var(--text);
+                font-weight: 800;
+                margin: 0;
+            }
+
+            .chart-wrap {
+                position: relative;
+                height: 320px;
+            }
+
+            .chart-total {
+                font-size: .9rem;
+                color: var(--text-muted);
+            }
+
+            .toast.text-bg-success {
+                background: var(--success) !important;
+                border-radius: 14px !important;
+                font-family: 'Manrope', sans-serif;
+                font-weight: 600;
+            }
+
+            @media (max-width: 700px) {
+                .graphic-page {
+                    padding: 28px 12px 40px;
+                }
+
+                .charts-card {
+                    padding: 20px 14px;
+                    border-radius: 20px;
+                }
+
+                .graphic-intro h1 {
+                    font-size: 1.6rem;
+                }
+
+                .chart-card {
+                    padding: 18px;
+                }
+
+                .chart-wrap {
+                    height: 280px;
+                }
+            }
         </style>
     @endslot
 
@@ -30,10 +140,13 @@
         </div>
     @endif
 
-    <div class="page-scroll">
+    <div class="graphic-page">
+        <div class="graphic-container">
 
-        <h1 class="text-center mb-1">Graficos</h1>
-        <p class="text-center text-muted mb-4">{{ number_format($total) }} registro(s) en total.</p>
+        <div class="graphic-intro">
+            <h1>Graficos</h1>
+            <p>{{ number_format($total) }} registro(s) en total.</p>
+        </div>
 
         @php
             $graduadosActualizados     = $graduadosActualizados     ?? 0;
@@ -45,7 +158,8 @@
             $totalNoGraduados = $noGraduadosActualizados + $noGraduadosNoActualizados;
         @endphp
 
-        <div class="row justify-content-center g-4">
+        <div class="charts-card">
+            <div class="row justify-content-center g-4">
 
             <div class="col-md-5">
                 <div class="chart-card">
@@ -67,8 +181,8 @@
                 </div>
             </div>
 
+            </div>
         </div>
-
     </div>
 
     @slot('scripts')

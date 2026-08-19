@@ -14,31 +14,48 @@
         crossorigin="anonymous"
     >
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <script src="/tablefilter/tablefilter.js"></script>
 
     <style>
-        .navbar-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
+        :root {
+            --primary: #FCBD00;
+            --primary-dark: #D9A200;
+            --primary-light: #FFF8E0;
+            --success: #16a672;
+            --success-light: #e4f7f0;
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
+            --text: #1f2333;
+            --text-muted: #7c8093;
+            --border: #e6e5f1;
+            --shadow: 0 20px 45px -20px rgba(252, 189, 0, 0.35);
         }
 
-        .navbar-brand img {
-            height: 42px;
-            width: auto;
-        }
-
-        /* Evita que cualquier elemento hijo provoque scroll horizontal */
-        html,
-        body {
+        html, body {
             width: 100%;
             max-width: 100%;
             overflow-x: hidden;
         }
 
+        body {
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 12% 8%, rgba(252, 189, 0, 0.10), transparent 40%),
+                radial-gradient(circle at 88% 92%, rgba(22, 166, 114, 0.08), transparent 42%),
+                #f6f6fb;
+        }
+
+        /* ===== Navbar ===== */
         .navbar {
             width: 100%;
             min-width: 0;
+            background: var(--text) !important;
+            box-shadow: 0 4px 18px -6px rgba(31, 35, 51, 0.35);
         }
 
         .navbar > .container {
@@ -48,14 +65,24 @@
         }
 
         .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             min-width: 0;
             max-width: 100%;
+        }
+
+        .navbar-brand img {
+            height: 42px;
+            width: auto;
         }
 
         .navbar-brand span {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            font-weight: 700;
+            color: #fff;
         }
 
         .navbar-nav {
@@ -63,19 +90,24 @@
         }
 
         .navbar-nav .nav-link {
-            padding: 0.5rem 0.6rem;
+            padding: 0.5rem 0.75rem;
             font-size: 0.9rem;
+            font-weight: 600;
             white-space: nowrap;
-            border-radius: 6px;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.85);
+            transition: background-color 0.2s, color 0.2s;
         }
 
         .navbar-nav .nav-link:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(252, 189, 0, 0.14);
+            color: var(--primary);
         }
 
         .navbar-nav .nav-link.active {
-            background-color: rgba(255, 255, 255, 0.2);
-            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: var(--text);
+            font-weight: 700;
         }
 
         .navbar .btn-logout {
@@ -83,26 +115,75 @@
             white-space: nowrap;
         }
 
+        .navbar .btn-logout .btn {
+            border-radius: 10px;
+            font-weight: 700;
+            border-width: 2px;
+            border-color: var(--primary);
+            color: var(--primary);
+            background: transparent;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .navbar .btn-logout .btn:hover {
+            background: var(--primary);
+            color: var(--text);
+        }
+
+        .navbar-toggler {
+            border-color: rgba(252, 189, 0, 0.4);
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: 0 0 0 4px rgba(252, 189, 0, 0.25);
+        }
+
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path stroke='rgba(252,189,0,0.9)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/></svg>");
+        }
+
+        /* ===== Main content ===== */
         main {
             width: 100%;
             min-width: 0;
             overflow-x: hidden;
+
+            display: flex;
+            flex-direction: column;
+
+            min-height: 0;
         }
 
         main > .container {
             width: 100%;
             max-width: 100%;
             min-width: 0;
+
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+
+            min-height: 0;
         }
 
+
+        /* ===== Footer ===== */
         footer {
             width: 100%;
             min-width: 0;
+            background: var(--text) !important;
         }
 
         footer .container {
             width: 100%;
             max-width: 100%;
+        }
+
+        footer .text-white {
+            color: rgba(255, 255, 255, 0.75) !important;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
         }
 
         /*

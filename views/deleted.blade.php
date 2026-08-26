@@ -4,21 +4,15 @@
         Registros borrados
     @endslot
 
-    {{-- HEADER SLOT --}}
     @slot('header')
         <style>
-<<<<<<< Updated upstream
-            .page-scroll {
-                overflow-x: auto;
-                width: 100%;
-=======
 
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --primary: #1A3A6B;
-            --primary-dark: #0F2747;
-            --primary-light: #E8EEF7;
+            --primary: #FCBD00;
+            --primary-dark: #D9A200;
+            --primary-light: #FFF8E0;
             --success: #16a672;
             --success-light: #e4f7f0;
             --danger: #ef4444;
@@ -27,14 +21,14 @@
             --border: #e6e5f1;
             --surface: #ffffff;
             --background: #f6f6fb;
-            --shadow: 0 20px 45px -20px rgba(26, 58, 107, 0.35);
+            --shadow: 0 20px 45px -20px rgba(252, 189, 0, 0.35);
         }
 
         .deleted-page {
             min-height: 100vh;
             padding: 40px 16px 60px;
             background:
-                radial-gradient(circle at 12% 8%, rgba(26, 58, 107, 0.18), transparent 40%),
+                radial-gradient(circle at 12% 8%, rgba(252, 189, 0, 0.18), transparent 40%),
                 radial-gradient(circle at 88% 92%, rgba(22, 166, 114, 0.14), transparent 42%),
                 var(--background);
             color: var(--text);
@@ -70,7 +64,7 @@
             position: relative;
             overflow: hidden;
             background: var(--surface);
-            border: 1px solid rgba(26, 58, 107, 0.12);
+            border: 1px solid rgba(252, 189, 0, 0.12);
             border-radius: 26px;
             padding: 28px;
             box-shadow: var(--shadow);
@@ -84,7 +78,7 @@
             width: 160px;
             height: 160px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(26, 58, 107,0.12), transparent 70%);
+            background: radial-gradient(circle, rgba(252,189,0,0.12), transparent 70%);
             pointer-events: none;
         }
 
@@ -110,10 +104,10 @@
         }
 
         .deleted-table thead th {
-            background: var(--primary) !important;
-            color: #fff !important;
+            background: var(--primary-light) !important;
+            color: var(--primary-dark) !important;
             border: 0 !important;
-            border-bottom: 2px solid rgba(26, 58, 107, 0.25) !important;
+            border-bottom: 2px solid rgba(252, 189, 0, 0.25) !important;
             padding: 13px 16px !important;
             min-height: 52px;
             min-width: 100px;
@@ -219,7 +213,7 @@
             border-color: transparent;
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: #1f2333;
-            box-shadow: 0 6px 14px -6px rgba(26, 58, 107, 0.5);
+            box-shadow: 0 6px 14px -6px rgba(252, 189, 0, 0.5);
         }
 
         .deleted-pagination .page-item.disabled .page-link {
@@ -238,141 +232,154 @@
         @media (max-width: 768px) {
             .deleted-page {
                 padding: 28px 12px 40px;
->>>>>>> Stashed changes
             }
 
-            table {
-                min-width: 1400px;
+            .deleted-header h1 {
+                font-size: 1.5rem;
             }
 
-            th, td {
-                white-space: nowrap;
-                text-align: center;
-                vertical-align: middle;
-                height: 50px;
+            .deleted-card {
+                padding: 18px;
+                border-radius: 20px;
             }
+        }
+
+        @media (max-width: 560px) {
+            .deleted-page {
+                padding: 22px 8px 32px;
+            }
+
+            .deleted-card {
+                padding: 14px;
+                border-radius: 18px;
+            }
+
+            .deleted-header h1 {
+                font-size: 1.35rem;
+            }
+
+            .deleted-header p {
+                font-size: 0.85rem;
+            }
+        }
         </style>
     @endslot
 
-    {{-- =========================
-         TOASTS
-         ========================= --}}
     @if(!empty($message))
-        <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3"
+        <div class="toast deleted-toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3"
              role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
-                <div class="toast-body">
-                    {{ $message }}
-                </div>
-                <button type="button"
-                        class="btn-close btn-close-white me-2 m-auto"
+                <div class="toast-body">{{ $message }}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto"
                         data-bs-dismiss="toast"></button>
             </div>
         </div>
     @endif
 
     @if(!empty($error))
-        <div class="toast align-items-center text-bg-danger border-0 position-fixed top-0 end-0 m-3"
+        <div class="toast deleted-toast align-items-center text-bg-danger border-0 position-fixed top-0 end-0 m-3"
              role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
-                <div class="toast-body">
-                    {{ $error }}
-                </div>
-                <button type="button"
-                        class="btn-close btn-close-white me-2 m-auto"
+                <div class="toast-body">{{ $error }}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto"
                         data-bs-dismiss="toast"></button>
             </div>
         </div>
     @endif
 
-    <div class="page-scroll">
+    <div class="deleted-page">
+    <div class="deleted-container">
 
-        <h1 class="text-center mb-2">Registros borrados</h1>
-        <p class="text-center text-muted mb-4">
-            Estos registros fueron eliminados y pueden ser restaurados si es necesario.
-        </p>
+        <div class="deleted-header">
+            <h1>Registros borrados</h1>
+            <p>Estos registros fueron eliminados y pueden ser restaurados si es necesario.</p>
+        </div>
 
-        <table class="table table-striped table-hover">
-            <thead>
-            <tr>
-                <th>#ID</th>
-                <th>Cédula</th>
-                <th>Nombre</th>
-                <th>Apellido</th>
-                <th>Correo electrónico</th>
-                <th>Teléfono</th>
-                <th>Teléfono alterno</th>
-                <th>País</th>
-                <th>Ciudad</th>
-                <th>Dirección</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
-            </tr>
-            </thead>
+        <div class="deleted-card">
 
-            <tbody>
-            @forelse($deletedAnswers as $answer)
-                <tr>
-                    <td>{{ $answer['id'] }}</td>
-                    <td>{{ $answer['identification_number'] }}</td>
-                    <td>{{ $answer['name'] }}</td>
-                    <td>{{ $answer['last_name'] }}</td>
-                    <td>{{ $answer['email'] }}</td>
-                    <td>{{ $answer['mobile_phone'] }}</td>
-                    <td>{{ $answer['alternative_mobile_phone'] ?: '—' }}</td>
-                    <td>{{ $answer['country'] }}</td>
-                    <td>{{ $answer['city'] }}</td>
-                    <td>{{ $answer['address'] }}</td>
-                    <td>{{ $answer['created_at'] }}</td>
-                    <td>
-                        <form action="/app/controllers/undelete.php"
-                              method="POST"
-                              onsubmit="return confirm('¿Deseas restaurar este registro?')">
-                            <input type="hidden" name="id" value="{{ $answer['id'] }}">
-                            <button class="btn btn-success btn-sm">
-                                Restaurar
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="12" class="text-center text-muted">
-                        No hay registros borrados
-                    </td>
-                </tr>
-            @endforelse
-            </tbody>
-        </table>
+            <div class="deleted-table-wrap">
+                <table class="deleted-table">
+                    <thead>
+                        <tr>
+                            <th>#ID</th>
+                            <th>Cédula</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Correo electrónico</th>
+                            <th>Teléfono</th>
+                            <th>Teléfono alterno</th>
+                            <th>País</th>
+                            <th>Ciudad</th>
+                            <th>Dirección</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
 
-        {{-- PAGINACIÓN --}}
-        <nav class="d-flex justify-content-center mt-4">
-            <ul class="pagination">
-                <li class="page-item {{ $page <= 1 ? 'disabled' : '' }}">
-                    <a class="page-link" href="?page={{ $page - 1 }}">«</a>
-                </li>
+                    <tbody>
+                    @forelse($deletedAnswers as $answer)
+                        <tr>
+                            <td><strong>{{ $answer['id'] }}</strong></td>
+                            <td>{{ $answer['identification_number'] }}</td>
+                            <td>{{ $answer['name'] }}</td>
+                            <td>{{ $answer['last_name'] }}</td>
+                            <td>{{ $answer['email'] }}</td>
+                            <td>{{ $answer['mobile_phone'] }}</td>
+                            <td>{{ $answer['alternative_mobile_phone'] ?: '—' }}</td>
+                            <td>{{ $answer['country'] }}</td>
+                            <td>{{ $answer['city'] }}</td>
+                            <td>{{ $answer['address'] }}</td>
+                            <td>{{ $answer['created_at'] }}</td>
+                            <td>
+                                <form action="/app/controllers/undelete.php"
+                                      method="POST"
+                                      onsubmit="return confirm('¿Deseas restaurar este registro?')">
+                                    <input type="hidden" name="id" value="{{ $answer['id'] }}">
+                                    <button type="submit" class="btn-restore">
+                                        Restaurar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="12" class="text-center text-muted py-4">
+                                No hay registros borrados
+                            </td>
+                        </tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
 
-                @for($i = max(1,$page-3); $i <= min($totalPages,$page+3); $i++)
-                    <li class="page-item {{ $i == $page ? 'active' : '' }}">
-                        <a class="page-link" href="?page={{ $i }}">{{ $i }}</a>
-                    </li>
-                @endfor
+            @if(($totalPages ?? 1) > 1)
+                <nav class="deleted-pagination">
+                    <ul class="pagination">
+                        <li class="page-item {{ $page <= 1 ? 'disabled' : '' }}">
+                            <a class="page-link" href="?page={{ $page - 1 }}">«</a>
+                        </li>
 
-                <li class="page-item {{ $page >= $totalPages ? 'disabled' : '' }}">
-                    <a class="page-link" href="?page={{ $page + 1 }}">»</a>
-                </li>
-            </ul>
-        </nav>
+                        @for($i = max(1, $page - 3); $i <= min($totalPages, $page + 3); $i++)
+                            <li class="page-item {{ $i == $page ? 'active' : '' }}">
+                                <a class="page-link" href="?page={{ $i }}">{{ $i }}</a>
+                            </li>
+                        @endfor
 
+                        <li class="page-item {{ $page >= $totalPages ? 'disabled' : '' }}">
+                            <a class="page-link" href="?page={{ $page + 1 }}">»</a>
+                        </li>
+                    </ul>
+                </nav>
+            @endif
+
+        </div>
+    </div>
     </div>
 
-    {{-- =========================
-         SCRIPTS
-         ========================= --}}
     @slot('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                document.querySelectorAll('.toast').forEach(el => {
+                document.querySelectorAll('.toast').forEach(function (el) {
                     new bootstrap.Toast(el, { delay: 5000 }).show();
                 });
             });

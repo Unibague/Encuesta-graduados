@@ -4,8 +4,10 @@
         Registros pendientes de sincronización
     @endslot
 
-    {{-- HEADER --}}
     @slot('header')
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
 <<<<<<< Updated upstream
 =======
@@ -111,6 +113,7 @@
             .page-scroll {
                 overflow-x: auto;
                 width: 100%;
+                border-radius: 16px;
             }
 
             table {
@@ -131,7 +134,93 @@
                 border-bottom: 2px solid rgba(26, 58, 107, 0.25);
 >>>>>>> Stashed changes
                 white-space: nowrap;
+                text-align: center;
                 vertical-align: middle;
+                height: auto;
+                color: var(--text);
+            }
+
+            .ready-table tbody tr:hover {
+                background: #fafafd;
+            }
+
+            .ready-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .ready-table td p {
+                margin: 0;
+                font-weight: 600;
+                color: var(--text);
+            }
+
+            .ready-table td hr {
+                margin: 6px 0;
+                border: none;
+                border-top: 1px dashed #e6e5f1;
+            }
+
+            .ready-table td p + hr + p {
+                font-weight: 500;
+                color: var(--text-muted);
+                font-size: 0.82rem;
+            }
+
+            .ready-table input[type="checkbox"] {
+                accent-color: var(--primary);
+                width: 16px;
+                height: 16px;
+                margin-top: 6px;
+                cursor: pointer;
+            }
+
+            .btn-approve {
+                background: linear-gradient(135deg, var(--success), #12855e) !important;
+                color: #fff !important;
+                border: none !important;
+                border-radius: 10px !important;
+                padding: 8px 14px !important;
+                font-weight: 700 !important;
+                font-size: 12.5px !important;
+                font-family: inherit !important;
+                box-shadow: 0 6px 14px -6px rgba(22, 166, 114, 0.45);
+                transition: filter 0.2s, transform 0.1s;
+            }
+
+            .btn-approve:hover {
+                filter: brightness(1.06);
+            }
+
+            .btn-approve:disabled {
+                opacity: 0.75;
+                cursor: not-allowed;
+            }
+
+            .btn-deny {
+                background: #fff !important;
+                color: var(--danger) !important;
+                border: 2px solid #fecaca !important;
+                border-radius: 10px !important;
+                padding: 7px 14px !important;
+                font-weight: 700 !important;
+                font-size: 12.5px !important;
+                font-family: inherit !important;
+                transition: background 0.2s, border-color 0.2s;
+            }
+
+            .btn-deny:hover {
+                background: var(--danger-light) !important;
+                border-color: var(--danger) !important;
+            }
+
+            .actions-cell {
+                display: flex;
+                gap: 8px;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .empty-state {
                 text-align: center;
 <<<<<<< Updated upstream
 =======
@@ -291,50 +380,68 @@
     @endslot
 
     {{-- TOAST --}}
-    @if(isset($message))
-        <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-2"
+@if(!empty($message))
+        <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3"
              role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
-                <div class="toast-body">{{ $message }}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                <div class="toast-body">
+                    {{ $message }}
+                </div>
+                <button type="button"
+                        class="btn-close btn-close-white me-2 m-auto"
                         data-bs-dismiss="toast"></button>
             </div>
         </div>
     @endif
 
-    <div class="page-scroll">
+    @if(!empty($error))
+        <div class="toast align-items-center text-bg-danger border-0 position-fixed top-0 end-0 m-3"
+             role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    {{ $error }}
+                </div>
+                <button type="button"
+                        class="btn-close btn-close-white me-2 m-auto"
+                        data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    @endif
 
-        <h1 class="text-center mb-4">Registros pendientes de sincronización</h1>
+        <div class="ready-page">
 
-        {{-- BUSCADOR GLOBAL --}}
-        <form method="GET" class="mb-4 d-flex justify-content-center">
-            <input
-                type="text"
-                name="search"
-                value="{{ $search ?? '' }}"
-                class="form-control w-50"
-                placeholder="Buscar por cédula, nombre, correo, ciudad..."
-            >
-            <button class="btn btn-primary ms-2">Buscar</button>
-        </form>
+        <h1>Registros pendientes de sincronización</h1>
 
-        <table class="table table-striped table-hover">
-            <thead>
-            <tr>
-                <th>#ID</th>
-                <th>Cédula</th>
-                <th>Nombre</th>
-                <th>Apellido</th>
-                <th>Correo</th>
-                <th>Teléfono</th>
-                <th>Tel. alterno</th>
-                <th>País</th>
-                <th>Ciudad</th>
-                <th>Dirección</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
-            </tr>
-            </thead>
+        <div class="ready-card">
+
+            {{-- BUSCADOR GLOBAL --}}
+            <form method="GET" class="search-wrap">
+                <input
+                    type="text"
+                    name="search"
+                    value="{{ $search ?? '' }}"
+                    placeholder="Buscar por cédula, nombre, correo, ciudad..."
+                >
+                <button type="submit" class="btn-search">Buscar</button>
+            </form>
+
+            <div class="page-scroll">
+                <table class="ready-table">
+                    <thead>
+                    <tr>
+                        <th>#ID</th>
+                        <th>Cédula</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Correo electrónico</th>
+                        <th>Teléfono</th>
+                        <th>Teléfono alterno</th>
+                        <th>Ciudad</th>
+                        <th>Dirección</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                    </thead>
 
             <tbody>
             @foreach($graduatedAnswers as $answer)
@@ -357,7 +464,7 @@
                                    value="{{ $answer['identification_number'] }}">
                             <button
     type="submit"
-    class="btn btn-primary btn-sm w-100 btn-sync"
+    class="btn btn-approve btn-sm w-100 btn-sync"
     data-loading-text="Sincronizando...">
     <span class="btn-text">Sincronizar</span>
     <span class="spinner-border spinner-border-sm d-none ms-1"
@@ -371,7 +478,7 @@
                               method="POST"
                               onsubmit="return confirm('¿Estás seguro?')">
                             <input type="hidden" name="id" value="{{ $answer['id'] }}">
-                            <button class="btn btn-danger btn-sm w-100">
+                            <button class="btn btn-deny btn-sm w-100">
                                 Rechazar
                             </button>
                         </form>
@@ -380,6 +487,7 @@
             @endforeach
             </tbody>
         </table>
+            </div>
 
         {{-- PAGINACIÓN --}}
         <nav class="d-flex justify-content-center mt-4">

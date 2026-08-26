@@ -14,6 +14,10 @@
         crossorigin="anonymous"
     >
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <script src="/tablefilter/tablefilter.js"></script>
 
     <style>
@@ -67,6 +71,8 @@
         .navbar {
             width: 100%;
             min-width: 0;
+            background: var(--text) !important;
+            box-shadow: 0 4px 18px -6px rgba(31, 35, 51, 0.35);
         }
 
         .navbar > .container {
@@ -76,14 +82,24 @@
         }
 
         .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             min-width: 0;
             max-width: 100%;
+        }
+
+        .navbar-brand img {
+            height: 42px;
+            width: auto;
         }
 
         .navbar-brand span {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            font-weight: 700;
+            color: #fff;
         }
 
         .navbar-nav {
@@ -91,10 +107,13 @@
         }
 
         .navbar-nav .nav-link {
-            padding: 0.5rem 0.6rem;
+            padding: 0.5rem 0.75rem;
             font-size: 0.9rem;
+            font-weight: 600;
             white-space: nowrap;
-            border-radius: 6px;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.85);
+            transition: background-color 0.2s, color 0.2s;
         }
 
         .navbar-nav .nav-link:hover {
@@ -168,22 +187,43 @@
             width: 100%;
             min-width: 0;
             overflow-x: hidden;
+
+            display: flex;
+            flex-direction: column;
+
+            min-height: 0;
         }
 
         main > .container {
             width: 100%;
             max-width: 100%;
             min-width: 0;
+
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+
+            min-height: 0;
         }
 
+
+        /* ===== Footer ===== */
         footer {
             width: 100%;
             min-width: 0;
+            background: var(--text) !important;
         }
 
         footer .container {
             width: 100%;
             max-width: 100%;
+        }
+
+        footer .text-white {
+            color: rgba(255, 255, 255, 0.75) !important;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
         }
 
         /*

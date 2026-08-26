@@ -141,7 +141,7 @@
 
     {{-- TOAST --}}
     @if(!empty($message))
-        <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3"
+        <div class="toast migrated-toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3"
              role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body">{{ $message }}</div>
@@ -151,22 +151,28 @@
         </div>
     @endif
 
-    <div class="page-scroll">
+    <div class="migrated-page">
+    <div class="migrated-container">
 
-        <h1 class="text-center mb-1">Historial de actualizaciones SIGA</h1>
-        <p class="text-center text-muted mb-4">
-            {{ number_format($total) }} registro(s) ya enviados a SIGA.
-        </p>
+        <div class="migrated-header">
+            <h1>Historial de actualizaciones SIGA</h1>
+            <p>
+                {{ number_format($total) }} registro(s) ya enviados a SIGA.
+            </p>
+        </div>
+
+        <div class="migrated-card">
 
         {{-- BUSCADOR --}}
-        <form method="GET" class="mb-4 d-flex justify-content-center">
+        <form method="GET" class="migrated-search">
             <input type="text" name="search" value="{{ $search ?? '' }}"
                    class="form-control w-50"
                    placeholder="Buscar por cédula, nombre, correo, ciudad...">
-            <button class="btn btn-primary ms-2">Buscar</button>
+            <button type="submit">Buscar</button>
         </form>
 
-        <table class="table table-striped table-hover table-sm">
+        <div class="migrated-table-wrap">
+        <table class="migrated-table">
             <thead class="table-dark">
             <tr>
                 <th>#ID</th>
@@ -206,17 +212,18 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="10" class="text-center text-muted py-4">
+                    <td colspan="10" class="migrated-empty text-center">
                         No hay registros actualizados en SIGA aún.
                     </td>
                 </tr>
             @endforelse
             </tbody>
         </table>
+        </div>
 
         {{-- PAGINACIÓN --}}
         @if($totalPages > 1)
-        <nav class="d-flex justify-content-center mt-4">
+        <nav class="migrated-pagination d-flex justify-content-center">
             <ul class="pagination">
                 <li class="page-item {{ $page <= 1 ? 'disabled' : '' }}">
                     <a class="page-link" href="?page={{ $page - 1 }}&search={{ $search }}">«</a>
@@ -235,6 +242,8 @@
         </nav>
         @endif
 
+        </div>
+    </div>
     </div>
 
     @slot('scripts')

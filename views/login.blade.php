@@ -172,21 +172,30 @@
             </div>
         </div>
     @endif
-    <form class="d-flex justify-content-center h-100" method="POST" action="/login.php">
-        <div class="d-flex justify-content-center d-flex flex-column">
-            <div class="mb-2">
-                <label for="exampleInputEmail1">USUARIO Unibagué</label>
-                <input type="text" class="form-control" id="exampleInputEmail1" aria-describedby="Usuario"
-                       placeholder="Usuario Unibagué" name="username">
+
+    <div class="login-shell">
+        <div class="login-card">
+            <div class="login-title">
+                <h1>Iniciar sesión</h1>
+                <p>Ingresa con tu usuario Unibagué</p>
             </div>
-            <label for="exampleInputPassword1">Contraseña</label>
-            <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Contraseña"
-                   name="password">
-            <button style="background: #0f1f39; color: white" type="submit" class="mt-2 btn btn-lg btn-block">Iniciar
-                Sesión
-            </button>
+
+            <form class="login-form" method="POST" action="/login.php">
+                <div class="form-field-login">
+                    <label class="field-label-login" for="exampleInputEmail1">USUARIO Unibagué</label>
+                    <input type="text" class="input-field" id="exampleInputEmail1" aria-describedby="Usuario"
+                           placeholder="Usuario Unibagué" name="username">
+                </div>
+                <div class="form-field-login">
+                    <label class="field-label-login" for="exampleInputPassword1">Contraseña</label>
+                    <input type="password" class="input-field" id="exampleInputPassword1" placeholder="Contraseña"
+                           name="password">
+                </div>
+                <button type="submit" class="btn-login">Iniciar Sesión</button>
+            </form>
         </div>
-    </form>
+    </div>
+
     @slot('scripts')
         <script>
             window.addEventListener('load', function () {

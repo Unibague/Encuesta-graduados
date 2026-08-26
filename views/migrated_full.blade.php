@@ -467,31 +467,199 @@
                 height: auto;
             }
 
-            .filter-row select {
-                display: block;
-                margin: 0 auto;
-                text-align: center;
-                font-size: 0.75rem;
-                padding: 2px 4px;
-                max-width: 160px;
-                width: 100%;
-                box-sizing: border-box;
-                min-width: 0;
+        .migrated-full-table .filter-row select {
+            display: block;
+            margin: 0 auto;
+            text-align: center;
+            font-size: 0.75rem;
+            padding: 7px 8px;
+            max-width: 180px;
+            width: 100%;
+            min-width: 0;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            background: #fff;
+            font-family: inherit;
+        }
+
+        .migrated-full-table .filter-row select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(252, 189, 0, 0.15);
+        }
+
+        .migrated-full-table tbody td {
+            min-height: 52px;
+            min-width: 100px;
+            padding: 12px 16px !important;
+            border-bottom: 1px solid #f0f0f7 !important;
+            border-right: 0 !important;
+            background: #fff;
+            color: var(--text);
+            font-size: 13px;
+            white-space: nowrap;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .migrated-full-table tbody tr:hover td {
+            background: #fafafd;
+        }
+
+        .migrated-full-table tbody tr:last-child td {
+            border-bottom: none !important;
+        }
+
+        .migrated-full-table strong {
+            font-weight: 800;
+        }
+
+        /* Mantiene el texto en una sola línea para que las columnas se adapten al contenido */
+        .migrated-full-table .pre-wrap {
+            white-space: nowrap;
+            word-break: normal;
+            overflow-wrap: normal;
+        }
+
+        .migrated-full-table .text-bg-success {
+            background: var(--success-light) !important;
+            color: var(--success) !important;
+        }
+
+        .migrated-full-table .text-bg-danger {
+            background: #fef2f2 !important;
+            color: var(--danger) !important;
+        }
+
+        .badge-femenino,
+        .badge-masculino,
+        .migrated-full-table .text-bg-success,
+        .migrated-full-table .text-bg-danger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 82px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .badge-femenino {
+            background: #fce7f3 !important;
+            color: #be185d !important;
+        }
+
+        .badge-masculino {
+            background: #e0edff !important;
+            color: #2563eb !important;
+        }
+
+        .migrated-full-pagination {
+            position: relative;
+            z-index: 1;
+            margin-top: 28px;
+        }
+
+        .migrated-full-pagination .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            margin: 0;
+        }
+
+        .migrated-full-pagination .page-link {
+            min-width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+            border: 2px solid var(--border);
+            border-radius: 11px !important;
+            background: #fff;
+            color: var(--text);
+            font-size: 13.5px;
+            font-weight: 700;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+
+        .migrated-full-pagination .page-link:hover {
+            border-color: var(--primary);
+            color: var(--primary-dark);
+            background: var(--primary-light);
+        }
+
+        .migrated-full-pagination .page-item.active .page-link {
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #1f2333;
+            box-shadow: 0 6px 14px -6px rgba(252, 189, 0, 0.5);
+        }
+
+        .migrated-full-pagination .page-item.disabled .page-link {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .migrated-full-toast {
+            border-radius: 14px !important;
+            box-shadow: 0 15px 35px -15px rgba(31, 35, 51, 0.35);
+            overflow: hidden;
+            font-family: 'Manrope', sans-serif;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .migrated-full-page {
+                padding: 28px 12px 40px;
+            }
+
+            .migrated-full-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .migrated-full-card {
+                padding: 18px;
+                border-radius: 20px;
             }
 
             .filters-toolbar {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                gap: 0.5rem;
-                flex-wrap: wrap;
-                margin-bottom: 0.5rem;
+                flex-direction: column;
+                align-items: stretch;
             }
+
+            .filters-toolbar input,
+            .filters-toolbar .btn {
+                width: 100% !important;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .migrated-full-page {
+                padding: 22px 8px 32px;
+            }
+
+            .migrated-full-card {
+                padding: 14px;
+                border-radius: 18px;
+            }
+
+            .migrated-full-header h1 {
+                font-size: 1.35rem;
+            }
+
+            .migrated-full-header p {
+                font-size: 0.85rem;
+            }
+        }
         </style>
     @endslot
 
     @if(!empty($message))
-        <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3"
+        <div class="toast migrated-full-toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3"
              role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body">{{ $message }}</div>
@@ -501,13 +669,17 @@
         </div>
     @endif
 
-    <div class="page-scroll">
+    <div class="migrated-full-page">
+    <div class="migrated-full-container">
 
-        <h1 class="text-center mb-1">Datos de egresados SIGA</h1>
-        <p class="text-center text-muted mb-4">
+        <div class="migrated-full-header">
+        <h1>Datos de egresados SIGA</h1>
+        <p>
             {{ number_format($total) }} Dato(s) coinciden con la búsqueda / filtros.
         </p>
+        </div>
 
+        <div class="migrated-full-card">
         @php
             $allColumns = [];
             $filters = $filters ?? [];
@@ -562,7 +734,7 @@
             }
         @endphp
 
-        <form method="GET" class="mb-3">
+        <form method="GET" class="migrated-full-form">
 
             <div class="filters-toolbar">
                 <input type="text"
@@ -584,7 +756,8 @@
                 @endif
             </div>
 
-            <table class="table table-striped table-hover table-sm">
+            <div class="migrated-full-table-wrap">
+            <table class="migrated-full-table">
 
                 <thead class="table-dark">
                     <tr>
@@ -650,6 +823,7 @@
 
                 </tbody>
             </table>
+        </div>
         </form>
 
         <div class="modal fade answers-modal" id="answersModal" tabindex="-1" aria-labelledby="answersModalLabel" aria-hidden="true">
@@ -667,7 +841,7 @@
         </div>
 
         @if($totalPages > 1)
-            <nav class="d-flex justify-content-center mt-4">
+            <nav class="migrated-full-pagination">
                 <ul class="pagination">
 
                     <li class="page-item {{ $page <= 1 ? 'disabled' : '' }}">
@@ -697,6 +871,8 @@
             </nav>
         @endif
 
+        </div>
+    </div>
     </div>
 
     @slot('scripts')

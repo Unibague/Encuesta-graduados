@@ -19,6 +19,9 @@
             --primary: #1A3A6B;
             --primary-dark: #0F2747;
             --primary-light: #E8EEF7;
+            --primary: #1A3A6B;
+            --primary-dark: #0F2747;
+            --primary-light: #E8EEF7;
             --success: #16a672;
             --success-light: #e4f7f0;
             --danger: #ef4444;
@@ -27,12 +30,14 @@
             --text-muted: #7c8093;
             --border: #e6e5f1;
             --shadow: 0 20px 45px -20px rgba(26, 58, 107, 0.35);
+            --shadow: 0 20px 45px -20px rgba(26, 58, 107, 0.35);
         }
 
         .rejected-shell {
             min-height: 100vh;
             padding: 40px 16px 60px;
             background:
+                radial-gradient(circle at 12% 8%, rgba(26, 58, 107, 0.18), transparent 40%),
                 radial-gradient(circle at 12% 8%, rgba(26, 58, 107, 0.18), transparent 40%),
                 radial-gradient(circle at 88% 92%, rgba(22, 166, 114, 0.14), transparent 42%),
                 #f6f6fb;
@@ -303,7 +308,7 @@
             width: 180px;
             height: 180px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(252,189,0,0.12), transparent 70%);
+            background: radial-gradient(circle, rgba(26, 58, 107,0.12), transparent 70%);
             pointer-events: none;
         }
 
@@ -331,7 +336,7 @@
             text-transform: uppercase;
             letter-spacing: 0.03em;
             padding: 14px 12px;
-            border-bottom: 2px solid rgba(252, 189, 0, 0.25);
+            border-bottom: 2px solid rgba(26, 58, 107, 0.25);
             white-space: nowrap;
             text-align: center;
             vertical-align: middle;
@@ -459,7 +464,7 @@
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             border-color: transparent;
             color: #1f2333;
-            box-shadow: 0 6px 14px -6px rgba(252, 189, 0, 0.5);
+            box-shadow: 0 6px 14px -6px rgba(26, 58, 107, 0.5);
         }
 
         .rejected-pagination .page-item.disabled .page-link {

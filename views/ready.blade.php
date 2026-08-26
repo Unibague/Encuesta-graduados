@@ -377,6 +377,16 @@
                 <button type="submit" class="btn-search">Buscar</button>
             </form>
 
+            <div class="bulk-approve-wrap">
+                <form action="/app/controllers/approve.php" method="POST"
+                      onsubmit="return confirm('¿Estás seguro de aprobar todos los registros faltantes?');">
+                    <input type="hidden" name="approve_all" value="1">
+                    <button type="submit" class="bulk-approve-button">
+                        Aprobar todos los faltantes
+                    </button>
+                </form>
+            </div>
+
             <div class="page-scroll">
                 <table class="ready-table">
                     <thead>

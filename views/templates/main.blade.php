@@ -31,6 +31,9 @@
             --primary: #1A3A6B;
             --primary-dark: #0F2747;
             --primary-light: #E8EEF7;
+            --primary: #1A3A6B;
+            --primary-dark: #0F2747;
+            --primary-light: #E8EEF7;
             --success: #16a672;
             --success-light: #e4f7f0;
             --danger: #ef4444;
@@ -61,6 +64,7 @@
             font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
             color: var(--text);
             background:
+                radial-gradient(circle at 12% 8%, rgba(26, 58, 107, 0.10), transparent 40%),
                 radial-gradient(circle at 12% 8%, rgba(26, 58, 107, 0.10), transparent 40%),
                 radial-gradient(circle at 88% 92%, rgba(22, 166, 114, 0.08), transparent 42%),
                 #f6f6fb;
@@ -132,6 +136,7 @@
         .navbar-nav .nav-link.active {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: #fff !important;
+            color: #fff !important;
             font-weight: 700;
 >>>>>>> Stashed changes
         }
@@ -161,23 +166,28 @@
             border-color: var(--primary);
             color: var(--primary);
             background: #fff;
+            background: #fff;
             transition: background-color 0.2s, color 0.2s;
         }
 
         .navbar .btn-logout .btn:hover {
             background: var(--primary);
             color: #fff;
+            color: #fff;
         }
 
         .navbar-toggler {
+            border-color: rgba(26, 58, 107, 0.4);
             border-color: rgba(26, 58, 107, 0.4);
         }
 
         .navbar-toggler:focus {
             box-shadow: 0 0 0 4px rgba(26, 58, 107, 0.25);
+            box-shadow: 0 0 0 4px rgba(26, 58, 107, 0.25);
         }
 
         .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path stroke='rgba(26, 58, 107,0.9)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/></svg>");
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path stroke='rgba(26, 58, 107,0.9)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/></svg>");
         }
 
@@ -356,47 +366,59 @@
                                 Listos para actualizar
                             </a>
                         </li> 
+                        </li> 
 
+                        <!-- <li class="nav-item">
                         <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'pending.php' ? 'active' : '' }}"
                                href="/pending.php">
                                 No están en SIGA
                             </a>
                         </li> 
+                        </li> 
 
+                        <!-- <li class="nav-item">
                         <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'not_graduated.php' ? 'active' : '' }}"
                                href="/not_graduated.php">
                                 Egresados
                             </a>
                         </li> -->
+                        </li> -->
 
+                        <!-- <li class="nav-item">
                         <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'migrated.php' ? 'active' : '' }}"
                                href="/migrated.php">
                                 Historial SIGA
                             </a>
                         </li> -->
+                        </li> -->
 
                         <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'migrated_full.php' ? 'active' : '' }}"
                                href="/migrated_full.php">
                                 Registros
+                                Registros
                             </a>
                         </li>
 
+                        <!-- <li class="nav-item">
                         <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'rejected.php' ? 'active' : '' }}"
                                href="/rejected.php">
                                 Rechazados
                             </a>
                         </li> -->
+                        </li> -->
 
+                        <!-- <li class="nav-item">
                         <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'deleted.php' ? 'active' : '' }}"
                                href="/deleted.php">
                                 Borrados
                             </a>
+                        </li> -->
                         </li> -->
 
                         <li class="nav-item">

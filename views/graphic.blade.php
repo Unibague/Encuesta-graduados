@@ -10,9 +10,9 @@
         <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
             :root {
-                --primary: #FCBD00;
-                --primary-dark: #D9A200;
-                --primary-light: #FFF8E0;
+                --primary: #1A3A6B;
+                --primary-dark: #0F2747;
+                --primary-light: #E8EEF7;
                 --success: #16a672;
                 --success-light: #e4f7f0;
                 --danger: #ef4444;
@@ -20,14 +20,14 @@
                 --text: #1f2333;
                 --text-muted: #7c8093;
                 --border: #e6e5f1;
-                --shadow: 0 20px 45px -20px rgba(252, 189, 0, 0.35);
+                --shadow: 0 20px 45px -20px rgba(26, 58, 107, 0.35);
             }
 
             .graphic-page {
                 min-height: 100vh;
                 padding: 40px 16px 60px;
                 background:
-                    radial-gradient(circle at 12% 8%, rgba(252, 189, 0, 0.18), transparent 40%),
+                    radial-gradient(circle at 12% 8%, rgba(26, 58, 107, 0.18), transparent 40%),
                     radial-gradient(circle at 88% 92%, rgba(22, 166, 114, 0.14), transparent 42%),
                     #f6f6fb;
                 font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -63,7 +63,7 @@
                 border-radius: 26px;
                 padding: 32px;
                 box-shadow: var(--shadow);
-                border: 1px solid rgba(252, 189, 0, 0.12);
+                border: 1px solid rgba(26, 58, 107, 0.12);
             }
 
             .chart-card {

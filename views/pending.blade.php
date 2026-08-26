@@ -15,6 +15,9 @@
                 --primary: #1A3A6B;
                 --primary-dark: #0F2747;
                 --primary-light: #E8EEF7;
+                --primary: #1A3A6B;
+                --primary-dark: #0F2747;
+                --primary-light: #E8EEF7;
                 --success: #16a672;
                 --success-light: #e4f7f0;
                 --danger: #ef4444;
@@ -22,6 +25,7 @@
                 --text: #1f2333;
                 --text-muted: #7c8093;
                 --border: #e6e5f1;
+                --shadow: 0 20px 45px -20px rgba(26, 58, 107, 0.25);
                 --shadow: 0 20px 45px -20px rgba(26, 58, 107, 0.25);
             }
 
@@ -52,6 +56,7 @@
                 padding: 28px 24px;
                 box-shadow: var(--shadow);
                 border: 1px solid rgba(26, 58, 107, 0.12);
+                border: 1px solid rgba(26, 58, 107, 0.12);
             }
 
             .search-wrap {
@@ -80,6 +85,7 @@
                 border-color: var(--primary);
                 background: #fff;
                 box-shadow: 0 0 0 4px rgba(26, 58, 107, 0.18);
+                box-shadow: 0 0 0 4px rgba(26, 58, 107, 0.18);
             }
 
             .search-wrap input::placeholder {
@@ -96,6 +102,7 @@
                 font-size: 14px;
                 font-family: inherit;
                 cursor: pointer;
+                box-shadow: 0 8px 18px -8px rgba(26, 58, 107, 0.5);
                 box-shadow: 0 8px 18px -8px rgba(26, 58, 107, 0.5);
                 transition: filter 0.2s, transform 0.1s;
             }
@@ -354,6 +361,7 @@
                 background: linear-gradient(135deg, var(--primary), var(--primary-dark));
                 border-color: transparent;
                 color: #1f2333;
+                box-shadow: 0 6px 14px -6px rgba(26, 58, 107, 0.5);
                 box-shadow: 0 6px 14px -6px rgba(26, 58, 107, 0.5);
             }
 

@@ -14,7 +14,7 @@
         :root {
             --pink:   #e91e8c;
             --cyan:   #00d4e0;
-            --yellow: #ffc107;
+            --yellow: #3B82F6;
             --orange: #ff6d00;
             --purple: #7c3aed;
             --indigo: #4338ca;
@@ -244,7 +244,7 @@
 
         .card-stripe {
             height: 4px;
-            background: linear-gradient(90deg, #e91e8c, #7c3aed, #4338ca, #00d4e0, #ffc107);
+            background: linear-gradient(90deg, #e91e8c, #7c3aed, #4338ca, #00d4e0, #1A3A6B);
             background-size: 200%;
             animation: stripeSlide 4s linear infinite;
         }

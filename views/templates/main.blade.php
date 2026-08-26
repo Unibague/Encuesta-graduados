@@ -17,10 +17,25 @@
     <script src="/tablefilter/tablefilter.js"></script>
 
     <style>
+<<<<<<< Updated upstream
         .navbar-brand {
             display: flex;
             align-items: center;
             gap: 12px;
+=======
+        :root {
+            --primary: #1A3A6B;
+            --primary-dark: #0F2747;
+            --primary-light: #E8EEF7;
+            --success: #16a672;
+            --success-light: #e4f7f0;
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
+            --text: #1f2333;
+            --text-muted: #7c8093;
+            --border: #e6e5f1;
+            --shadow: 0 20px 45px -20px rgba(26, 58, 107, 0.35);
+>>>>>>> Stashed changes
         }
 
         .navbar-brand img {
@@ -36,6 +51,19 @@
             overflow-x: hidden;
         }
 
+<<<<<<< Updated upstream
+=======
+        body {
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 12% 8%, rgba(26, 58, 107, 0.10), transparent 40%),
+                radial-gradient(circle at 88% 92%, rgba(22, 166, 114, 0.08), transparent 42%),
+                #f6f6fb;
+        }
+
+        /* ===== Navbar ===== */
+>>>>>>> Stashed changes
         .navbar {
             width: 100%;
             min-width: 0;
@@ -70,12 +98,34 @@
         }
 
         .navbar-nav .nav-link:hover {
+<<<<<<< Updated upstream
             background-color: rgba(255, 255, 255, 0.1);
         }
 
         .navbar-nav .nav-link.active {
             background-color: rgba(255, 255, 255, 0.2);
             font-weight: 600;
+=======
+            background-color: rgba(26, 58, 107, 0.14);
+            color: var(--primary);
+        }
+
+        .navbar-nav .nav-link.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff !important;
+            font-weight: 700;
+>>>>>>> Stashed changes
+        }
+
+        /* Mantiene el contraste de los elementos activos y los encabezados. */
+        table thead th {
+            background: var(--primary) !important;
+            color: #fff !important;
+        }
+
+        .btn-search,
+        .btn-primary {
+            color: #fff !important;
         }
 
         .navbar .btn-logout {
@@ -83,6 +133,37 @@
             white-space: nowrap;
         }
 
+<<<<<<< Updated upstream
+=======
+        .navbar .btn-logout .btn {
+            border-radius: 10px;
+            font-weight: 700;
+            border-width: 2px;
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #fff;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .navbar .btn-logout .btn:hover {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .navbar-toggler {
+            border-color: rgba(26, 58, 107, 0.4);
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: 0 0 0 4px rgba(26, 58, 107, 0.25);
+        }
+
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path stroke='rgba(26, 58, 107,0.9)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/></svg>");
+        }
+
+        /* ===== Main content ===== */
+>>>>>>> Stashed changes
         main {
             width: 100%;
             min-width: 0;
@@ -234,49 +315,49 @@
                                href="/ready.php">
                                 Listos para actualizar
                             </a>
-                        </li>
+                        </li> 
 
-                        <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'pending.php' ? 'active' : '' }}"
                                href="/pending.php">
                                 No están en SIGA
                             </a>
-                        </li>
+                        </li> 
 
-                        <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'not_graduated.php' ? 'active' : '' }}"
                                href="/not_graduated.php">
                                 Egresados
                             </a>
-                        </li>
+                        </li> -->
 
-                        <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'migrated.php' ? 'active' : '' }}"
                                href="/migrated.php">
                                 Historial SIGA
                             </a>
-                        </li>
+                        </li> -->
 
                         <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'migrated_full.php' ? 'active' : '' }}"
                                href="/migrated_full.php">
-                                Datos
+                                Registros
                             </a>
                         </li>
 
-                        <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'rejected.php' ? 'active' : '' }}"
                                href="/rejected.php">
                                 Rechazados
                             </a>
-                        </li>
+                        </li> -->
 
-                        <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'deleted.php' ? 'active' : '' }}"
                                href="/deleted.php">
                                 Borrados
                             </a>
-                        </li>
+                        </li> -->
 
                         <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'graphic.php' ? 'active' : '' }}"

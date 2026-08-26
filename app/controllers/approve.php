@@ -18,6 +18,11 @@ $dotenv->safeLoad();
 // =========================
 $request = parseRequest();
 
+if (!empty($request->approve_all)) {
+    approveAllReadyRecords();
+    exit;
+}
+
 if (empty($request->id) || empty($request->identification_number)) {
     flashSession('Datos incompletos para actualizar');
     header('Location: ' . $_SERVER['HTTP_REFERER']);
@@ -112,6 +117,70 @@ function approveLog(string $message, string $level = 'INFO'): void
     }
 
     file_put_contents($logDir . '/approve.log', $line, FILE_APPEND);
+}
+
+function approveAllReadyRecords(): void
+{
+    $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+    $userId = (int) user()->id;
+    $successCount = 0;
+    $failureCount = 0;
+
+    $rows = $db->makeQuery("SELECT * FROM form_answers
+        WHERE is_graduated = 1
+          AND is_migrated = 0
+          AND is_denied = 0
+          AND is_deleted = 0
+        ORDER BY created_at DESC")->fetch_all(MYSQLI_ASSOC);
+
+    foreach ($rows as $row) {
+        $request = (object) [
+            'email' => $row['email'] ?? '',
+            'city' => $row['city'] ?? '',
+            'address' => $row['address'] ?? '',
+            'mobile_phone' => $row['mobile_phone'] ?? '',
+            'alternative_mobile_phone' => $row['alternative_mobile_phone'] ?? '',
+        ];
+        $identificationNumber = trim((string) ($row['identification_number'] ?? ''));
+
+        if ($identificationNumber === '') {
+            $failureCount++;
+            continue;
+        }
+
+        if (!hasUpdateData($request)) {
+            $success = $db->makeQuery("UPDATE form_answers SET
+                is_migrated = 1, migrated_by = $userId, updated_at = NOW()
+                WHERE identification_number = '" . addslashes($identificationNumber) . "'");
+            $success ? $successCount++ : $failureCount++;
+            continue;
+        }
+
+        $response = updateUserData($identificationNumber, $request);
+        $isSuccessful = $response
+            && !isset($response->error)
+            && (!isset($response->success) || $response->success !== false)
+            && (($response->ok ?? false) === true);
+
+        if (!$isSuccessful) {
+            $failureCount++;
+            approveLog('Fallo en aprobación masiva para documento ' . $identificationNumber, 'ERROR');
+            continue;
+        }
+
+        $updated = $db->makeQuery("UPDATE form_answers SET
+            is_migrated = 1, migrated_by = $userId, updated_at = NOW()
+            WHERE identification_number = '" . addslashes($identificationNumber) . "'");
+        $updated ? $successCount++ : $failureCount++;
+    }
+
+    $message = "Aprobación masiva finalizada: $successCount registro(s) procesado(s)";
+    if ($failureCount > 0) {
+        $message .= " y $failureCount con error; permanecen pendientes.";
+    }
+
+    flashSession($message);
+    header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/ready.php'));
 }
 
 function updateUserData(string $identification_number, object $request): ?object

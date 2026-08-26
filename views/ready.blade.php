@@ -7,6 +7,126 @@
     {{-- HEADER SLOT --}}
     @slot('header')
         <style>
+<<<<<<< Updated upstream
+=======
+            :root {
+                --primary: #1A3A6B;
+                --primary-dark: #0F2747;
+                --primary-light: #E8EEF7;
+                --success: #16a672;
+                --success-light: #e4f7f0;
+                --danger: #ef4444;
+                --danger-light: #fef2f2;
+                --text: #1f2333;
+                --text-muted: #7c8093;
+                --border: #e6e5f1;
+                --shadow: 0 20px 45px -20px rgba(26, 58, 107, 0.25);
+            }
+
+            .ready-page {
+                font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+                color: var(--text);
+                padding: 10px 0 40px;
+            }
+
+            .ready-page h1 {
+                font-size: 1.75rem;
+                font-weight: 800;
+                letter-spacing: -0.02em;
+                margin: 0 0 6px;
+                text-align: center;
+            }
+
+            .ready-subtitle {
+                text-align: center;
+                color: var(--text-muted);
+                font-size: 0.95rem;
+                margin-bottom: 28px;
+            }
+
+            .ready-card {
+                background: #ffffff;
+                border-radius: 22px;
+                padding: 28px 24px;
+                box-shadow: var(--shadow);
+                border: 1px solid rgba(26, 58, 107, 0.12);
+            }
+
+            .search-wrap {
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                margin-bottom: 24px;
+                flex-wrap: wrap;
+            }
+
+            .search-wrap input {
+                max-width: 420px;
+                width: 100%;
+                padding: 12px 16px;
+                border: 2px solid var(--border);
+                border-radius: 14px;
+                font-size: 0.95rem;
+                font-family: inherit;
+                background: #fbfbfe;
+                color: var(--text);
+                transition: border-color 0.2s, box-shadow 0.2s;
+            }
+
+            .search-wrap input:focus {
+                outline: none;
+                border-color: var(--primary);
+                background: #fff;
+                box-shadow: 0 0 0 4px rgba(26, 58, 107, 0.18);
+            }
+
+            .search-wrap input::placeholder {
+                color: #b3b4c6;
+            }
+
+            .bulk-approve-wrap {
+                display: flex;
+                justify-content: flex-end;
+                margin-bottom: 24px;
+            }
+
+            .bulk-approve-button {
+                background: linear-gradient(135deg, var(--success), #12855e);
+                color: #fff;
+                border: none;
+                border-radius: 13px;
+                padding: 12px 22px;
+                font-weight: 700;
+                font-size: 14px;
+                font-family: inherit;
+                cursor: pointer;
+                box-shadow: 0 8px 18px -8px rgba(22, 166, 114, 0.5);
+            }
+
+            .btn-search {
+                background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                color: #1f2333;
+                border: none;
+                border-radius: 13px;
+                padding: 12px 22px;
+                font-weight: 700;
+                font-size: 14px;
+                font-family: inherit;
+                cursor: pointer;
+                box-shadow: 0 8px 18px -8px rgba(26, 58, 107, 0.5);
+                transition: filter 0.2s, transform 0.1s;
+            }
+
+            .btn-search:hover {
+                filter: brightness(1.05);
+            }
+
+            .btn-search:active {
+                transform: scale(0.97);
+            }
+
+            /* Tabla */
+>>>>>>> Stashed changes
             .page-scroll {
                 overflow-x: auto;
                 width: 100%;
@@ -16,11 +136,191 @@
                 min-width: 1600px;
             }
 
+<<<<<<< Updated upstream
             th, td {
                 white-space: nowrap;
                 text-align: center;
                 vertical-align: middle;
                 height: 50px;
+=======
+            .ready-table thead th {
+                background: var(--primary-light);
+                color: var(--primary-dark);
+                font-weight: 800;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                padding: 14px 12px;
+                border-bottom: 2px solid rgba(26, 58, 107, 0.25);
+                white-space: nowrap;
+                text-align: center;
+                vertical-align: middle;
+            }
+
+            .ready-table thead th:first-child {
+                border-radius: 12px 0 0 0;
+            }
+
+            .ready-table thead th:last-child {
+                border-radius: 0 12px 0 0;
+            }
+
+            .ready-table tbody td {
+                padding: 14px 12px;
+                border-bottom: 1px solid #f0f0f7;
+                white-space: nowrap;
+                text-align: center;
+                vertical-align: middle;
+                height: auto;
+                color: var(--text);
+            }
+
+            .ready-table tbody tr:hover {
+                background: #fafafd;
+            }
+
+            .ready-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .ready-table td p {
+                margin: 0;
+                font-weight: 600;
+                color: var(--text);
+            }
+
+            .ready-table td hr {
+                margin: 6px 0;
+                border: none;
+                border-top: 1px dashed #e6e5f1;
+            }
+
+            .ready-table td p + hr + p {
+                font-weight: 500;
+                color: var(--text-muted);
+                font-size: 0.82rem;
+            }
+
+            .ready-table input[type="checkbox"] {
+                accent-color: var(--primary);
+                width: 16px;
+                height: 16px;
+                margin-top: 6px;
+                cursor: pointer;
+            }
+
+            .btn-approve {
+                background: linear-gradient(135deg, var(--success), #12855e) !important;
+                color: #fff !important;
+                border: none !important;
+                border-radius: 10px !important;
+                padding: 8px 14px !important;
+                font-weight: 700 !important;
+                font-size: 12.5px !important;
+                font-family: inherit !important;
+                box-shadow: 0 6px 14px -6px rgba(22, 166, 114, 0.45);
+                transition: filter 0.2s, transform 0.1s;
+            }
+
+            .btn-approve:hover {
+                filter: brightness(1.06);
+            }
+
+            .btn-approve:disabled {
+                opacity: 0.75;
+                cursor: not-allowed;
+            }
+
+            .btn-deny {
+                background: #fff !important;
+                color: var(--danger) !important;
+                border: 2px solid #fecaca !important;
+                border-radius: 10px !important;
+                padding: 7px 14px !important;
+                font-weight: 700 !important;
+                font-size: 12.5px !important;
+                font-family: inherit !important;
+                transition: background 0.2s, border-color 0.2s;
+            }
+
+            .btn-deny:hover {
+                background: var(--danger-light) !important;
+                border-color: var(--danger) !important;
+            }
+
+            .actions-cell {
+                display: flex;
+                gap: 8px;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 48px 20px !important;
+                color: var(--text-muted) !important;
+                font-weight: 600;
+                font-size: 0.95rem;
+            }
+
+            .ready-pagination {
+                display: flex;
+                justify-content: center;
+                margin-top: 28px;
+                gap: 4px;
+                list-style: none;
+                padding: 0;
+            }
+
+            .ready-pagination .page-item .page-link {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 38px;
+                height: 38px;
+                padding: 0 12px;
+                border-radius: 11px;
+                border: 2px solid var(--border);
+                background: #fff;
+                color: var(--text);
+                font-weight: 700;
+                font-size: 13.5px;
+                text-decoration: none;
+                transition: all 0.15s;
+                font-family: inherit;
+            }
+
+            .ready-pagination .page-item .page-link:hover {
+                border-color: var(--primary);
+                color: var(--primary-dark);
+                background: var(--primary-light);
+            }
+
+            .ready-pagination .page-item.active .page-link {
+                background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                border-color: transparent;
+                color: #1f2333;
+                box-shadow: 0 6px 14px -6px rgba(26, 58, 107, 0.5);
+            }
+
+            .ready-pagination .page-item.disabled .page-link {
+                opacity: 0.4;
+                pointer-events: none;
+            }
+
+            .toast.text-bg-success {
+                background: var(--success) !important;
+                border-radius: 14px !important;
+                font-family: 'Manrope', sans-serif;
+                font-weight: 600;
+            }
+
+            .toast.text-bg-danger {
+                background: var(--danger) !important;
+                border-radius: 14px !important;
+                font-family: 'Manrope', sans-serif;
+                font-weight: 600;
+>>>>>>> Stashed changes
             }
         </style>
     @endslot
@@ -89,10 +389,40 @@
             </tr>
             </thead>
 
+<<<<<<< Updated upstream
             <tbody>
             @forelse($graduatedAnswers as $answer)
                 <tr>
                     <td>{{ $answer['id'] }}</td>
+=======
+            <div class="bulk-approve-wrap">
+                <form action="/app/controllers/approve.php" method="POST"
+                      onsubmit="return confirm('¿Estás seguro de aprobar todos los registros faltantes?');">
+                    <input type="hidden" name="approve_all" value="1">
+                    <button type="submit" class="bulk-approve-button">
+                        Aprobar todos los faltantes
+                    </button>
+                </form>
+            </div>
+
+            <div class="page-scroll">
+                <table class="ready-table">
+                    <thead>
+                    <tr>
+                        <th>#ID</th>
+                        <th>Cédula</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Correo electrónico</th>
+                        <th>Teléfono</th>
+                        <th>Teléfono alterno</th>
+                        <th>Ciudad</th>
+                        <th>Dirección</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                    </thead>
+>>>>>>> Stashed changes
 
                     <td>
                         <p>{{ $answer['identification_number'] }}</p>

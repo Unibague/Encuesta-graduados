@@ -6,7 +6,67 @@
 
     @slot('header')
         <style>
+<<<<<<< Updated upstream
             .page-scroll { overflow-x: auto; width: 100%; }
+=======
+            :root {
+                --primary: #1A3A6B;
+                --primary-dark: #0F2747;
+                --primary-light: #E8EEF7;
+                --success: #16a672;
+                --success-light: #e4f7f0;
+                --danger: #ef4444;
+                --danger-light: #fef2f2;
+                --text: #1f2333;
+                --text-muted: #7c8093;
+                --border: #e6e5f1;
+                --shadow: 0 20px 45px -20px rgba(26, 58, 107, 0.35);
+            }
+
+            .graphic-page {
+                min-height: 100vh;
+                padding: 40px 16px 60px;
+                background:
+                    radial-gradient(circle at 12% 8%, rgba(26, 58, 107, 0.18), transparent 40%),
+                    radial-gradient(circle at 88% 92%, rgba(22, 166, 114, 0.14), transparent 42%),
+                    #f6f6fb;
+                font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+                color: var(--text);
+            }
+
+            .graphic-container {
+                max-width: 1100px;
+                width: 100%;
+                margin: 0 auto;
+            }
+
+            .graphic-intro {
+                text-align: center;
+                margin-bottom: 28px;
+            }
+
+            .graphic-intro h1 {
+                font-size: 1.9rem;
+                font-weight: 800;
+                letter-spacing: -0.02em;
+                margin: 0 0 8px;
+            }
+
+            .graphic-intro p {
+                color: var(--text-muted);
+                font-size: .95rem;
+                margin: 0;
+            }
+
+            .charts-card {
+                background: #fff;
+                border-radius: 26px;
+                padding: 32px;
+                box-shadow: var(--shadow);
+                border: 1px solid rgba(26, 58, 107, 0.12);
+            }
+
+>>>>>>> Stashed changes
             .chart-card {
                 background: #fff;
                 border-radius: .5rem;

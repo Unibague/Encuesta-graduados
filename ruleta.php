@@ -11,7 +11,7 @@
 :root {
     --pink:   #e91e8c;
     --cyan:   #00d4e0;
-    --yellow: #ffc107;
+    --yellow: #3B82F6;
     --purple: #7c3aed;
     --indigo: #4338ca;
     --navy:   #07111f;
@@ -741,7 +741,7 @@ function closeModal() {
 }
 
 function launchConfetti() {
-    const colors = ['#e91e8c','#ffc107','#00d4e0','#7c3aed','#ff6d00','#fff'];
+    const colors = ['#e91e8c','#1A3A6B','#00d4e0','#7c3aed','#ff6d00','#fff'];
     for (let i = 0; i < 80; i++) {
         const el = document.createElement('div');
         el.className = 'confetti-piece';

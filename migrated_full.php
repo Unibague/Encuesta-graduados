@@ -24,7 +24,7 @@ $db = new EasySQL(
     getenv('ENVIRONMENT')
 );
 
-$where = "fa.is_migrated = 1 AND fa.is_deleted = 0";
+$where = "fa.is_deleted = 0";
 
 if ($search !== '') {
     $s = addslashes($search);
@@ -218,6 +218,10 @@ function getDynamicColumnValue(array $row, array $column): string
 function getBaseColumnValue(array $row, string $field): string
 {
     $value = $row[$field] ?? '';
+
+    if ($field === 'updated_at' && $value === '') {
+        $value = $row['modificated_at'] ?? '';
+    }
 
     if ($field === 'is_graduated') {
         return ((int) $value === 1) ? '1' : '0';
@@ -670,18 +674,14 @@ $formColumns = array_values(
 );
 
 $baseColumns = [
-    'id' => 'ID',
+    'updated_at' => 'Fecha actualización',
     'identification_number' => 'Cédula',
-    'name' => 'Nombres',
-    'last_name' => 'Apellidos',
+    'name' => 'Nombre',
+    'last_name' => 'Apellido',
     'email' => 'Correo',
     'mobile_phone' => 'Teléfono',
-    'alternative_mobile_phone' => 'Teléfono alterno',
-    'address' => 'Dirección',
     'city' => 'Ciudad',
-    'country' => 'País',
-    'is_graduated' => '¿Graduado?',
-    'updated_at' => 'Última actualización',
+    'is_migrated' => 'Estado SIGA',
 ];
 
 foreach ($allRows as $rowIndex => $row) {

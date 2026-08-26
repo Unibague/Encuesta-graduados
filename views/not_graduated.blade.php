@@ -10,8 +10,6 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
-<<<<<<< Updated upstream
-=======
             :root {
                 --primary: #1A3A6B;
                 --primary-dark: #0F2747;
@@ -113,24 +111,20 @@
             }
 
             /* Tabla */
->>>>>>> Stashed changes
             .page-scroll {
                 overflow-x: auto;
                 width: 100%;
                 border-radius: 16px;
             }
 
-            table {
-                min-width: 1400px;
+            .ready-table {
+                min-width: 1500px;
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                font-size: 0.88rem;
             }
 
-<<<<<<< Updated upstream
-            th, td {
-                white-space: nowrap;
-                text-align: center;
-                vertical-align: middle;
-                height: 50px;
-=======
             .ready-table thead th {
                 background: var(--primary-light);
                 color: var(--primary-dark);
@@ -304,7 +298,6 @@
                 border-radius: 14px !important;
                 font-family: 'Manrope', sans-serif;
                 font-weight: 600;
->>>>>>> Stashed changes
             }
         </style>
     @endslot

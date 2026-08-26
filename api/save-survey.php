@@ -41,6 +41,9 @@ $city = (string) firstAnswer($answers, ['ciudad', 'Ciudad']);
 
 $storedAnswers = $answers;
 $storedAnswers['_survey_type'] = $surveyType;
+$storedAnswers['_survey_question_types'] = is_array($input['question_types'] ?? null)
+    ? $input['question_types']
+    : [];
 $storedAnswers['_survey_completed_at'] = date('Y-m-d H:i:s');
 $jsonAnswers = json_encode($storedAnswers, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
@@ -101,7 +104,32 @@ if ($existing) {
         )");
 }
 
-echo json_encode(['success' => true, 'message' => 'Encuesta guardada correctamente']);
+$sigaResponse = sendSurveyDataToSiga(
+    $identificationNumber,
+    $name,
+    $lastName,
+    $email,
+    $phone,
+    $city
+);
+
+if ($sigaResponse->ok) {
+    $db->makeQuery("UPDATE form_answers SET is_migrated = 1, modificated_at = NOW()
+        WHERE identification_number = '$identSafe' AND is_deleted = 0");
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Encuesta guardada y enviada a SIGA correctamente',
+        'siga_sent' => true,
+    ]);
+    exit;
+}
+
+echo json_encode([
+    'success' => true,
+    'message' => 'Encuesta guardada, pero no se pudo enviar a SIGA: ' . $sigaResponse->error,
+    'siga_sent' => false,
+]);
 
 function firstAnswer(array $answers, array $keys): mixed
 {
@@ -126,4 +154,117 @@ function verifyIfIsGraduated(string $identificationNumber): int
 
     $response = json_decode((string) $curl->makeRequest(), true);
     return isset($response['data']) ? (int) $response['data'] : 0;
+}
+
+function sendSurveyDataToSiga(
+    string $identificationNumber,
+    string $name,
+    string $lastName,
+    string $email,
+    string $phone,
+    string $city
+): object {
+    $data = [
+        'consulta' => 'Modificar',
+        'documento' => $identificationNumber,
+        'nombres' => $name,
+        'apellidos' => $lastName,
+        'correo' => $email,
+        'telefono' => $phone,
+        'ciudad' => normalizeCityForSiga($city),
+        'token' => md5($identificationNumber) . getenv('SECURE_TOKEN'),
+    ];
+
+    try {
+        if (function_exists('curl_init')) {
+            $curl = new \Ospina\CurlCobain\CurlCobain(
+                'https://academia.unibague.edu.co/atlante/actualiza_graduados.php'
+            );
+            $curl->setQueryParamsAsArray($data);
+            $response = trim((string) $curl->makeRequest());
+        } else {
+            $url = 'https://academia.unibague.edu.co/atlante/actualiza_graduados.php?'
+                . http_build_query($data);
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'GET',
+                    'timeout' => 20,
+                    'ignore_errors' => true,
+                ],
+                'ssl' => [
+                    'verify_peer' => true,
+                    'verify_peer_name' => true,
+                ],
+            ]);
+            $response = trim((string) file_get_contents($url, false, $context));
+        }
+    } catch (Throwable $exception) {
+        return (object) [
+            'ok' => false,
+            'error' => 'No se pudo conectar con SIGA: ' . $exception->getMessage(),
+        ];
+    }
+
+    if ($response === '') {
+        return (object) [
+            'ok' => false,
+            'error' => 'SIGA no devolvió respuesta',
+        ];
+    }
+
+    $jsonPayload = extractJsonObject($response);
+    $decoded = $jsonPayload !== null ? json_decode($jsonPayload, false) : null;
+
+    if (is_object($decoded)) {
+        if (isset($decoded->error) && $decoded->error) {
+            return (object) [
+                'ok' => false,
+                'error' => (string) $decoded->error,
+            ];
+        }
+
+        if (isset($decoded->success)) {
+            return (object) [
+                'ok' => $decoded->success !== false,
+                'error' => $decoded->success === false
+                    ? 'SIGA rechazó la actualización'
+                    : '',
+            ];
+        }
+    }
+
+    $normalized = strtolower($response);
+    $success = str_contains($normalized, 'actualiz')
+        || str_contains($normalized, 'modific')
+        || str_contains($normalized, 'exito')
+        || str_contains($normalized, 'ok');
+
+    return (object) [
+        'ok' => $success,
+        'error' => $success ? '' : 'Respuesta no válida de SIGA',
+    ];
+}
+
+function normalizeCityForSiga(string $city): string
+{
+    $city = trim($city);
+    $converted = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $city);
+
+    if ($converted !== false) {
+        $city = $converted;
+    }
+
+    return strtoupper(trim($city));
+}
+
+function extractJsonObject(string $response): ?string
+{
+    $start = strpos($response, '{');
+    $end = strrpos($response, '}');
+
+    if ($start === false || $end === false || $end < $start) {
+        return null;
+    }
+
+    return substr($response, $start, $end - $start + 1);
 }

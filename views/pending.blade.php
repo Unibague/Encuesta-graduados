@@ -9,12 +9,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
-<<<<<<< Updated upstream
-=======
             :root {
-                --primary: #1A3A6B;
-                --primary-dark: #0F2747;
-                --primary-light: #E8EEF7;
                 --primary: #1A3A6B;
                 --primary-dark: #0F2747;
                 --primary-light: #E8EEF7;
@@ -25,7 +20,6 @@
                 --text: #1f2333;
                 --text-muted: #7c8093;
                 --border: #e6e5f1;
-                --shadow: 0 20px 45px -20px rgba(26, 58, 107, 0.25);
                 --shadow: 0 20px 45px -20px rgba(26, 58, 107, 0.25);
             }
 
@@ -56,7 +50,6 @@
                 padding: 28px 24px;
                 box-shadow: var(--shadow);
                 border: 1px solid rgba(26, 58, 107, 0.12);
-                border: 1px solid rgba(26, 58, 107, 0.12);
             }
 
             .search-wrap {
@@ -85,7 +78,6 @@
                 border-color: var(--primary);
                 background: #fff;
                 box-shadow: 0 0 0 4px rgba(26, 58, 107, 0.18);
-                box-shadow: 0 0 0 4px rgba(26, 58, 107, 0.18);
             }
 
             .search-wrap input::placeholder {
@@ -103,7 +95,6 @@
                 font-family: inherit;
                 cursor: pointer;
                 box-shadow: 0 8px 18px -8px rgba(26, 58, 107, 0.5);
-                box-shadow: 0 8px 18px -8px rgba(26, 58, 107, 0.5);
                 transition: filter 0.2s, transform 0.1s;
             }
 
@@ -116,20 +107,20 @@
             }
 
             /* Tabla */
->>>>>>> Stashed changes
             .page-scroll {
                 overflow-x: auto;
                 width: 100%;
                 border-radius: 16px;
             }
 
-            table {
-                min-width: 1400px;
+            .ready-table {
+                min-width: 1600px;
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                font-size: 0.88rem;
             }
 
-<<<<<<< Updated upstream
-            th, td {
-=======
             .ready-table thead th {
                 background: var(--primary-light);
                 color: var(--primary-dark);
@@ -139,98 +130,24 @@
                 letter-spacing: 0.03em;
                 padding: 14px 12px;
                 border-bottom: 2px solid rgba(26, 58, 107, 0.25);
->>>>>>> Stashed changes
                 white-space: nowrap;
                 text-align: center;
                 vertical-align: middle;
-                height: auto;
-                color: var(--text);
             }
 
-            .ready-table tbody tr:hover {
-                background: #fafafd;
+            .ready-table thead th:first-child {
+                border-radius: 12px 0 0 0;
             }
 
-            .ready-table tbody tr:last-child td {
-                border-bottom: none;
+            .ready-table thead th:last-child {
+                border-radius: 0 12px 0 0;
             }
 
-            .ready-table td p {
-                margin: 0;
-                font-weight: 600;
-                color: var(--text);
-            }
-
-            .ready-table td hr {
-                margin: 6px 0;
-                border: none;
-                border-top: 1px dashed #e6e5f1;
-            }
-
-            .ready-table td p + hr + p {
-                font-weight: 500;
-                color: var(--text-muted);
-                font-size: 0.82rem;
-            }
-
-            .ready-table input[type="checkbox"] {
-                accent-color: var(--primary);
-                width: 16px;
-                height: 16px;
-                margin-top: 6px;
-                cursor: pointer;
-            }
-
-            .btn-approve {
-                background: linear-gradient(135deg, var(--success), #12855e) !important;
-                color: #fff !important;
-                border: none !important;
-                border-radius: 10px !important;
-                padding: 8px 14px !important;
-                font-weight: 700 !important;
-                font-size: 12.5px !important;
-                font-family: inherit !important;
-                box-shadow: 0 6px 14px -6px rgba(22, 166, 114, 0.45);
-                transition: filter 0.2s, transform 0.1s;
-            }
-
-            .btn-approve:hover {
-                filter: brightness(1.06);
-            }
-
-            .btn-approve:disabled {
-                opacity: 0.75;
-                cursor: not-allowed;
-            }
-
-            .btn-deny {
-                background: #fff !important;
-                color: var(--danger) !important;
-                border: 2px solid #fecaca !important;
-                border-radius: 10px !important;
-                padding: 7px 14px !important;
-                font-weight: 700 !important;
-                font-size: 12.5px !important;
-                font-family: inherit !important;
-                transition: background 0.2s, border-color 0.2s;
-            }
-
-            .btn-deny:hover {
-                background: var(--danger-light) !important;
-                border-color: var(--danger) !important;
-            }
-
-            .actions-cell {
-                display: flex;
-                gap: 8px;
-                justify-content: center;
-                align-items: center;
-            }
-
-            .empty-state {
+            .ready-table tbody td {
+                padding: 14px 12px;
+                border-bottom: 1px solid #f0f0f7;
+                white-space: nowrap;
                 text-align: center;
-<<<<<<< Updated upstream
-=======
                 vertical-align: middle;
                 height: auto;
                 color: var(--text);
@@ -362,7 +279,6 @@
                 border-color: transparent;
                 color: #1f2333;
                 box-shadow: 0 6px 14px -6px rgba(26, 58, 107, 0.5);
-                box-shadow: 0 6px 14px -6px rgba(26, 58, 107, 0.5);
             }
 
             .ready-pagination .page-item.disabled .page-link {
@@ -382,7 +298,6 @@
                 border-radius: 14px !important;
                 font-family: 'Manrope', sans-serif;
                 font-weight: 600;
->>>>>>> Stashed changes
             }
         </style>
     @endslot

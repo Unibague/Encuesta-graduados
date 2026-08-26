@@ -3,8 +3,6 @@
         Iniciar sesión
     @endslot
     @slot('header')
-<<<<<<< Updated upstream
-=======
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -28,24 +26,16 @@
             }
 
             .login-shell {
-                width: 100%;
-                flex: 1;
-                min-height: 0;
-                box-sizing: border-box;
-
+                min-height: 100vh;
                 padding: 40px 16px;
-
                 background:
                     radial-gradient(circle at 12% 8%, rgba(26, 58, 107, 0.18), transparent 40%),
                     radial-gradient(circle at 88% 92%, rgba(22, 166, 114, 0.14), transparent 42%),
                     #f6f6fb;
-
                 display: flex;
                 align-items: center;
                 justify-content: center;
             }
-
-
 
             .login-card {
                 background: #ffffff;
@@ -67,7 +57,7 @@
                 width: 160px;
                 height: 160px;
                 border-radius: 50%;
-                background: radial-gradient(circle, rgba(26, 58, 107,0.12), transparent 70%);
+                background: radial-gradient(circle, rgba(26, 58, 107, 0.12), transparent 70%);
                 pointer-events: none;
             }
 
@@ -157,7 +147,6 @@
                 box-shadow: 0 12px 24px -10px rgba(239, 68, 68, 0.5);
             }
         </style>
->>>>>>> Stashed changes
     @endslot
 
     @if(isset($error))

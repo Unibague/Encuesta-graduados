@@ -9,8 +9,6 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
-<<<<<<< Updated upstream
-=======
             :root {
                 --primary: #1A3A6B;
                 --primary-dark: #0F2747;
@@ -86,28 +84,9 @@
                 color: #b3b4c6;
             }
 
-            .bulk-approve-wrap {
-                display: flex;
-                justify-content: flex-end;
-                margin-bottom: 24px;
-            }
-
-            .bulk-approve-button {
-                background: linear-gradient(135deg, var(--success), #12855e);
-                color: #fff;
-                border: none;
-                border-radius: 13px;
-                padding: 12px 22px;
-                font-weight: 700;
-                font-size: 14px;
-                font-family: inherit;
-                cursor: pointer;
-                box-shadow: 0 8px 18px -8px rgba(22, 166, 114, 0.5);
-            }
-
             .btn-search {
                 background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-                color: #1f2333;
+                color: #fff;
                 border: none;
                 border-radius: 13px;
                 padding: 12px 22px;
@@ -127,8 +106,35 @@
                 transform: scale(0.97);
             }
 
+            .approve-all-form {
+                display: flex;
+                justify-content: center;
+                margin: 0 0 22px;
+            }
+
+            .btn-approve-all {
+                background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                color: #fff;
+                border: none;
+                border-radius: 13px;
+                padding: 13px 22px;
+                font-weight: 700;
+                font-size: 14px;
+                font-family: inherit;
+                cursor: pointer;
+                box-shadow: 0 8px 18px -8px rgba(26, 58, 107, 0.5);
+                transition: filter 0.2s, transform 0.1s;
+            }
+
+            .btn-approve-all:hover {
+                filter: brightness(1.08);
+            }
+
+            .btn-approve-all:active {
+                transform: scale(0.97);
+            }
+
             /* Tabla */
->>>>>>> Stashed changes
             .page-scroll {
                 overflow-x: auto;
                 width: 100%;
@@ -137,15 +143,12 @@
 
             .ready-table {
                 min-width: 1600px;
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                font-size: 0.88rem;
             }
 
-<<<<<<< Updated upstream
-            th, td {
-                white-space: nowrap;
-                text-align: center;
-                vertical-align: middle;
-                height: 50px;
-=======
             .ready-table thead th {
                 background: var(--primary-light);
                 color: var(--primary-dark);
@@ -323,7 +326,6 @@
                 border-radius: 14px !important;
                 font-family: 'Manrope', sans-serif;
                 font-weight: 600;
->>>>>>> Stashed changes
             }
         </style>
     @endslot
@@ -364,6 +366,16 @@
         <h1>Registros listos para actualizar</h1>
         <p class="ready-subtitle">Revisa y aprueba los datos enviados por los egresados</p>
 
+        <form action="/app/controllers/approve.php"
+              method="POST"
+              class="approve-all-form"
+              onsubmit="return confirm('¿Deseas aprobar todos los registros listos para actualizar?')">
+            <input type="hidden" name="approve_all" value="1">
+            <button type="submit" class="btn-approve-all">
+                Aprobar todos los registros
+            </button>
+        </form>
+
         <div class="ready-card">
 
             {{-- BUSCADOR GLOBAL --}}
@@ -377,16 +389,6 @@
                 <button type="submit" class="btn-search">Buscar</button>
             </form>
 
-            <div class="bulk-approve-wrap">
-                <form action="/app/controllers/approve.php" method="POST"
-                      onsubmit="return confirm('¿Estás seguro de aprobar todos los registros faltantes?');">
-                    <input type="hidden" name="approve_all" value="1">
-                    <button type="submit" class="bulk-approve-button">
-                        Aprobar todos los faltantes
-                    </button>
-                </form>
-            </div>
-
             <div class="page-scroll">
                 <table class="ready-table">
                     <thead>
@@ -405,40 +407,10 @@
                     </tr>
                     </thead>
 
-<<<<<<< Updated upstream
-            <tbody>
-            @forelse($graduatedAnswers as $answer)
-                <tr>
-                    <td>{{ $answer['id'] }}</td>
-=======
-            <div class="bulk-approve-wrap">
-                <form action="/app/controllers/approve.php" method="POST"
-                      onsubmit="return confirm('¿Estás seguro de aprobar todos los registros faltantes?');">
-                    <input type="hidden" name="approve_all" value="1">
-                    <button type="submit" class="bulk-approve-button">
-                        Aprobar todos los faltantes
-                    </button>
-                </form>
-            </div>
-
-            <div class="page-scroll">
-                <table class="ready-table">
-                    <thead>
-                    <tr>
-                        <th>#ID</th>
-                        <th>Cédula</th>
-                        <th>Nombre</th>
-                        <th>Apellido</th>
-                        <th>Correo electrónico</th>
-                        <th>Teléfono</th>
-                        <th>Teléfono alterno</th>
-                        <th>Ciudad</th>
-                        <th>Dirección</th>
-                        <th>Fecha</th>
-                        <th>Acciones</th>
-                    </tr>
-                    </thead>
->>>>>>> Stashed changes
+                    <tbody>
+                    @forelse($graduatedAnswers as $answer)
+                        <tr>
+                            <td>{{ $answer['id'] }}</td>
 
                             <td>
                                 <p>{{ $answer['identification_number'] }}</p>

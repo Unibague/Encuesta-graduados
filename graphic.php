@@ -51,6 +51,58 @@ $noGraduadosNoActualizados  = (int) ($counts['no_graduados_no_actualizados'] ?? 
 $total = $graduadosActualizados + $graduadosNoActualizados
        + $noGraduadosActualizados + $noGraduadosNoActualizados;
 
+$surveyQuestionStats = [];
+$surveyRows = $db->makeQuery("SELECT answers FROM form_answers WHERE $where")
+    ->fetch_all(MYSQLI_ASSOC);
+
+foreach ($surveyRows as $surveyRow) {
+    $answers = json_decode($surveyRow['answers'] ?? '', true);
+
+    if (!is_array($answers)) {
+        continue;
+    }
+
+    foreach ($answers as $question => $value) {
+        if (str_starts_with((string) $question, '_')) {
+            continue;
+        }
+
+        $questionTypes = $answers['_survey_question_types'] ?? [];
+        if (!in_array($questionTypes[$question] ?? '', ['radio', 'select'], true)) {
+            continue;
+        }
+
+        $question = trim((string) $question);
+        if ($question === '') {
+            continue;
+        }
+
+        $values = flattenGraphicAnswers($value);
+        foreach ($values as $answerValue) {
+            if ($answerValue === '') {
+                continue;
+            }
+
+            if (!isset($surveyQuestionStats[$question])) {
+                $surveyQuestionStats[$question] = [];
+            }
+
+            $surveyQuestionStats[$question][$answerValue] =
+                ($surveyQuestionStats[$question][$answerValue] ?? 0) + 1;
+        }
+    }
+}
+
+foreach ($surveyQuestionStats as $question => $values) {
+    arsort($values);
+    $surveyQuestionStats[$question] = $values;
+}
+
+$selectedQuestion = trim($_GET['question'] ?? '');
+if (!isset($surveyQuestionStats[$selectedQuestion])) {
+    $selectedQuestion = array_key_first($surveyQuestionStats) ?? '';
+}
+
 // =========================
 // FLASH
 // =========================
@@ -70,6 +122,30 @@ echo $blade->run('graphic', [
     'graduadosNoActualizados'    => $graduadosNoActualizados,
     'noGraduadosActualizados'    => $noGraduadosActualizados,
     'noGraduadosNoActualizados'  => $noGraduadosNoActualizados,
+    'surveyQuestionStats'        => $surveyQuestionStats,
+    'selectedQuestion'            => $selectedQuestion,
     'message'                    => $message,
     'error'                      => $error,
 ]);
+
+function flattenGraphicAnswers($value): array
+{
+    if (!is_array($value)) {
+        return [trim((string) ($value ?? ''))];
+    }
+
+    $values = [];
+    foreach ($value as $key => $item) {
+        if (is_array($item)) {
+            $values = array_merge($values, flattenGraphicAnswers($item));
+            continue;
+        }
+
+        $item = trim((string) $item);
+        if ($item !== '') {
+            $values[] = is_string($key) ? trim($key) . ': ' . $item : $item;
+        }
+    }
+
+    return $values;
+}

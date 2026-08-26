@@ -227,6 +227,14 @@ function getBaseColumnValue(array $row, string $field): string
         return ((int) $value === 1) ? '1' : '0';
     }
 
+    if ($field === 'name' || $field === 'last_name') {
+        return normalizePersonName((string) $value);
+    }
+
+    if ($field === 'mobile_phone' || $field === 'alternative_mobile_phone') {
+        return normalizeColombianPhone((string) $value);
+    }
+
     if ($field === 'updated_at' && $value !== '') {
         $timestamp = strtotime((string) $value);
 
@@ -236,6 +244,44 @@ function getBaseColumnValue(array $row, string $field): string
     }
 
     return stringifyAnswer($value);
+}
+
+function normalizePersonName(string $value): string
+{
+    $value = trim($value);
+    if ($value === '') {
+        return '';
+    }
+
+    $value = strtr($value, [
+        'á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u',
+        'Á' => 'A', 'É' => 'E', 'Í' => 'I', 'Ó' => 'O', 'Ú' => 'U',
+        'ñ' => 'n', 'Ñ' => 'N',
+    ]);
+    $converted = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+    if ($converted !== false) {
+        $value = $converted;
+    }
+
+    return strtoupper($value);
+}
+
+function normalizeColombianPhone(string $value): string
+{
+    $digits = preg_replace('/\D+/', '', trim($value));
+    if ($digits === null || $digits === '') {
+        return '';
+    }
+
+    if (str_starts_with($digits, '0057')) {
+        $digits = substr($digits, 2);
+    }
+
+    if (str_starts_with($digits, '57')) {
+        return '+' . $digits;
+    }
+
+    return '+57' . $digits;
 }
 
 function isSexOrGenderLabel(string $label): bool
@@ -838,6 +884,11 @@ $filteredRows = array_values(
 $total = count($filteredRows);
 $totalPages = max((int) ceil($total / $limit), 1);
 
+if (($_GET['export'] ?? '') === 'excel') {
+    exportMigratedFullCsv($filteredRows, $baseColumns, $formColumns);
+    exit;
+}
+
 if ($page > $totalPages) {
     $page = $totalPages;
 }
@@ -883,3 +934,55 @@ echo $blade->run(
         'baseFilterableColumns' => $baseFilterableColumns,
     ]
 );
+
+function exportMigratedFullCsv(
+    array $rows,
+    array $baseColumns,
+    array $formColumns
+): void {
+    $filename = 'migrated_full_' . date('Y-m-d_H-i-s') . '.csv';
+
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+
+    $output = fopen('php://output', 'wb');
+    fwrite($output, "\xEF\xBB\xBF");
+
+    $headers = array_values($baseColumns);
+    foreach ($formColumns as $column) {
+        $headers[] = $column['label'];
+    }
+
+    fputcsv($output, $headers, ';');
+
+    foreach ($rows as $row) {
+        $values = [];
+
+        foreach ($baseColumns as $field => $_label) {
+            $values[] = excelSafeValue($row['base_values'][$field] ?? '');
+        }
+
+        foreach ($formColumns as $column) {
+            $values[] = excelSafeValue(
+                $row['dynamic_values'][$column['norm']] ?? ''
+            );
+        }
+
+        fputcsv($output, $values, ';');
+    }
+
+    fclose($output);
+}
+
+function excelSafeValue($value): string
+{
+    $value = trim((string) ($value ?? ''));
+
+    if ($value !== '' && preg_match('/^[=+\-@]/', $value)) {
+        return "'" . $value;
+    }
+
+    return $value;
+}

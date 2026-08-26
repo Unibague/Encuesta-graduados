@@ -21,16 +21,7 @@
     <script src="/tablefilter/tablefilter.js"></script>
 
     <style>
-<<<<<<< Updated upstream
-        .navbar-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-=======
         :root {
-            --primary: #1A3A6B;
-            --primary-dark: #0F2747;
-            --primary-light: #E8EEF7;
             --primary: #1A3A6B;
             --primary-dark: #0F2747;
             --primary-light: #E8EEF7;
@@ -42,36 +33,24 @@
             --text-muted: #7c8093;
             --border: #e6e5f1;
             --shadow: 0 20px 45px -20px rgba(26, 58, 107, 0.35);
->>>>>>> Stashed changes
         }
 
-        .navbar-brand img {
-            height: 42px;
-            width: auto;
-        }
-
-        /* Evita que cualquier elemento hijo provoque scroll horizontal */
-        html,
-        body {
+        html, body {
             width: 100%;
             max-width: 100%;
             overflow-x: hidden;
         }
 
-<<<<<<< Updated upstream
-=======
         body {
             font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
             color: var(--text);
             background:
-                radial-gradient(circle at 12% 8%, rgba(26, 58, 107, 0.10), transparent 40%),
                 radial-gradient(circle at 12% 8%, rgba(26, 58, 107, 0.10), transparent 40%),
                 radial-gradient(circle at 88% 92%, rgba(22, 166, 114, 0.08), transparent 42%),
                 #f6f6fb;
         }
 
         /* ===== Navbar ===== */
->>>>>>> Stashed changes
         .navbar {
             width: 100%;
             min-width: 0;
@@ -116,40 +95,19 @@
             font-weight: 600;
             white-space: nowrap;
             border-radius: 10px;
-            color: rgba(255, 255, 255, 0.85);
+            color: #fff !important;
             transition: background-color 0.2s, color 0.2s;
         }
 
         .navbar-nav .nav-link:hover {
-<<<<<<< Updated upstream
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .navbar-nav .nav-link.active {
-            background-color: rgba(255, 255, 255, 0.2);
-            font-weight: 600;
-=======
             background-color: rgba(26, 58, 107, 0.14);
-            color: var(--primary);
+            color: #fff !important;
         }
 
         .navbar-nav .nav-link.active {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: #fff !important;
-            color: #fff !important;
             font-weight: 700;
->>>>>>> Stashed changes
-        }
-
-        /* Mantiene el contraste de los elementos activos y los encabezados. */
-        table thead th {
-            background: var(--primary) !important;
-            color: #fff !important;
-        }
-
-        .btn-search,
-        .btn-primary {
-            color: #fff !important;
         }
 
         .navbar .btn-logout {
@@ -157,8 +115,6 @@
             white-space: nowrap;
         }
 
-<<<<<<< Updated upstream
-=======
         .navbar .btn-logout .btn {
             border-radius: 10px;
             font-weight: 700;
@@ -166,56 +122,106 @@
             border-color: var(--primary);
             color: var(--primary);
             background: #fff;
-            background: #fff;
             transition: background-color 0.2s, color 0.2s;
         }
 
         .navbar .btn-logout .btn:hover {
-            background: var(--primary);
-            color: #fff;
-            color: #fff;
+            background: var(--primary-light);
+            color: var(--primary-dark);
         }
 
         .navbar-toggler {
-            border-color: rgba(26, 58, 107, 0.4);
             border-color: rgba(26, 58, 107, 0.4);
         }
 
         .navbar-toggler:focus {
             box-shadow: 0 0 0 4px rgba(26, 58, 107, 0.25);
-            box-shadow: 0 0 0 4px rgba(26, 58, 107, 0.25);
         }
 
         .navbar-toggler-icon {
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path stroke='rgba(26, 58, 107,0.9)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/></svg>");
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path stroke='rgba(26, 58, 107,0.9)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/></svg>");
         }
 
         /* ===== Main content ===== */
->>>>>>> Stashed changes
         main {
             width: 100%;
             min-width: 0;
             overflow-x: hidden;
-
-            display: flex;
-            flex-direction: column;
-
-            min-height: 0;
         }
 
         main > .container {
             width: 100%;
             max-width: 100%;
             min-width: 0;
-
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-
-            min-height: 0;
         }
 
+        /* Tablas administrativas con el mismo lenguaje visual */
+        .table-responsive,
+        .page-scroll,
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        main .table:not(.migrated-full-table),
+        main .ready-table,
+        main .rejected-table {
+            min-width: 1100px;
+            margin-bottom: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+            color: var(--text);
+            font-family: inherit;
+        }
+
+        main .table:not(.migrated-full-table) thead th,
+        main .ready-table thead th,
+        main .rejected-table thead th {
+            background: var(--primary) !important;
+            color: #fff !important;
+            border: 0;
+            border-bottom: 2px solid rgba(26, 58, 107, 0.25) !important;
+            padding: 13px 16px;
+            font-size: 11.5px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            white-space: nowrap;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        main .table:not(.migrated-full-table) tbody td,
+        main .ready-table tbody td,
+        main .rejected-table tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f7;
+            border-right: 0;
+            background: #fff;
+            color: var(--text);
+            white-space: nowrap;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        main .table:not(.migrated-full-table) tbody tr:hover td,
+        main .ready-table tbody tr:hover td,
+        main .rejected-table tbody tr:hover td {
+            background: #fafafd;
+        }
+
+        main .table:not(.migrated-full-table) thead th:first-child,
+        main .ready-table thead th:first-child,
+        main .rejected-table thead th:first-child {
+            border-radius: 12px 0 0 0;
+        }
+
+        main .table:not(.migrated-full-table) thead th:last-child,
+        main .ready-table thead th:last-child,
+        main .rejected-table thead th:last-child {
+            border-radius: 0 12px 0 0;
+        }
 
         /* ===== Footer ===== */
         footer {
@@ -365,60 +371,48 @@
                                href="/ready.php">
                                 Listos para actualizar
                             </a>
-                        </li> 
-                        </li> 
+                        </li>
 
-                        <!-- <li class="nav-item">
                         <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'pending.php' ? 'active' : '' }}"
                                href="/pending.php">
                                 No están en SIGA
                             </a>
-                        </li> 
-                        </li> 
+                        </li> -->
 
-                        <!-- <li class="nav-item">
-                        <!-- <li class="nav-item">
+                        <!--  <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'not_graduated.php' ? 'active' : '' }}"
                                href="/not_graduated.php">
                                 Egresados
                             </a>
                         </li> -->
-                        </li> -->
 
-                        <!-- <li class="nav-item">
                         <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'migrated.php' ? 'active' : '' }}"
                                href="/migrated.php">
                                 Historial SIGA
                             </a>
                         </li> -->
-                        </li> -->
 
                         <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'migrated_full.php' ? 'active' : '' }}"
                                href="/migrated_full.php">
                                 Registros
-                                Registros
                             </a>
                         </li>
 
-                        <!-- <li class="nav-item">
-                        <!-- <li class="nav-item">
+                        <!--  <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'rejected.php' ? 'active' : '' }}"
                                href="/rejected.php">
                                 Rechazados
                             </a>
                         </li> -->
-                        </li> -->
 
-                        <!-- <li class="nav-item">
                         <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'deleted.php' ? 'active' : '' }}"
                                href="/deleted.php">
                                 Borrados
                             </a>
-                        </li> -->
                         </li> -->
 
                         <li class="nav-item">

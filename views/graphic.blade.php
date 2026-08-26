@@ -97,6 +97,35 @@
                 color: var(--text-muted);
             }
 
+            .question-filter {
+                max-width: 720px;
+                margin: 0 auto 28px;
+            }
+
+            .question-filter label {
+                display: block;
+                margin-bottom: 8px;
+                color: var(--primary-dark);
+                font-size: .85rem;
+                font-weight: 800;
+            }
+
+            .question-filter select {
+                width: 100%;
+                padding: 12px 14px;
+                border: 2px solid var(--border);
+                border-radius: 13px;
+                background: #fff;
+                color: var(--text);
+                font: inherit;
+            }
+
+            .question-filter select:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 4px rgba(26, 58, 107, .15);
+            }
+
             .toast.text-bg-success {
                 background: var(--success) !important;
                 border-radius: 14px !important;
@@ -148,6 +177,19 @@
             <p>{{ number_format($total) }} registro(s) en total.</p>
         </div>
 
+        <form method="GET" class="question-filter">
+            <label for="questionSelect">Selecciona la pregunta que deseas graficar</label>
+            <select id="questionSelect" name="question" onchange="this.form.submit()">
+                @forelse(($surveyQuestionStats ?? []) as $question => $values)
+                    <option value="{{ $question }}" {{ ($selectedQuestion ?? '') === $question ? 'selected' : '' }}>
+                        {{ $question }}
+                    </option>
+                @empty
+                    <option value="">No hay respuestas de preguntas disponibles</option>
+                @endforelse
+            </select>
+        </form>
+
         @php
             $graduadosActualizados     = $graduadosActualizados     ?? 0;
             $graduadosNoActualizados   = $graduadosNoActualizados   ?? 0;
@@ -160,6 +202,22 @@
 
         <div class="charts-card">
             <div class="row justify-content-center g-4">
+
+            @php
+                $selectedStats = ($surveyQuestionStats ?? [])[$selectedQuestion ?? ''] ?? [];
+            @endphp
+
+            @if(!empty($selectedStats))
+                <div class="col-12">
+                    <div class="chart-card">
+                        <h5 class="text-center mb-1">{{ $selectedQuestion }}</h5>
+                        <p class="text-center chart-total mb-3">Distribución de respuestas</p>
+                        <div class="chart-wrap">
+                            <canvas id="chartQuestion"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <div class="col-md-5">
                 <div class="chart-card">
@@ -221,6 +279,35 @@
                     }
                 }
             };
+
+            const questionLabels = {!! json_encode(array_keys($selectedStats ?? []), JSON_UNESCAPED_UNICODE) !!};
+            const questionValues = {!! json_encode(array_values($selectedStats ?? [])) !!};
+
+            const questionChart = document.getElementById('chartQuestion');
+            if (questionChart) {
+                new Chart(questionChart, {
+                    type: 'bar',
+                    data: {
+                        labels: questionLabels,
+                        datasets: [{
+                            label: 'Respuestas',
+                            data: questionValues,
+                            backgroundColor: '#1A3A6B',
+                            borderColor: '#0F2747',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                        }]
+                    },
+                    options: {
+                        ...commonOptions,
+                        indexAxis: questionLabels.length > 8 ? 'y' : 'x',
+                        scales: {
+                            x: { beginAtZero: true, ticks: { precision: 0 } },
+                            y: { beginAtZero: true, ticks: { precision: 0 } }
+                        }
+                    }
+                });
+            }
 
             new Chart(document.getElementById('chartGraduados'), {
                 type: 'pie',

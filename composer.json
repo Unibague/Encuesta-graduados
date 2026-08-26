@@ -3,6 +3,7 @@
         "ospina/curlcobain": "^1.0",
       "ext-json": "*",
       "ext-mysqli": "*",
+      "ext-curl": "*",
         "eftec/bladeone": "^4.5",
         "ospina/easy-sql": "^1.0",
         "ospina/easy-ldap": "^1.0",

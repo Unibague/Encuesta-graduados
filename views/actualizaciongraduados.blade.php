@@ -450,15 +450,19 @@
 
         .summary-head {
             text-align: center;
-            margin-bottom: 22px;
+            margin: -8px -8px 22px;
+            padding: 20px 16px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff;
         }
 
         .summary-check {
             width: 58px;
             height: 58px;
             border-radius: 50%;
-            background: var(--success-light);
-            color: var(--success);
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -479,7 +483,7 @@
         }
 
         .summary-head p {
-            color: var(--text-muted);
+            color: rgba(255, 255, 255, 0.82);
             font-size: 0.9rem;
             margin: 0;
         }
@@ -503,11 +507,15 @@
             align-items: flex-start;
             justify-content: space-between;
             gap: 10px;
-            padding: 11px 4px;
-            border-bottom: 1px solid #f0f0f7;
+            padding: 14px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 8px 18px -16px rgba(31, 35, 51, 0.35);
         }
 
-        .summary-item:last-child { border-bottom: none; }
+        .summary-item:last-child { margin-bottom: 0; }
 
         .summary-texts { min-width: 0; }
 
@@ -522,7 +530,15 @@
             font-weight: 700;
             font-size: 0.94rem;
             margin-top: 2px;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
             word-break: break-word;
+            line-height: 1.45;
+        }
+
+        @media (max-width: 560px) {
+            .summary-item { flex-direction: column; }
+            .summary-edit { align-self: flex-end; }
         }
 
         .summary-edit {
@@ -1065,6 +1081,10 @@
         ];
 
         const answers = {};
+        const questionTypes = Object.fromEntries(
+            encuestaSections.flatMap(section => section.fields)
+                .map(field => [field.key, field.type])
+        );
         let currentSectionIndex = 0;
         let returnToSummary = false;
 
@@ -1635,7 +1655,9 @@
                     ${section.fields.map(field => {
                         let val = answers[field.key];
                         if (field.type === 'matrix' && val) {
-                            val = Object.entries(val).map(([row, answer]) => `${row}: ${answer}`).join(' | ');
+                            val = Object.entries(val)
+                                .map(([row, answer]) => `${row}: ${answer}`)
+                                .join('\n');
                         } else if (Array.isArray(val)) {
                             val = val.length ? val.join(', ') : '—';
                         } else if (!val && val !== 0) {
@@ -1675,6 +1697,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         survey_type: 'actualizaciongraduados',
+                        question_types: questionTypes,
                         answers,
                     }),
                 });

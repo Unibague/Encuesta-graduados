@@ -7,15 +7,17 @@ use Ospina\EasySQL\EasySQL;
 
 verifyIsAuthenticated();
 
+$anioActivo = obtenerAnioEncuentroActivo();
+
 $page = max((int) ($_GET['page'] ?? 1), 1);
 $limit = 50;
 $search = trim($_GET['search'] ?? '');
-$anio = trim($_GET['anio'] ?? '2026');
+$anio = trim($_GET['anio'] ?? (string) $anioActivo);
 if ($anio !== '' && !preg_match('/^\d{4}$/', $anio)) {
-    $anio = '2026';
+    $anio = (string) $anioActivo;
 }
 $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
-$encuentroAnioExpression = "COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(fa.answers, '$._encuentro_anio')), ''), '2026')";
+$encuentroAnioExpression = "COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(fa.answers, '$._encuentro_anio')), ''), '{$anioActivo}')";
 
 $where = "fa.is_deleted = 0
     AND JSON_UNQUOTE(JSON_EXTRACT(fa.answers, '$._survey_type')) = 'registrograduados'";
@@ -55,8 +57,8 @@ try {
         static fn (array $row): string => trim((string) ($row['anio'] ?? '')),
         $anios
     ), static fn (string $value): bool => $value !== ''));
-    if (!in_array('2026', $anios, true)) {
-        $anios[] = '2026';
+    if (!in_array((string) $anioActivo, $anios, true)) {
+        $anios[] = (string) $anioActivo;
     }
     rsort($anios, SORT_STRING);
 
@@ -70,42 +72,46 @@ try {
     foreach ($graduados as $key => $answer) {
         $answers = json_decode($answer['answers'] ?? '', true);
         $answers = is_array($answers) ? $answers : [];
-        $answers['encuentro_anio'] = trim((string) ($answers['_encuentro_anio'] ?? '2026')) ?: '2026';
+        $answers['encuentro_anio'] = trim((string) ($answers['_encuentro_anio'] ?? '')) ?: (string) $anioActivo;
         $graduados[$key]['survey_answers'] = $answers;
         $graduados[$key]['source_type'] = 'Graduado';
         $graduados[$key]['source_table'] = 'form_answers';
         $graduados[$key]['row_key'] = 'graduado_' . $answer['id'];
     }
 
-    // La tabla actual de acompañantes pertenece a la edición 2026.
-    if ($anio === '' || $anio === '2026') {
-        $acompanantesWhere = '1 = 1';
-        if ($search !== '') {
-            $searchSafe = addslashes($search);
-            $acompanantesWhere = "(
-                cedula LIKE '%$searchSafe%'
-                OR nombres LIKE '%$searchSafe%'
-                OR apellidos LIKE '%$searchSafe%'
-            )";
-        }
+    // La tabla de acompañantes ahora guarda el año del encuentro al que
+    // pertenece cada registro, así que se filtra igual que los graduados.
+    $acompanantesWhere = '1 = 1';
+    if ($search !== '') {
+        $searchSafe = addslashes($search);
+        $acompanantesWhere = "(
+            cedula LIKE '%$searchSafe%'
+            OR nombres LIKE '%$searchSafe%'
+            OR apellidos LIKE '%$searchSafe%'
+        )";
+    }
+    if ($anio !== '') {
+        $anioSafe = addslashes($anio);
+        $acompanantesWhere .= " AND encuentro_anio = '$anioSafe'";
+    }
 
-        try {
-            $acompanantes = $db->makeQuery("\n                SELECT id, cedula, nombres, apellidos, 2026 AS encuentro_anio, created_at, updated_at
-                FROM registroacom_2026
-                WHERE $acompanantesWhere
-                ORDER BY created_at DESC
-            ")->fetch_all(MYSQLI_ASSOC);
-        } catch (Throwable $e) {
-            encuentroResultadosLog('La tabla registroacom_2026 aún no está disponible: ' . $e->getMessage(), 'WARNING');
-        }
+    try {
+        $acompanantes = $db->makeQuery("\n            SELECT id, cedula, nombres, apellidos, consentimiento, encuentro_anio, created_at, updated_at
+            FROM registroacom_2026
+            WHERE $acompanantesWhere
+            ORDER BY created_at DESC
+        ")->fetch_all(MYSQLI_ASSOC);
+    } catch (Throwable $e) {
+        encuentroResultadosLog('La tabla registroacom_2026 aún no está disponible: ' . $e->getMessage(), 'WARNING');
     }
 
     foreach ($acompanantes as $key => $answer) {
         $acompanantes[$key]['survey_answers'] = [
-            'encuentro_anio' => (string) ($answer['encuentro_anio'] ?? '2026'),
+            'encuentro_anio' => (string) ($answer['encuentro_anio'] ?? $anioActivo),
             'id' => $answer['cedula'],
             'nombres' => $answer['nombres'],
             'apellidos' => $answer['apellidos'],
+            'consentimiento' => $answer['consentimiento'] ?? '',
         ];
         $acompanantes[$key]['source_type'] = 'Acompañante';
         $acompanantes[$key]['source_table'] = 'registroacom_2026';
@@ -118,7 +124,6 @@ try {
     );
 
     $excludedKeys = [
-        'autorizacion_datos',
         '_survey_type',
         '_encuentro_anio',
         '_survey_question_types',
@@ -139,12 +144,23 @@ try {
     $questionColumns = array_map(
         static fn (string $key): array => [
             'key' => $key,
-            'label' => $key === 'id' ? 'Cédula' : $key,
+            'label' => humanizeQuestionLabel($key),
         ],
         array_keys($questionKeys)
     );
+    $consentKeys = ['autorizacion_datos', 'consentimiento'];
+    $questionColumns = array_merge(
+        array_values(array_filter(
+            $questionColumns,
+            static fn (array $column): bool => !in_array($column['key'], $consentKeys, true)
+        )),
+        array_values(array_filter(
+            $questionColumns,
+            static fn (array $column): bool => in_array($column['key'], $consentKeys, true)
+        ))
+    );
 
-    $primaryKeys = ['encuentro_anio', 'id', 'nombres', 'apellidos', 'email', 'programa', 'anio_graduacion'];
+    $primaryKeys = ['encuentro_anio', 'id', 'nombres', 'apellidos'];
     $primaryColumns = array_map(
         static fn (string $key): array => [
             'key' => $key,
@@ -207,6 +223,7 @@ echo $blade->run('encuentro_resultados', [
     'search' => $search,
     'anio' => $anio,
     'anios' => $anios,
+    'anioActivo' => $anioActivo,
     'message' => $message,
     'error' => $error,
     'questionColumns' => $questionColumns,
@@ -231,6 +248,32 @@ function stringifyRegistroAnswer($value): string
     }
 
     return trim((string) ($value ?? ''));
+}
+
+function humanizeQuestionLabel(string $key): string
+{
+    $knownLabels = [
+        'id' => 'Cédula',
+        'encuentro_anio' => 'Año encuentro',
+        'anio_graduacion' => 'Año graduación',
+        'email' => 'Correo electrónico',
+        'autorizacion_datos' => 'Autorización de datos',
+        'consentimiento' => 'Consentimiento',
+    ];
+
+    if (isset($knownLabels[$key])) {
+        return $knownLabels[$key];
+    }
+
+    $label = trim(preg_replace('/\s+/', ' ', str_replace('_', ' ', $key)));
+    $label = mb_strtolower($label, 'UTF-8');
+
+    if ($label === '') {
+        return '';
+    }
+
+    return mb_strtoupper(mb_substr($label, 0, 1, 'UTF-8'), 'UTF-8')
+        . mb_substr($label, 1, null, 'UTF-8');
 }
 
 /**

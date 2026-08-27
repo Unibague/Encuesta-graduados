@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de datos - Universidad de Ibagué</title>
+    <title>Registro acompañante - Universidad de Ibagué</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -119,7 +119,7 @@
     <main class="survey-shell">
         <div class="survey-container">
             <header class="survey-intro">
-                <h1>Registro de datos</h1>
+                <h1>Registro acompañante</h1>
                 <p>Completa los datos solicitados para continuar.</p>
             </header>
 

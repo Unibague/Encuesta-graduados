@@ -43,8 +43,9 @@ $storedAnswers = $answers;
 $storedAnswers['_survey_type'] = $surveyType;
 if ($surveyType === 'registrograduados') {
     // Edición del encuentro a la que pertenece este registro. No se toma del
-    // navegador para evitar que el cliente pueda alterar el año del evento.
-    $storedAnswers['_encuentro_anio'] = 2026;
+    // navegador para evitar que el cliente pueda alterar el año del evento;
+    // se usa el año activo configurado por el administrador.
+    $storedAnswers['_encuentro_anio'] = obtenerAnioEncuentroActivo();
 }
 $storedAnswers['_survey_question_types'] = is_array($input['question_types'] ?? null)
     ? $input['question_types']

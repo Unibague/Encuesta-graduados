@@ -44,7 +44,7 @@
             }
 
             .encuentro-table {
-                min-width: 900px !important;
+                min-width: 700px !important;
             }
 
             .answers-modal .modal-content {
@@ -93,6 +93,96 @@
                 white-space: pre-wrap;
             }
 
+            .encuentro-config-bar {
+                align-items: center;
+                background: var(--primary-light);
+                border: 1px solid rgba(26, 58, 107, .18);
+                border-radius: 14px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 14px;
+                justify-content: space-between;
+                margin-bottom: 20px;
+                padding: 14px 18px;
+            }
+
+            .encuentro-config-info {
+                align-items: center;
+                display: flex;
+                gap: 10px;
+            }
+
+            .encuentro-config-label {
+                color: var(--primary-dark);
+                font-size: .85rem;
+                font-weight: 700;
+            }
+
+            .encuentro-config-badge {
+                background: var(--primary);
+                border-radius: 999px;
+                color: #fff;
+                font-size: .95rem;
+                font-weight: 800;
+                padding: 4px 14px;
+            }
+
+            .encuentro-config-form {
+                align-items: center;
+                display: flex;
+                gap: 10px;
+            }
+
+            .encuentro-config-hint {
+                color: var(--primary-dark);
+                font-size: .85rem;
+                font-weight: 600;
+            }
+
+            .encuentro-switch {
+                display: inline-block;
+                flex-shrink: 0;
+                height: 26px;
+                position: relative;
+                width: 46px;
+            }
+
+            .encuentro-switch input {
+                height: 0;
+                opacity: 0;
+                width: 0;
+            }
+
+            .encuentro-switch-slider {
+                background: #c7cede;
+                border-radius: 999px;
+                cursor: pointer;
+                inset: 0;
+                position: absolute;
+                transition: .2s;
+            }
+
+            .encuentro-switch-slider::before {
+                background: #fff;
+                border-radius: 50%;
+                bottom: 3px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+                content: '';
+                height: 20px;
+                left: 3px;
+                position: absolute;
+                transition: .2s;
+                width: 20px;
+            }
+
+            .encuentro-switch input:checked + .encuentro-switch-slider {
+                background: var(--success);
+            }
+
+            .encuentro-switch input:checked + .encuentro-switch-slider::before {
+                transform: translateX(20px);
+            }
+
             .encuentro-pagination {
                 display: flex;
                 gap: 8px;
@@ -117,6 +207,21 @@
         </p>
 
         <div class="encuentro-card">
+            <div class="encuentro-config-bar">
+                <div class="encuentro-config-info">
+                    <span class="encuentro-config-label">Año activo del Encuentro</span>
+                    <span class="encuentro-config-badge">{{ $anioActivo }}</span>
+                </div>
+                <form method="POST" action="/app/controllers/set-encuentro-anio.php" class="encuentro-config-form">
+                    <label class="encuentro-switch" title="Sincronizar con el año actual ({{ date('Y') }})">
+                        <input type="checkbox" onchange="this.form.submit()"
+                               {{ (int) $anioActivo === (int) date('Y') ? 'checked' : '' }}>
+                        <span class="encuentro-switch-slider"></span>
+                    </label>
+                    <span class="encuentro-config-hint">Usar año actual ({{ date('Y') }})</span>
+                </form>
+            </div>
+
             <form method="GET" class="encuentro-search">
                 <input type="text" name="search" value="{{ $search }}"
                        class="form-control"
@@ -144,7 +249,7 @@
                             <th>{{ $column['label'] }}</th>
                         @endforeach
                         <th>Tipo</th>
-                        <th>Más datos</th>
+                        <th>Ver respuestas</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -192,12 +297,14 @@
                             <div class="modal-body">
                                 <div class="answers-list">
                                     @foreach($questionColumns as $column)
-                                        <div class="answer-item">
-                                            <div class="answer-question">{{ $column['label'] }}</div>
-                                            <div class="answer-value">
-                                                {{ $answer['display_answers'][$column['key']] ?? '' ?: 'Sin respuesta' }}
+                                        @if(array_key_exists($column['key'], $answer['survey_answers']))
+                                            <div class="answer-item">
+                                                <div class="answer-question">{{ $column['label'] }}</div>
+                                                <div class="answer-value">
+                                                    {{ $answer['display_answers'][$column['key']] ?? '' ?: 'Sin respuesta' }}
+                                                </div>
                                             </div>
-                                        </div>
+                                        @endif
                                     @endforeach
                                 </div>
                             </div>

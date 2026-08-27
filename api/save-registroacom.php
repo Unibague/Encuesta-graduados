@@ -24,6 +24,8 @@ if ($consentimiento !== 'Sí' || $nombres === '' || $apellidos === '' || $cedula
     exit;
 }
 
+$anioActivo = obtenerAnioEncuentroActivo();
+
 $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 $db->makeQuery("
     CREATE TABLE IF NOT EXISTS registroacom_2026 (
@@ -58,13 +60,13 @@ if ($existing) {
         nombres = '$nombresSafe',
         apellidos = '$apellidosSafe',
         consentimiento = 'Sí',
-        encuentro_anio = 2026,
+        encuentro_anio = $anioActivo,
         updated_at = NOW()
         WHERE id = " . (int) $existing['id']);
 } else {
     $db->makeQuery("INSERT INTO registroacom_2026
         (cedula, nombres, apellidos, consentimiento, encuentro_anio, created_at, updated_at)
-        VALUES ('$cedulaSafe', '$nombresSafe', '$apellidosSafe', 'Sí', 2026, NOW(), NOW())");
+        VALUES ('$cedulaSafe', '$nombresSafe', '$apellidosSafe', 'Sí', $anioActivo, NOW(), NOW())");
 }
 
 echo json_encode(['success' => true, 'message' => 'Registro guardado correctamente']);

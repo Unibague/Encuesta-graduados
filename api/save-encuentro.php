@@ -49,6 +49,8 @@ if (!$nombres || !$apellidos || !$identificacion || !$celular || !$correo || !$a
 /* =========================
  * DB
  * ========================= */
+$anioActivo = obtenerAnioEncuentroActivo();
+
 $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
 /* Crear tabla si no existe */
@@ -62,11 +64,20 @@ $db->makeQuery("
         correo          VARCHAR(150) NOT NULL,
         asistencia      ENUM('si','no') NOT NULL DEFAULT 'si',
         acompanantes    TINYINT     NOT NULL DEFAULT 0,
+        encuentro_anio  SMALLINT UNSIGNED NOT NULL DEFAULT 2026,
         created_at      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_iden (identificacion)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 ");
+
+/* Compatibilidad con instalaciones donde la tabla se creó antes de agregar
+   el año del encuentro. */
+$yearColumn = $db->makeQuery("SHOW COLUMNS FROM encuentro_2026 LIKE 'encuentro_anio'")->fetch_assoc();
+if (!$yearColumn) {
+    $db->makeQuery("ALTER TABLE encuentro_2026
+        ADD COLUMN encuentro_anio SMALLINT UNSIGNED NOT NULL DEFAULT 2026 AFTER acompanantes");
+}
 
 $now    = date('Y-m-d H:i:s');
 $idSafe = addslashes($identificacion);
@@ -91,13 +102,14 @@ if ($existente) {
             correo       = '" . addslashes($correo)     . "',
             asistencia   = '" . addslashes($asistencia) . "',
             acompanantes = $acompanantes,
+            encuentro_anio = $anioActivo,
             updated_at   = '$now'
         WHERE id = {$existente['id']}
     ");
 } else {
     $db->makeQuery("
         INSERT INTO encuentro_2026
-            (identificacion, nombres, apellidos, celular, correo, asistencia, acompanantes, created_at, updated_at)
+            (identificacion, nombres, apellidos, celular, correo, asistencia, acompanantes, encuentro_anio, created_at, updated_at)
         VALUES (
             '$idSafe',
             '" . addslashes($nombres)    . "',
@@ -106,6 +118,7 @@ if ($existente) {
             '" . addslashes($correo)     . "',
             '" . addslashes($asistencia) . "',
             $acompanantes,
+            $anioActivo,
             '$now', '$now'
         )
     ");

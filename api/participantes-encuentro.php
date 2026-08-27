@@ -54,11 +54,12 @@ try {
     // Fallback: leer de la base de datos (registrados con asistencia = 'si')
     error_log('[participantes-encuentro] Sheets falló: ' . $e->getMessage() . ' — usando BD.');
 
-    $db     = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
-    $result = $db->makeQuery("
+    $db         = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+    $anioActivo = obtenerAnioEncuentroActivo();
+    $result     = $db->makeQuery("
         SELECT nombres, apellidos
         FROM encuentro_2026
-        WHERE asistencia = 'si'
+        WHERE asistencia = 'si' AND encuentro_anio = $anioActivo
         ORDER BY created_at ASC
     ");
 

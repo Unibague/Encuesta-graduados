@@ -16,7 +16,7 @@ $forms = [
         'accent' => '#1a3a6b',
     ],
     [
-        'title' => 'Registro de datos',
+        'title' => 'Registro acompañantes',
         'description' => 'Autoriza el tratamiento de datos y completa tu información personal.',
         'path' => 'registroacom.php',
         'accent' => '#167d68',

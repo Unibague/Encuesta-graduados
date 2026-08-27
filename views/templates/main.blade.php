@@ -404,7 +404,7 @@
                         <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'encuentro_resultados.php' ? 'active' : '' }}"
                                href="/encuentro_resultados.php">
-                                Registro graduados
+                                Encuentro graduados
                             </a>
                         </li>
 

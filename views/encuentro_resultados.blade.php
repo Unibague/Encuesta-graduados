@@ -1,7 +1,7 @@
 @component('templates.main')
 
     @slot('title')
-        Resultados de Registro de Graduados
+        Encuentro de Graduados
     @endslot
 
     @slot('header')
@@ -33,6 +33,7 @@
 
             .encuentro-search {
                 display: flex;
+                flex-wrap: wrap;
                 gap: 10px;
                 justify-content: center;
                 margin-bottom: 22px;
@@ -92,27 +93,6 @@
                 white-space: pre-wrap;
             }
 
-            .encuentro-delete {
-                align-items: center;
-                background: #fee2e2;
-                border: 1px solid #fecaca;
-                border-radius: 50%;
-                color: #b91c1c;
-                display: inline-flex;
-                font-size: 1.1rem;
-                font-weight: 800;
-                height: 28px;
-                justify-content: center;
-                line-height: 1;
-                padding: 0;
-                width: 28px;
-            }
-
-            .encuentro-delete:hover {
-                background: #b91c1c;
-                color: #fff;
-            }
-
             .encuentro-pagination {
                 display: flex;
                 gap: 8px;
@@ -131,7 +111,7 @@
     @endif
 
     <div class="encuentro-page">
-        <h1>Resultados de Registro de Graduados</h1>
+        <h1>Encuentro de Graduados</h1>
         <p class="encuentro-subtitle">
             {{ number_format($total) }} registro(s) guardado(s) en esta encuesta.
         </p>
@@ -149,7 +129,11 @@
                         </option>
                     @endforeach
                 </select>
-                <button type="submit" class="btn btn-primary">Buscar</button>
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a class="btn btn-success"
+                   href="?export=excel&amp;search={{ urlencode($search) }}&amp;anio={{ urlencode($anio) }}">
+                    Descargar Excel
+                </a>
             </form>
 
             <div class="table-responsive">
@@ -161,7 +145,6 @@
                         @endforeach
                         <th>Tipo</th>
                         <th>Más datos</th>
-                        <th>Ocultar</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -179,22 +162,11 @@
                                     Ver respuestas
                                 </button>
                             </td>
-                            <td>
-                                  <form method="POST"
-                                      action="{{ $answer['source_table'] === 'registroacom_2026' ? '/app/controllers/delete-registroacom.php' : '/app/controllers/delete.php' }}"
-                                      onsubmit="return confirm('¿Deseas ocultar este registro?');">
-                                    <input type="hidden" name="id" value="{{ $answer['id'] }}">
-                                    <button type="submit" class="encuentro-delete"
-                                            title="Ocultar registro" aria-label="Ocultar registro">
-                                        &times;
-                                    </button>
-                                </form>
-                            </td>
                         </tr>
 
                     @empty
                         <tr>
-                            <td colspan="{{ count($primaryColumns) + 3 }}" class="text-center text-muted py-4">
+                            <td colspan="{{ count($primaryColumns) + 2 }}" class="text-center text-muted py-4">
                                 No hay registros de graduados ni acompañantes.
                             </td>
                         </tr>

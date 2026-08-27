@@ -32,11 +32,20 @@ $db->makeQuery("
         nombres VARCHAR(100) NOT NULL,
         apellidos VARCHAR(100) NOT NULL,
         consentimiento ENUM('Sí') NOT NULL DEFAULT 'Sí',
+        encuentro_anio SMALLINT UNSIGNED NOT NULL DEFAULT 2026,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY uq_registroacom_cedula (cedula)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 ");
+
+// Compatibilidad con instalaciones donde la tabla se creó antes de agregar
+// el año del encuentro.
+$yearColumn = $db->makeQuery("SHOW COLUMNS FROM registroacom_2026 LIKE 'encuentro_anio'")->fetch_assoc();
+if (!$yearColumn) {
+    $db->makeQuery("ALTER TABLE registroacom_2026
+        ADD COLUMN encuentro_anio SMALLINT UNSIGNED NOT NULL DEFAULT 2026 AFTER consentimiento");
+}
 
 $cedulaSafe = addslashes($cedula);
 $nombresSafe = addslashes($nombres);
@@ -49,12 +58,13 @@ if ($existing) {
         nombres = '$nombresSafe',
         apellidos = '$apellidosSafe',
         consentimiento = 'Sí',
+        encuentro_anio = 2026,
         updated_at = NOW()
         WHERE id = " . (int) $existing['id']);
 } else {
     $db->makeQuery("INSERT INTO registroacom_2026
-        (cedula, nombres, apellidos, consentimiento, created_at, updated_at)
-        VALUES ('$cedulaSafe', '$nombresSafe', '$apellidosSafe', 'Sí', NOW(), NOW())");
+        (cedula, nombres, apellidos, consentimiento, encuentro_anio, created_at, updated_at)
+        VALUES ('$cedulaSafe', '$nombresSafe', '$apellidosSafe', 'Sí', 2026, NOW(), NOW())");
 }
 
 echo json_encode(['success' => true, 'message' => 'Registro guardado correctamente']);

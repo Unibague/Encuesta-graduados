@@ -10,8 +10,12 @@ verifyIsAuthenticated();
 $page = max((int) ($_GET['page'] ?? 1), 1);
 $limit = 50;
 $search = trim($_GET['search'] ?? '');
-$anio = trim($_GET['anio'] ?? '');
+$anio = trim($_GET['anio'] ?? '2026');
+if ($anio !== '' && !preg_match('/^\d{4}$/', $anio)) {
+    $anio = '2026';
+}
 $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+$encuentroAnioExpression = "COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(fa.answers, '$._encuentro_anio')), ''), '2026')";
 
 $where = "fa.is_deleted = 0
     AND JSON_UNQUOTE(JSON_EXTRACT(fa.answers, '$._survey_type')) = 'registrograduados'";
@@ -29,7 +33,7 @@ if ($search !== '') {
 if ($anio !== '') {
     $anioSafe = addslashes($anio);
     $where .= "
-        AND JSON_UNQUOTE(JSON_EXTRACT(fa.answers, '$.anio_graduacion')) = '$anioSafe'
+        AND $encuentroAnioExpression = '$anioSafe'
     ";
 }
 
@@ -41,17 +45,20 @@ $acompanantes = [];
 $anios = [];
 
 try {
-    $anios = $db->makeQuery("\n        SELECT DISTINCT JSON_UNQUOTE(JSON_EXTRACT(fa.answers, '$.anio_graduacion')) AS anio
+    $anios = $db->makeQuery("\n        SELECT DISTINCT $encuentroAnioExpression AS anio
         FROM form_answers fa
         WHERE fa.is_deleted = 0
             AND JSON_UNQUOTE(JSON_EXTRACT(fa.answers, '$._survey_type')) = 'registrograduados'
-            AND JSON_EXTRACT(fa.answers, '$.anio_graduacion') IS NOT NULL
         ORDER BY anio DESC
     ")->fetch_all(MYSQLI_ASSOC);
     $anios = array_values(array_filter(array_map(
         static fn (array $row): string => trim((string) ($row['anio'] ?? '')),
         $anios
     ), static fn (string $value): bool => $value !== ''));
+    if (!in_array('2026', $anios, true)) {
+        $anios[] = '2026';
+    }
+    rsort($anios, SORT_STRING);
 
     $graduados = $db->makeQuery("\n        SELECT fa.id, fa.answers, fa.name, fa.last_name,
                fa.identification_number, fa.created_at, fa.updated_at
@@ -63,15 +70,15 @@ try {
     foreach ($graduados as $key => $answer) {
         $answers = json_decode($answer['answers'] ?? '', true);
         $answers = is_array($answers) ? $answers : [];
+        $answers['encuentro_anio'] = trim((string) ($answers['_encuentro_anio'] ?? '2026')) ?: '2026';
         $graduados[$key]['survey_answers'] = $answers;
         $graduados[$key]['source_type'] = 'Graduado';
         $graduados[$key]['source_table'] = 'form_answers';
         $graduados[$key]['row_key'] = 'graduado_' . $answer['id'];
     }
 
-    // Los acompañantes no tienen año de graduación asociado, así que solo se
-    // muestran cuando no hay un filtro de año activo.
-    if ($anio === '') {
+    // La tabla actual de acompañantes pertenece a la edición 2026.
+    if ($anio === '' || $anio === '2026') {
         $acompanantesWhere = '1 = 1';
         if ($search !== '') {
             $searchSafe = addslashes($search);
@@ -83,7 +90,7 @@ try {
         }
 
         try {
-            $acompanantes = $db->makeQuery("\n                SELECT id, cedula, nombres, apellidos, created_at, updated_at
+            $acompanantes = $db->makeQuery("\n                SELECT id, cedula, nombres, apellidos, 2026 AS encuentro_anio, created_at, updated_at
                 FROM registroacom_2026
                 WHERE $acompanantesWhere
                 ORDER BY created_at DESC
@@ -95,6 +102,7 @@ try {
 
     foreach ($acompanantes as $key => $answer) {
         $acompanantes[$key]['survey_answers'] = [
+            'encuentro_anio' => (string) ($answer['encuentro_anio'] ?? '2026'),
             'id' => $answer['cedula'],
             'nombres' => $answer['nombres'],
             'apellidos' => $answer['apellidos'],
@@ -112,6 +120,7 @@ try {
     $excludedKeys = [
         'autorizacion_datos',
         '_survey_type',
+        '_encuentro_anio',
         '_survey_question_types',
         '_survey_completed_at',
     ];
@@ -135,13 +144,14 @@ try {
         array_keys($questionKeys)
     );
 
-    $primaryKeys = ['id', 'nombres', 'apellidos', 'email', 'programa', 'anio_graduacion'];
+    $primaryKeys = ['encuentro_anio', 'id', 'nombres', 'apellidos', 'email', 'programa', 'anio_graduacion'];
     $primaryColumns = array_map(
         static fn (string $key): array => [
             'key' => $key,
             'label' => match ($key) {
+                'encuentro_anio' => 'Año encuentro',
                 'id' => 'Cédula',
-                'anio_graduacion' => 'Año',
+                'anio_graduacion' => 'Año graduación',
                 default => ucfirst($key),
             },
         ],
@@ -167,6 +177,10 @@ try {
     }
 
     $total = count($encuentroAnswers);
+
+    if (($_GET['export'] ?? '') === 'excel') {
+        exportEncuentroCsv($encuentroAnswers, $primaryColumns, $extraColumns, $anio);
+    }
 } catch (Throwable $e) {
     encuentroResultadosLog('No fue posible consultar respuestas de graduados o acompañantes: ' . $e->getMessage(), 'WARNING');
 }
@@ -217,4 +231,47 @@ function stringifyRegistroAnswer($value): string
     }
 
     return trim((string) ($value ?? ''));
+}
+
+/**
+ * Exporta todos los resultados que coinciden con los filtros actuales en un
+ * CSV UTF-8 compatible con Excel. También neutraliza valores que Excel podría
+ * interpretar como fórmulas.
+ */
+function exportEncuentroCsv(array $answers, array $primaryColumns, array $extraColumns, string $anio): never
+{
+    $suffix = $anio !== '' ? $anio : 'todos-los-anios';
+    $filename = "encuentro-graduados-{$suffix}.csv";
+
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+
+    $output = fopen('php://output', 'wb');
+    fwrite($output, "\xEF\xBB\xBF");
+
+    $columns = array_merge($primaryColumns, $extraColumns);
+    $headers = array_map(static fn (array $column): string => $column['label'], $columns);
+    $headers[] = 'Tipo';
+    $headers[] = 'Fecha de registro';
+    fputcsv($output, $headers, ';', '"', '\\');
+
+    foreach ($answers as $answer) {
+        $row = [];
+        foreach ($columns as $column) {
+            $row[] = excelSafeValue((string) ($answer['display_answers'][$column['key']] ?? ''));
+        }
+        $row[] = excelSafeValue((string) ($answer['source_type'] ?? ''));
+        $row[] = excelSafeValue((string) ($answer['created_at'] ?? ''));
+        fputcsv($output, $row, ';', '"', '\\');
+    }
+
+    fclose($output);
+    exit;
+}
+
+function excelSafeValue(string $value): string
+{
+    $value = trim($value);
+    return preg_match('/^[=+\-@]/', $value) ? "'" . $value : $value;
 }

@@ -325,6 +325,16 @@
             color: var(--primary-dark);
         }
 
+        .cedula-lookup-status {
+            font-size: 12.5px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .cedula-lookup-status.loading { color: var(--text-muted); }
+        .cedula-lookup-status.found { color: var(--success); }
+        .cedula-lookup-status.empty { color: var(--text-muted); }
+
         .validation-alert {
             background: var(--danger-light);
             color: var(--danger);
@@ -650,7 +660,7 @@
                     <div id="summaryContainer"></div>
                     <div class="nav-row">
                         <button type="button" class="btn btn-secondary-outline" onclick="backToLastSection()">← Seguir editando</button>
-                        <button type="button" class="btn btn-success" onclick="submitSurvey()">Terminar encuesta ✓</button>
+                        <button type="button" class="btn btn-success" onclick="submitSurvey()">Enviar registro ✓</button>
                     </div>
                 </div>
 
@@ -696,12 +706,19 @@
                 ]
             },
             {
+                title: 'Identificación',
+                icon: '',
+                isCedula: true,
+                fields: [
+                    { key: 'id', label: 'Cédula', type: 'text', description: 'Documento oficial. Al escribirla buscaremos tus datos si ya te has registrado antes.', required: true, placeholder: 'Ej: 20231001' }
+                ]
+            },
+            {
                 title: 'Datos personales',
                 icon: '',
                 fields: [
                     { key: 'nombres', label: 'Nombres', type: 'text', required: true, placeholder: 'Tus nombres completos' },
                     { key: 'apellidos', label: 'Apellidos', type: 'text', required: true, placeholder: 'Tus apellidos completos' },
-                    { key: 'id', label: 'Cédula', type: 'text', description: 'Documento oficial', required: true, placeholder: 'Ej: 20231001' },
                     { key: 'email', label: 'Correo electrónico', type: 'email', description: 'Tu correo de contacto principal', required: true, placeholder: 'correo@ejemplo.com' },
                     { key: 'numero_celular', label: 'Número celular', type: 'tel', description: 'Teléfono de contacto', required: true, placeholder: 'Ej: +57 3001234567' },
                     { key: 'fecha_nacimiento', label: 'Fecha de nacimiento', type: 'date', required: true },
@@ -832,6 +849,8 @@
         );
         let currentSectionIndex = 0;
         let returnToSummary = false;
+        let lastLookedUpCedula = '';
+        let cedulaLookupMessage = { text: '', type: '' };
 
         function getVisibleSections() {
             return encuestaSections
@@ -942,6 +961,17 @@
                 return `<textarea class="input-field" id="field_${field.key}" placeholder="${placeholder}" oninput="onInputChange('${field.key}')">${value}</textarea>`;
             }
 
+            if (field.key === 'id') {
+                const msg = cedulaLookupMessage.text
+                    ? `<div class="cedula-lookup-status ${cedulaLookupMessage.type}">${cedulaLookupMessage.text}</div>`
+                    : '';
+                return `
+                    <input class="input-field" type="text" id="field_${field.key}" value="${value}" placeholder="${placeholder}" autocomplete="off"
+                           oninput="onInputChange('${field.key}')">
+                    ${msg}
+                `;
+            }
+
             return `<input class="input-field" type="${field.type}" id="field_${field.key}" value="${value}" placeholder="${placeholder}" autocomplete="off" oninput="onInputChange('${field.key}')">`;
         }
 
@@ -1033,6 +1063,66 @@
             if (countryField) countryField.classList.remove('has-error');
 
             updateNextButton();
+        }
+
+        async function lookupGraduadoPorCedula() {
+            const cedula = String(answers.id || '').replace(/\D/g, '');
+            if (cedula.length < 6 || cedula === lastLookedUpCedula) return;
+
+            saveCurrentSectionAnswers();
+            lastLookedUpCedula = cedula;
+            cedulaLookupMessage = { text: 'Buscando tus datos…', type: 'loading' };
+            renderSection();
+
+            try {
+                const response = await fetch(`/api/lookup-graduado.php?cedula=${encodeURIComponent(cedula)}`);
+                const result = await response.json();
+
+                if (!response.ok || !result.success || !result.found) {
+                    cedulaLookupMessage = {
+                        text: 'No encontramos un registro previo. Continúa diligenciando tus datos.',
+                        type: 'empty'
+                    };
+                    renderSection();
+                    return;
+                }
+
+                const data = result.data || {};
+                const fillIfEmpty = (key, val) => {
+                    if (val && !answers[key]) answers[key] = val;
+                };
+
+                fillIfEmpty('nombres', data.nombres);
+                fillIfEmpty('apellidos', data.apellidos);
+                fillIfEmpty('email', data.email);
+                fillIfEmpty('numero_celular', data.numero_celular);
+                fillIfEmpty('direccion', data.direccion);
+
+                if (data.pais && !answers.pais_codigo) {
+                    const match = Country.getAllCountries()
+                        .find(c => c.name.toLowerCase() === String(data.pais).toLowerCase());
+                    if (match) {
+                        answers.pais = match.name;
+                        answers.pais_codigo = match.isoCode;
+
+                        if (data.ciudad) {
+                            const cityMatch = (City.getCitiesOfCountry(match.isoCode) || [])
+                                .find(c => c.name.toLowerCase() === String(data.ciudad).toLowerCase());
+                            answers.ciudad = cityMatch ? cityMatch.name : data.ciudad;
+                        }
+                    }
+                } else {
+                    fillIfEmpty('ciudad', data.ciudad);
+                }
+
+                cedulaLookupMessage = {
+                    text: 'Encontramos datos de un registro anterior. Verifícalos.',
+                    type: 'found'
+                };
+                renderSection();
+            } catch (error) {
+                cedulaLookupMessage = { text: '', type: '' };
+            }
         }
 
         function saveCurrentSectionAnswers() {
@@ -1212,7 +1302,7 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function goNext() {
+        async function goNext() {
             if (!validateCurrentSection()) return;
             saveCurrentSectionAnswers();
 
@@ -1223,13 +1313,27 @@
                 return;
             }
 
+            if (current && current.isCedula) {
+                const btnNext = document.getElementById('btnNext');
+                const btnPrev = document.getElementById('btnPrev');
+                if (btnNext) btnNext.disabled = true;
+                if (btnPrev) btnPrev.disabled = true;
+
+                await lookupGraduadoPorCedula();
+                await new Promise(resolve => setTimeout(resolve, 1200));
+
+                if (btnNext) btnNext.disabled = false;
+                if (btnPrev) btnPrev.disabled = currentSectionIndex === 0;
+            }
+
             if (returnToSummary) {
                 returnToSummary = false;
                 showSummary();
                 return;
             }
 
-            if (currentSectionIndex < sections.length - 1) {
+            const updatedSections = getVisibleSections();
+            if (currentSectionIndex < updatedSections.length - 1) {
                 currentSectionIndex++;
                 renderSection('next');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1361,6 +1465,7 @@
         window.selectChip = selectChip;
         window.onInputChange = onInputChange;
         window.onCountryChange = onCountryChange;
+        window.lookupGraduadoPorCedula = lookupGraduadoPorCedula;
         window.goNext = goNext;
         window.goBack = goBack;
         window.editField = editField;

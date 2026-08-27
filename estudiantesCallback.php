@@ -136,6 +136,7 @@ function returnErrorPage($message) {
         <meta charset='UTF-8'>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <title>Encuesta Unibagué</title>
+        <link rel='icon' type='image/svg+xml' href='/images/favicon.svg'>
         <style>
             body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: white; color: white; }
             .container { max-width: 600px; margin: auto; padding: 20px; background-color: #0036b3; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); }

@@ -10,6 +10,7 @@ verifyIsAuthenticated();
 $page = max((int) ($_GET['page'] ?? 1), 1);
 $limit = 50;
 $search = trim($_GET['search'] ?? '');
+$anio = trim($_GET['anio'] ?? '');
 $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
 
 $where = "fa.is_deleted = 0
@@ -25,14 +26,33 @@ if ($search !== '') {
         )
     ";
 }
+if ($anio !== '') {
+    $anioSafe = addslashes($anio);
+    $where .= "
+        AND JSON_UNQUOTE(JSON_EXTRACT(fa.answers, '$.anio_graduacion')) = '$anioSafe'
+    ";
+}
 
 $total = 0;
 $encuentroAnswers = [];
 $questionColumns = [];
 $graduados = [];
 $acompanantes = [];
+$anios = [];
 
 try {
+    $anios = $db->makeQuery("\n        SELECT DISTINCT JSON_UNQUOTE(JSON_EXTRACT(fa.answers, '$.anio_graduacion')) AS anio
+        FROM form_answers fa
+        WHERE fa.is_deleted = 0
+            AND JSON_UNQUOTE(JSON_EXTRACT(fa.answers, '$._survey_type')) = 'registrograduados'
+            AND JSON_EXTRACT(fa.answers, '$.anio_graduacion') IS NOT NULL
+        ORDER BY anio DESC
+    ")->fetch_all(MYSQLI_ASSOC);
+    $anios = array_values(array_filter(array_map(
+        static fn (array $row): string => trim((string) ($row['anio'] ?? '')),
+        $anios
+    ), static fn (string $value): bool => $value !== ''));
+
     $graduados = $db->makeQuery("\n        SELECT fa.id, fa.answers, fa.name, fa.last_name,
                fa.identification_number, fa.created_at, fa.updated_at
         FROM form_answers fa
@@ -49,24 +69,28 @@ try {
         $graduados[$key]['row_key'] = 'graduado_' . $answer['id'];
     }
 
-    $acompanantesWhere = '1 = 1';
-    if ($search !== '') {
-        $searchSafe = addslashes($search);
-        $acompanantesWhere = "(
-            cedula LIKE '%$searchSafe%'
-            OR nombres LIKE '%$searchSafe%'
-            OR apellidos LIKE '%$searchSafe%'
-        )";
-    }
+    // Los acompañantes no tienen año de graduación asociado, así que solo se
+    // muestran cuando no hay un filtro de año activo.
+    if ($anio === '') {
+        $acompanantesWhere = '1 = 1';
+        if ($search !== '') {
+            $searchSafe = addslashes($search);
+            $acompanantesWhere = "(
+                cedula LIKE '%$searchSafe%'
+                OR nombres LIKE '%$searchSafe%'
+                OR apellidos LIKE '%$searchSafe%'
+            )";
+        }
 
-    try {
-        $acompanantes = $db->makeQuery("\n            SELECT id, cedula, nombres, apellidos, created_at, updated_at
-            FROM registroacom_2026
-            WHERE $acompanantesWhere
-            ORDER BY created_at DESC
-        ")->fetch_all(MYSQLI_ASSOC);
-    } catch (Throwable $e) {
-        encuentroResultadosLog('La tabla registroacom_2026 aún no está disponible: ' . $e->getMessage(), 'WARNING');
+        try {
+            $acompanantes = $db->makeQuery("\n                SELECT id, cedula, nombres, apellidos, created_at, updated_at
+                FROM registroacom_2026
+                WHERE $acompanantesWhere
+                ORDER BY created_at DESC
+            ")->fetch_all(MYSQLI_ASSOC);
+        } catch (Throwable $e) {
+            encuentroResultadosLog('La tabla registroacom_2026 aún no está disponible: ' . $e->getMessage(), 'WARNING');
+        }
     }
 
     foreach ($acompanantes as $key => $answer) {
@@ -111,11 +135,15 @@ try {
         array_keys($questionKeys)
     );
 
-    $primaryKeys = ['id', 'nombres', 'apellidos', 'email', 'programa'];
+    $primaryKeys = ['id', 'nombres', 'apellidos', 'email', 'programa', 'anio_graduacion'];
     $primaryColumns = array_map(
         static fn (string $key): array => [
             'key' => $key,
-            'label' => $key === 'id' ? 'Cédula' : ucfirst($key),
+            'label' => match ($key) {
+                'id' => 'Cédula',
+                'anio_graduacion' => 'Año',
+                default => ucfirst($key),
+            },
         ],
         $primaryKeys
     );
@@ -163,6 +191,8 @@ echo $blade->run('encuentro_resultados', [
     'total' => $total,
     'totalPages' => $totalPages,
     'search' => $search,
+    'anio' => $anio,
+    'anios' => $anios,
     'message' => $message,
     'error' => $error,
     'questionColumns' => $questionColumns,

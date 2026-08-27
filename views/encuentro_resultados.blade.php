@@ -141,6 +141,14 @@
                 <input type="text" name="search" value="{{ $search }}"
                        class="form-control"
                        placeholder="Buscar por cédula o nombre">
+                <select name="anio" class="form-control" style="max-width: 160px;">
+                    <option value="">Todos los años</option>
+                    @foreach($anios as $anioOption)
+                        <option value="{{ $anioOption }}" {{ $anio === $anioOption ? 'selected' : '' }}>
+                            {{ $anioOption }}
+                        </option>
+                    @endforeach
+                </select>
                 <button type="submit" class="btn btn-primary">Buscar</button>
             </form>
 
@@ -231,14 +239,14 @@
                     <div class="encuentro-pagination">
                         @if($page > 1)
                             <a class="btn btn-outline-primary btn-sm"
-                               href="?page={{ $page - 1 }}&search={{ urlencode($search) }}">Anterior</a>
+                               href="?page={{ $page - 1 }}&search={{ urlencode($search) }}&anio={{ urlencode($anio) }}">Anterior</a>
                         @endif
                         <span class="align-self-center text-muted small">
                             Página {{ $page }} de {{ $totalPages }}
                         </span>
                         @if($page < $totalPages)
                             <a class="btn btn-outline-primary btn-sm"
-                               href="?page={{ $page + 1 }}&search={{ urlencode($search) }}">Siguiente</a>
+                               href="?page={{ $page + 1 }}&search={{ urlencode($search) }}&anio={{ urlencode($anio) }}">Siguiente</a>
                         @endif
                     </div>
                 </nav>

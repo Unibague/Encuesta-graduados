@@ -104,6 +104,14 @@ if ($existing) {
         )");
 }
 
+if ($surveyType === 'registrograduados') {
+    try {
+        marcarAsistenciaRegistroGraduados($name, $lastName, $phone, $email);
+    } catch (Throwable $e) {
+        registroGraduadosSheetsLog('Error marcando asistencia en Sheets: ' . $e->getMessage(), 'ERROR');
+    }
+}
+
 $sigaResponse = sendSurveyDataToSiga(
     $identificationNumber,
     $name,
@@ -267,4 +275,100 @@ function extractJsonObject(string $response): ?string
     }
 
     return substr($response, $start, $end - $start + 1);
+}
+
+/**
+ * Marca la columna E (¿Asistió?) como "Sí" para el graduado en la hoja
+ * "Lista asistencia graduados" al completar la encuesta de registro.
+ * Si la persona no tiene fila aún, se agrega una nueva ya marcada.
+ */
+function marcarAsistenciaRegistroGraduados(
+    string $nombres,
+    string $apellidos,
+    string $celular,
+    string $correo
+): void {
+    $spreadsheetId = '1LockLyDz0texEzDypaRyhqL1uniy4Fpus_FPCPOv2Ec';
+    $targetGid = 1419700379;
+
+    $client = new Google_Client();
+    $client->setAuthConfig(registroGraduadosCredentialsPath());
+    $client->addScope(Google_Service_Sheets::SPREADSHEETS);
+
+    $service = new Google_Service_Sheets($client);
+    $spreadsheet = $service->spreadsheets->get($spreadsheetId);
+    $sheetName = null;
+
+    foreach ($spreadsheet->getSheets() as $sheet) {
+        if ((int) $sheet->getProperties()->getSheetId() === $targetGid) {
+            $sheetName = $sheet->getProperties()->getTitle();
+            break;
+        }
+    }
+
+    if (!$sheetName) {
+        throw new RuntimeException("No se encontró la hoja con gid={$targetGid}");
+    }
+
+    $nombreCompleto = trim($nombres . ' ' . $apellidos);
+    $params = ['valueInputOption' => 'USER_ENTERED'];
+
+    $existentes = $service->spreadsheets_values->get($spreadsheetId, "{$sheetName}!A4:C");
+    $filas = $existentes->getValues() ?? [];
+
+    $nombreBuscado = mb_strtolower(preg_replace('/\s+/', ' ', $nombreCompleto), 'UTF-8');
+    $correoBuscado = mb_strtolower(trim($correo), 'UTF-8');
+
+    $numeroFila = null;
+    foreach ($filas as $i => $fila) {
+        $nombreFila = mb_strtolower(preg_replace('/\s+/', ' ', trim($fila[0] ?? '')), 'UTF-8');
+        $correoFila = mb_strtolower(trim($fila[2] ?? ''), 'UTF-8');
+
+        $coincide = ($correoBuscado !== '' && $correoFila === $correoBuscado)
+            || ($nombreFila !== '' && $nombreFila === $nombreBuscado);
+
+        if ($coincide) {
+            $numeroFila = $i + 4; // A4 es la primera fila de datos
+            break;
+        }
+    }
+
+    if ($numeroFila !== null) {
+        $body = new Google_Service_Sheets_ValueRange(['values' => [['Sí']]]);
+        $service->spreadsheets_values->update($spreadsheetId, "{$sheetName}!E{$numeroFila}", $body, $params);
+
+        registroGraduadosSheetsLog("Asistencia marcada (fila existente): {$nombreCompleto}");
+        return;
+    }
+
+    $body = new Google_Service_Sheets_ValueRange(['values' => [[$nombreCompleto, $celular, $correo, '', 'Sí']]]);
+    $service->spreadsheets_values->append($spreadsheetId, "{$sheetName}!A:E", $body, $params);
+
+    registroGraduadosSheetsLog("Asistencia marcada (fila nueva): {$nombreCompleto}");
+}
+
+function registroGraduadosCredentialsPath(): string
+{
+    $configuredPath = trim((string) getenv('GOOGLE_CREDENTIALS_PATH'));
+
+    if ($configuredPath !== '' && is_file($configuredPath)) {
+        return $configuredPath;
+    }
+
+    $localPath = dirname(__DIR__) . '/credentials.json';
+    if (is_file($localPath)) {
+        return $localPath;
+    }
+
+    throw new RuntimeException('No se encontró el archivo de credenciales de Google Sheets.');
+}
+
+function registroGraduadosSheetsLog(string $message, string $level = 'INFO'): void
+{
+    $line = '[' . date('Y-m-d H:i:s') . "][{$level}] {$message}" . PHP_EOL;
+    $logDir = dirname(__DIR__) . '/logs';
+
+    if (!is_dir($logDir)) mkdir($logDir, 0777, true);
+
+    file_put_contents($logDir . '/registrograduados_sheets.log', $line, FILE_APPEND);
 }

@@ -6,6 +6,25 @@ use Ospina\EasySQL\EasySQL;
 
 header('Content-Type: application/json; charset=utf-8');
 
+// Red de seguridad: si ocurre un error fatal de PHP que ningún try/catch
+// puede atrapar (por ejemplo, un problema de esquema en la base de datos),
+// el navegador debe recibir JSON válido en vez de una respuesta vacía
+// ("Unexpected end of JSON input").
+register_shutdown_function(function () {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        registroGraduadosSheetsLog('Error fatal en save-survey.php: ' . $error['message'] . ' en ' . $error['file'] . ':' . $error['line'], 'ERROR');
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=utf-8');
+            http_response_code(500);
+        }
+        echo json_encode([
+            'success' => false,
+            'message' => 'Ocurrió un error inesperado al guardar la encuesta. Por favor intenta de nuevo.',
+        ]);
+    }
+});
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Método no permitido']);
@@ -59,91 +78,100 @@ if ($jsonAnswers === false) {
     exit;
 }
 
-$db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
-$identSafe = addslashes($identificationNumber);
-
-$existing = $db->makeQuery("SELECT id FROM form_answers
-    WHERE identification_number = '$identSafe' AND is_deleted = 0
-    ORDER BY id DESC LIMIT 1")->fetch_assoc();
-
 try {
-    $isGraduated = verifyIfIsGraduated($identificationNumber);
-} catch (Throwable $e) {
-    $isGraduated = 0;
-}
+    $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
+    $identSafe = addslashes($identificationNumber);
 
-$fields = [
-    "email = '" . addslashes($email) . "'",
-    "name = '" . addslashes($name) . "'",
-    "last_name = '" . addslashes($lastName) . "'",
-    "mobile_phone = '" . addslashes($phone) . "'",
-    "alternative_mobile_phone = '" . addslashes($alternativePhone) . "'",
-    "address = '" . addslashes($address) . "'",
-    "country = '" . addslashes($country) . "'",
-    "city = '" . addslashes($city) . "'",
-    "answers = '" . addslashes($jsonAnswers) . "'",
-    'is_graduated = ' . (int) $isGraduated,
-    'is_migrated = 0',
-    'is_denied = 0',
-    'is_deleted = 0',
-    'has_error = 0',
-    'modificated_at = NOW()',
-];
+    $existing = $db->makeQuery("SELECT id FROM form_answers
+        WHERE identification_number = '$identSafe' AND is_deleted = 0
+        ORDER BY id DESC LIMIT 1")->fetch_assoc();
 
-if ($existing) {
-    $db->makeQuery('UPDATE form_answers SET ' . implode(', ', $fields) . ' WHERE id = ' . (int) $existing['id']);
-    $db->makeQuery("UPDATE form_answers SET is_deleted = 1
-        WHERE identification_number = '$identSafe' AND id <> " . (int) $existing['id']);
-} else {
-    $db->makeQuery("INSERT INTO form_answers
-        (email, identification_number, name, last_name, mobile_phone,
-         alternative_mobile_phone, address, country, city, answers,
-         is_graduated, is_migrated, is_denied, is_deleted, has_error,
-         created_at, modificated_at)
-        VALUES (
-            '" . addslashes($email) . "', '$identSafe',
-            '" . addslashes($name) . "', '" . addslashes($lastName) . "',
-            '" . addslashes($phone) . "', '" . addslashes($alternativePhone) . "',
-            '" . addslashes($address) . "', '" . addslashes($country) . "',
-            '" . addslashes($city) . "', '" . addslashes($jsonAnswers) . "',
-            " . (int) $isGraduated . ", 0, 0, 0, 0, NOW(), NOW()
-        )");
-}
-
-if ($surveyType === 'registrograduados') {
     try {
-        marcarAsistenciaRegistroGraduados($name, $lastName, $phone, $email);
+        $isGraduated = verifyIfIsGraduated($identificationNumber);
     } catch (Throwable $e) {
-        registroGraduadosSheetsLog('Error marcando asistencia en Sheets: ' . $e->getMessage(), 'ERROR');
+        $isGraduated = 0;
     }
-}
 
-$sigaResponse = sendSurveyDataToSiga(
-    $identificationNumber,
-    $name,
-    $lastName,
-    $email,
-    $phone,
-    $city
-);
+    $fields = [
+        "email = '" . addslashes($email) . "'",
+        "name = '" . addslashes($name) . "'",
+        "last_name = '" . addslashes($lastName) . "'",
+        "mobile_phone = '" . addslashes($phone) . "'",
+        "alternative_mobile_phone = '" . addslashes($alternativePhone) . "'",
+        "address = '" . addslashes($address) . "'",
+        "country = '" . addslashes($country) . "'",
+        "city = '" . addslashes($city) . "'",
+        "answers = '" . addslashes($jsonAnswers) . "'",
+        'is_graduated = ' . (int) $isGraduated,
+        'is_migrated = 0',
+        'is_denied = 0',
+        'is_deleted = 0',
+        'has_error = 0',
+        'modificated_at = NOW()',
+    ];
 
-if ($sigaResponse->ok) {
-    $db->makeQuery("UPDATE form_answers SET is_migrated = 1, modificated_at = NOW()
-        WHERE identification_number = '$identSafe' AND is_deleted = 0");
+    if ($existing) {
+        $db->makeQuery('UPDATE form_answers SET ' . implode(', ', $fields) . ' WHERE id = ' . (int) $existing['id']);
+        $db->makeQuery("UPDATE form_answers SET is_deleted = 1
+            WHERE identification_number = '$identSafe' AND id <> " . (int) $existing['id']);
+    } else {
+        $db->makeQuery("INSERT INTO form_answers
+            (email, identification_number, name, last_name, mobile_phone,
+             alternative_mobile_phone, address, country, city, answers,
+             is_graduated, is_migrated, is_denied, is_deleted, has_error,
+             created_at, modificated_at)
+            VALUES (
+                '" . addslashes($email) . "', '$identSafe',
+                '" . addslashes($name) . "', '" . addslashes($lastName) . "',
+                '" . addslashes($phone) . "', '" . addslashes($alternativePhone) . "',
+                '" . addslashes($address) . "', '" . addslashes($country) . "',
+                '" . addslashes($city) . "', '" . addslashes($jsonAnswers) . "',
+                " . (int) $isGraduated . ", 0, 0, 0, 0, NOW(), NOW()
+            )");
+    }
+
+    if ($surveyType === 'registrograduados') {
+        try {
+            marcarAsistenciaRegistroGraduados($name, $lastName, $phone, $email);
+        } catch (Throwable $e) {
+            registroGraduadosSheetsLog('Error marcando asistencia en Sheets: ' . $e->getMessage(), 'ERROR');
+        }
+    }
+
+    $sigaResponse = sendSurveyDataToSiga(
+        $identificationNumber,
+        $name,
+        $lastName,
+        $email,
+        $phone,
+        $city
+    );
+
+    if ($sigaResponse->ok) {
+        $db->makeQuery("UPDATE form_answers SET is_migrated = 1, modificated_at = NOW()
+            WHERE identification_number = '$identSafe' AND is_deleted = 0");
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Encuesta guardada y enviada a SIGA correctamente',
+            'siga_sent' => true,
+        ]);
+        exit;
+    }
 
     echo json_encode([
         'success' => true,
-        'message' => 'Encuesta guardada y enviada a SIGA correctamente',
-        'siga_sent' => true,
+        'message' => 'Encuesta guardada, pero no se pudo enviar a SIGA: ' . $sigaResponse->error,
+        'siga_sent' => false,
     ]);
-    exit;
+} catch (Throwable $e) {
+    registroGraduadosSheetsLog('Error guardando encuesta: ' . $e->getMessage(), 'ERROR');
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Ocurrió un problema al guardar la encuesta. Por favor intenta de nuevo en unos minutos.',
+    ]);
 }
-
-echo json_encode([
-    'success' => true,
-    'message' => 'Encuesta guardada, pero no se pudo enviar a SIGA: ' . $sigaResponse->error,
-    'siga_sent' => false,
-]);
 
 function firstAnswer(array $answers, array $keys): mixed
 {

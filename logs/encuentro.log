@@ -119,3 +119,11 @@
 [2026-08-05 20:26:34][INFO] Respuesta grad_dat_siga documento 1005839105 | body={"Nombres":"MARIANA","Apellidos":"MILLAN MENESES","Numero de identificacion":"1005839105","Telefono de contacto":"3505386324","Telefono alterno":"3505385324","Annio de graduacion":"","Correo":"mmillan0978@gmail.com","Programa del cual es egresado":"INGENIERIA DE SISTEMAS","Direccion de correspondencia":"CRA 18A NO 72 75","Ciudad residencia":"IBAGUE"}
 [2026-08-05 20:26:35][INFO] Actualizado en 'No asistentes': Mariana Millan | 1005839105
 [2026-08-05 20:26:36][INFO] Sin coincidencias para retirar de 'Asistentes': Mariana Millan | 1005839105
+[2026-08-26 16:31:31][WARNING] Error consultando SIGA para prefill: Call to undefined function Ospina\CurlCobain\curl_init()
+[2026-08-26 16:31:31][ERROR] Error Google Sheets: No se encontró el archivo de credenciales de Google Sheets.
+[2026-08-26 16:31:36][WARNING] Error consultando SIGA para prefill: Call to undefined function Ospina\CurlCobain\curl_init()
+[2026-08-26 16:31:36][ERROR] Error Google Sheets: No se encontró el archivo de credenciales de Google Sheets.
+[2026-08-27 13:17:26][WARNING] Error consultando SIGA para prefill: Call to undefined function Ospina\CurlCobain\curl_init()
+[2026-08-27 13:17:26][ERROR] Error Google Sheets: No se encontró el archivo de credenciales de Google Sheets.
+[2026-08-27 13:17:31][WARNING] Error consultando SIGA para prefill: Call to undefined function Ospina\CurlCobain\curl_init()
+[2026-08-27 13:17:31][ERROR] Error Google Sheets: No se encontró el archivo de credenciales de Google Sheets.

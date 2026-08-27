@@ -25,9 +25,22 @@
                 color: var(--text);
             }
 
+            body:has(.login-shell) {
+                overflow: hidden;
+            }
+
+            main:has(.login-shell) {
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+            }
+
             .login-shell {
-                min-height: 100vh;
-                padding: 40px 16px;
+                flex: 1;
+                min-height: 0;
+                padding: 24px 16px;
                 background:
                     radial-gradient(circle at 12% 8%, rgba(26, 58, 107, 0.18), transparent 40%),
                     radial-gradient(circle at 88% 92%, rgba(22, 166, 114, 0.14), transparent 42%),
@@ -130,7 +143,7 @@
                 cursor: pointer;
                 font-family: inherit;
                 background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-                color: #1f2333;
+                color: #ffffff !important;
                 padding: 13px 26px;
                 box-shadow: 0 10px 20px -8px rgba(26, 58, 107, 0.55);
                 margin-top: 8px;

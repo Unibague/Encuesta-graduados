@@ -397,7 +397,14 @@
                         <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'migrated_full.php' ? 'active' : '' }}"
                                href="/migrated_full.php">
-                                Registros
+                                Registros Actualizados
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'encuentro_resultados.php' ? 'active' : '' }}"
+                               href="/encuentro_resultados.php">
+                                Registro graduados
                             </a>
                         </li>
 

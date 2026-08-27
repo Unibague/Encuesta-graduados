@@ -24,7 +24,11 @@ $db = new EasySQL(
     getenv('ENVIRONMENT')
 );
 
-$where = "fa.is_deleted = 0";
+$where = "fa.is_deleted = 0
+    AND COALESCE(
+        JSON_UNQUOTE(JSON_EXTRACT(fa.answers, '$._survey_type')),
+        ''
+    ) <> 'registrograduados'";
 
 if ($search !== '') {
     $s = addslashes($search);

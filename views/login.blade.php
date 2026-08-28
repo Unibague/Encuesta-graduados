@@ -37,6 +37,12 @@
                 padding-bottom: 0 !important;
             }
 
+            main:has(.login-shell) > .container {
+                display: flex;
+                flex: 1;
+                min-height: 0;
+            }
+
             .login-shell {
                 flex: 1;
                 min-height: 0;
@@ -184,7 +190,7 @@
 
             <form class="login-form" method="POST" action="/login.php">
                 <div class="form-field-login">
-                    <label class="field-label-login" for="exampleInputEmail1">USUARIO Unibagué</label>
+                    <label class="field-label-login" for="exampleInputEmail1">Usuario Unibagué</label>
                     <input type="text" class="input-field" id="exampleInputEmail1" aria-describedby="Usuario"
                            placeholder="Usuario Unibagué" name="username">
                 </div>

@@ -24,6 +24,10 @@
             --shadow: 0 20px 45px -20px rgba(26, 58, 107, 0.35);
         }
 
+        main:has(.migrated-full-page) > .container {
+            max-width: 100%;
+        }
+
         .migrated-full-page {
             min-height: 100vh;
             padding: 40px 16px 60px;
@@ -37,7 +41,7 @@
 
         .migrated-full-container {
             width: 100%;
-            max-width: 1500px;
+            max-width: 96vw;
             margin: 0 auto;
         }
 
@@ -492,7 +496,7 @@
     <div class="migrated-full-container">
 
         <div class="migrated-full-header">
-        <h1>Datos de egresados SIGA</h1>
+        <h1>Registros actualizados</h1>
         <p>
             {{ number_format($total) }} Dato(s) coinciden con la búsqueda / filtros.
         </p>
@@ -511,7 +515,6 @@
                 'email'                   => 'Correo',
                 'mobile_phone'             => 'Teléfono',
                 'city'                     => 'Ciudad',
-                'is_migrated'              => 'Estado SIGA',
             ];
 
             $baseFilterableColumns = $baseFilterableColumns ?? [];
@@ -604,13 +607,7 @@
                                     $baseVal = $row['base_values'][$field] ?? '';
                                 @endphp
 
-                                @if($field === 'is_migrated')
-                                    @if($baseVal === '1')
-                                        <span class="badge text-bg-success">Actualizado</span>
-                                    @else
-                                        <span class="badge text-bg-danger">Pendiente</span>
-                                    @endif
-                                @elseif($field === 'identification_number')
+                                @if($field === 'identification_number')
                                     <div class="pre-wrap">
                                         <strong>{{ $baseVal !== '' ? $baseVal : '—' }}</strong>
                                     </div>
@@ -709,6 +706,41 @@
                 const modal = new bootstrap.Modal(document.getElementById('answersModal'));
                 const list = document.getElementById('answersList');
                 const title = document.getElementById('answersModalLabel');
+                const sentenceCase = function (text) {
+                    const cleanLabel = String(text ?? '')
+                        .trim()
+                        .replace(/^[a-z]\d+(?:[a-z]\d+)+\s*[-:–—.]?\s*/i, '')
+                        .replace(/\s*\[-\]\s*$/, '');
+                    const normalized = cleanLabel.toLocaleLowerCase('es-CO');
+
+                    return normalized.replace(
+                        /^(\s*[¿¡]*)(\p{L})/u,
+                        function (_match, prefix, firstLetter) {
+                            return prefix + firstLetter.toLocaleUpperCase('es-CO');
+                        }
+                    );
+                };
+                const isTechnicalQuestion = function (text) {
+                    const label = String(text ?? '').trim();
+
+                    return /^timestamp$/i.test(label)
+                        || /^(?:column|columna)\s*\d+$/i.test(label);
+                };
+                const shortLabelOverrides = [
+                    { test: /politica de tratamiento de datos/, label: 'Autorización de datos' },
+                ];
+                const buildLabel = function (text) {
+                    const withoutAccents = String(text ?? '')
+                        .normalize('NFD')
+                        .replace(/[̀-ͯ]/g, '')
+                        .toLocaleLowerCase('es-CO');
+
+                    const override = shortLabelOverrides.find(
+                        (entry) => entry.test.test(withoutAccents)
+                    );
+
+                    return override ? override.label : sentenceCase(text);
+                };
 
                 document.querySelectorAll('.view-answers').forEach(function (button) {
                     button.addEventListener('click', function () {
@@ -717,14 +749,14 @@
                         list.replaceChildren();
 
                         Object.entries(answers).forEach(function ([question, value]) {
-                            if (question.startsWith('_')) return;
+                            if (question.startsWith('_') || isTechnicalQuestion(question)) return;
 
                             const item = document.createElement('article');
                             item.className = 'answer-item';
 
                             const label = document.createElement('div');
                             label.className = 'answer-question';
-                            label.textContent = question;
+                            label.textContent = buildLabel(question);
 
                             const answer = document.createElement('div');
                             answer.className = 'answer-value';

@@ -8,6 +8,11 @@ use Ospina\EasySQL\EasySQL;
 
 verifyIsAuthenticated();
 
+// Esta vista carga y decodifica el JSON completo de form_answers en memoria
+// para poder filtrar por preguntas dinámicas; con el volumen actual de
+// registros eso supera el límite por defecto de PHP.
+ini_set('memory_limit', '1024M');
+
 $dotenv = Dotenv::createUnsafeImmutable(__DIR__);
 $dotenv->load();
 
@@ -267,7 +272,11 @@ function normalizePersonName(string $value): string
         $value = $converted;
     }
 
-    return strtoupper($value);
+    return mb_convert_case(
+        mb_strtolower($value, 'UTF-8'),
+        MB_CASE_TITLE,
+        'UTF-8'
+    );
 }
 
 function normalizeColombianPhone(string $value): string
@@ -282,10 +291,10 @@ function normalizeColombianPhone(string $value): string
     }
 
     if (str_starts_with($digits, '57')) {
-        return '+' . $digits;
+        return $digits;
     }
 
-    return '+57' . $digits;
+    return '57' . $digits;
 }
 
 function isSexOrGenderLabel(string $label): bool
@@ -342,6 +351,8 @@ foreach ($allRows as $key => $row) {
 
     $allRows[$key]['extra_answers'] =
         is_array($decoded) ? $decoded : [];
+
+    unset($allRows[$key]['answers']);
 }
 
 $allFormKeys = [];
@@ -731,7 +742,6 @@ $baseColumns = [
     'email' => 'Correo',
     'mobile_phone' => 'Teléfono',
     'city' => 'Ciudad',
-    'is_migrated' => 'Estado SIGA',
 ];
 
 foreach ($allRows as $rowIndex => $row) {

@@ -160,7 +160,7 @@ try {
         ))
     );
 
-    $primaryKeys = ['encuentro_anio', 'id', 'nombres', 'apellidos', 'email', 'numero_celular'];
+    $primaryKeys = ['encuentro_anio', 'id', 'nombres', 'apellidos'];
     $primaryColumns = array_map(
         static fn (string $key): array => [
             'key' => $key,

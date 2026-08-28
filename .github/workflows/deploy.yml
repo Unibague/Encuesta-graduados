@@ -58,6 +58,18 @@ jobs:
         INTERNAL_RESOURCE_IP: ${{ secrets.INTERNAL_RESOURCE_IP }} 
       run: |
         sshpass -p "$INTERNAL_SSH_PASSWORD" ssh -vvv -o StrictHostKeyChecking=no "$INTERNAL_USER@$INTERNAL_RESOURCE_IP" 'echo "SSH connection successful"'
+
+    - name: Repair Git repository permissions
+      env:
+        INTERNAL_SSH_PASSWORD: ${{ secrets.INTERNAL_SSH_PASSWORD }}
+        INTERNAL_USER: ${{ secrets.INTERNAL_USER }}
+        INTERNAL_RESOURCE_IP: ${{ secrets.INTERNAL_RESOURCE_IP }}
+      run: |
+        printf '%s\n' "$INTERNAL_SSH_PASSWORD" | \
+          SSHPASS="$INTERNAL_SSH_PASSWORD" sshpass -e ssh \
+          -o StrictHostKeyChecking=no \
+          "$INTERNAL_USER@$INTERNAL_RESOURCE_IP" \
+          "sudo -S -p '' chown -R \"\$(id -u):\$(id -g)\" '$WORKSPACE_PATH/.git'"
         
     - name: Clone repository on remote server
       env:

@@ -707,10 +707,15 @@
                 const list = document.getElementById('answersList');
                 const title = document.getElementById('answersModalLabel');
                 const sentenceCase = function (text) {
-                    const cleanLabel = String(text ?? '')
-                        .trim()
+                    const trimmed = String(text ?? '').trim();
+                    const withoutCodePrefix = trimmed
                         .replace(/^[a-z]\d+(?:[a-z]\d+)+\s*[-:–—.]?\s*/i, '')
                         .replace(/\s*\[-\]\s*$/, '');
+                    // Si al quitar el prefijo tipo "F4C16P1 -" no queda nada,
+                    // la clave completa ES el código (encuestas nuevas la
+                    // guardan así); en ese caso se conserva tal cual.
+                    const cleanLabel = (withoutCodePrefix !== '' ? withoutCodePrefix : trimmed)
+                        .replace(/_/g, ' ');
                     const normalized = cleanLabel.toLocaleLowerCase('es-CO');
 
                     return normalized.replace(
@@ -729,8 +734,61 @@
                 const shortLabelOverrides = [
                     { test: /politica de tratamiento de datos/, label: 'Autorización de datos' },
                 ];
+                // Claves de 'actualizaciongraduados': la pregunta se guarda como
+                // clave corta (ej. "F4C16P1"), no como el texto completo, así
+                // que aquí se resuelve al enunciado real de esa encuesta.
+                const knownQuestionLabels = {
+                    "autorizacion_datos": "¿Autoriza el tratamiento de sus datos personales?",
+                    "nombres": "Nombres",
+                    "apellidos": "Apellidos",
+                    "id": "Cédula",
+                    "email": "Correo electrónico",
+                    "numero_celular": "Número celular",
+                    "numero_alterno": "Número celular alterno",
+                    "fecha_nacimiento": "Fecha de nacimiento",
+                    "genero": "Género",
+                    "direccion": "Dirección",
+                    "pais": "País",
+                    "departamento": "Departamento",
+                    "ciudad": "Ciudad",
+                    "nivel_academico": "Máximo nivel académico alcanzado",
+                    "anio_graduacion": "Año de graduación",
+                    "anio_graduacion_master": "Año de graduación de Especialización o maestría",
+                    "programa": "¿De qué programa eres egresado?",
+                    "estado_laboral": "¿Cuál es tu situación laboral actual?",
+                    "metodo_empleo": "¿Por cuales metodos ha obtenido sus empleos?",
+                    "nombre_empresa": "Nombre de la empresa a la cual estás vinculado",
+                    "cargo": "Nombre del cargo que desempeña actualmente o, si es pensionado(a), del último cargo que ocupó",
+                    "sector": "Sector de la empresa",
+                    "salario": "Rango salarial mensual actual",
+                    "nivel laboral": "Seleccione el nivel laboral del empleo actual, o del último empleo si es pensionado(a)",
+                    "sector_eco": "Sector económico de la empresa",
+                    "antiguedad": "¿Cuánto tiempo llevas vinculado a tu empleo actual o, si es pensionado(a), en su ultimo empleo?",
+                    "tiempo_cesante": "¿Cuánto tiempo llevas cesante?",
+                    "anios_constitucion": "¿Hace cuántos años constituyó su empresa?",
+                    "pais_empresa": "País donde está ubicada su empresa",
+                    "ciudad_empresa": "Ciudad donde está ubicada su empresa",
+                    "reconocimientos": "¿Ha recibido algún reconocimiento por su desempeño profesional?",
+                    "detalle_reconocimientos": "Si respondió sí, por favor indique cuáles",
+                    "F4C16P1": "En qué medida considera que el perfil de formación, las competencias adquiridas y las posibilidades que le ha ofrecido su formación han contribuido a su desarrollo profesional y laboral",
+                    "F4C117P1": "Considera que su desempeño laboral y profesional ha tenido impactos positivos en:",
+                    "F4C17P2": "Si lo desea por favor especifique el aporte mencionado anteriormente",
+                    "F5C19P1": "En qué medida considera que las rutas de formación alternativas derivadas de las estrategias de flexibilidad curricular (cursos electivos: Electiva Humanística, movilidad, entre otros) fueron coherentes con sus necesidades e intereses",
+                    "F7C32P1": "En qué medida considera que las acciones de cooperación académica y científica (curso con docente internacional, convenios, estrategias para un segundo idioma, movilidad, entre otros) desarrolladas por el Programa favorecen la interacción entre profesores y estudiantes a nivel nacional e internacional",
+                    "F9C37P1": "En qué medida considera que la infraestructura, espacios y servicios de bienestar (gimnasio, sede deportiva, asesoría psicológica, entre otros) son de calidad y pertinentes",
+                    "F11C41P1": "En qué medida considera que la participación de los egresados en los órganos colegiados (comité de Programa, consejo de Facultad, Consejo Superior, Consejo de Fundadores, entre otros) ha contribuido al mejoramiento del Programa",
+                    "necesidades_capacitacion": "¿Cuáles son sus necesidades o espectativas en terminos de capacitación?",
+                    "observaciones": "En caso de observaciones utilice este espacio",
+                    "recomendacion": "¿Recomendaría a la Universidad de Ibagué como una institución de educación superior?",
+                };
                 const buildLabel = function (text) {
-                    const withoutAccents = String(text ?? '')
+                    const key = String(text ?? '').trim();
+
+                    if (Object.prototype.hasOwnProperty.call(knownQuestionLabels, key)) {
+                        return knownQuestionLabels[key];
+                    }
+
+                    const withoutAccents = key
                         .normalize('NFD')
                         .replace(/[̀-ͯ]/g, '')
                         .toLocaleLowerCase('es-CO');

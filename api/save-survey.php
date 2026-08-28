@@ -258,7 +258,7 @@ function sendSurveyDataToSiga(
     if ($normalizedPhone !== '') $data['telefono'] = $normalizedPhone;
     if ($normalizedAlternativePhone !== '') $data['tel_alterno'] = $normalizedAlternativePhone;
     if ($normalizedCity !== null) $data['ciudad'] = $normalizedCity;
-    if (trim($address) !== '') $data['direccion'] = trim($address);
+    if (trim($address) !== '') $data['direccion'] = removeAccentsSiga(trim($address));
 
     try {
         if (function_exists('curl_init')) {

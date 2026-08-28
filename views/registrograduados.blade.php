@@ -269,6 +269,18 @@
             box-shadow: 0 0 0 4px rgba(26, 58, 107, 0.18);
         }
 
+        .searchable-field {
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' stroke='%237c8093' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 44px;
+        }
+
+        .searchable-field:disabled {
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
         textarea.input-field {
             min-height: 110px;
             resize: vertical;
@@ -722,8 +734,7 @@
                     { key: 'apellidos', label: 'Apellidos', type: 'text', required: true, placeholder: 'Tus apellidos completos' },
                     { key: 'email', label: 'Correo electrónico', type: 'email', description: 'Tu correo de contacto principal', required: true, placeholder: 'correo@ejemplo.com' },
                     { key: 'numero_celular', label: 'Número celular', type: 'tel', description: 'Teléfono de contacto', required: true, placeholder: 'Ej: +57 3001234567' },
-                    { key: 'fecha_nacimiento', label: 'Fecha de nacimiento', type: 'date', required: true },
-                    { key: 'genero', label: 'Género', type: 'radio', options: ['Masculino', 'Femenino', 'Transgénero', 'Otro'], required: true },
+                    { key: 'genero', label: 'Género', type: 'radio', options: ['Masculino', 'Femenino', 'Otro'], required: true },
                     { key: 'direccion', label: 'Dirección', type: 'text', description: 'Dirección de residencia', required: true, placeholder: 'Calle 123 #45-67' },
                     { key: 'pais', label: 'País', type: 'country', required: true },
                     { key: 'ciudad', label: 'Ciudad', type: 'city', required: true }
@@ -733,57 +744,29 @@
                 title: 'Formación académica',
                 icon: '',
                 fields: [
-                    { key: 'nivel_academico', label: 'Máximo nivel académico alcanzado', type: 'select', options: ['Técnico', 'Tecnológico', 'Universitario', 'Especialización', 'Maestría', 'Doctorado'], required: true },
-                    { key: 'anio_graduacion', label: 'Año de graduación', type: 'number', description: 'Año en que obtuviste tu título', required: true, placeholder: 'Ej: 2020' },
+                    { key: 'nivel_academico', label: 'Máximo nivel académico alcanzado en la universidad de Ibagué', type: 'select', options: ['Universitario', 'Especialización', 'Maestría', 'Doctorado'], required: true },
                     {
                         key: 'programa',
                         label: '¿De qué programa eres egresado?',
                         type: 'select',
                         description: 'Selecciona tu programa de la lista',
                         options: [
-                            'TECNOLOGIA EN CONTABILIDAD Y COSTOS',
-                            'TECNOLOGIA EN ENTRENAMIENTO DEPORTIVO EN FUTBOL',
-                            'ESPECIALIZACION EN DERECHO ADMINISTRATIVO',
-                            'ESPECIALIZACION EN GESTION EMPRESARIAL',
-                            'MAESTRIA EN ADMINISTRACION DE NEGOCIOS',
-                            'ESPECIALIZACION EN GESTION Y CONTROL DE CALIDAD',
                             'INGENIERIA DE SISTEMAS',
-                            'ESPECIALIZACION EN INTERVENCION PSICOSOCIAL',
                             'CONTADURIA PUBLICA',
-                            'TECNOLOGIA EN SEGURIDAD E HIGIENE INDUSTRIAL',
-                            'TECNOLOGIA EN GESTION DE TIC',
-                            'MAESTRIA EN DERECHO CON ENFASIS EN DERECHO PUBLICO Y DERECHO PRIVADO',
-                            'TECNOLOGIA EN INVESTIGACION CRIMINAL Y JUDICIAL',
                             'INGENIERÍA EN ANALÍTICA DE DATOS',
-                            'MAESTRIA EN GESTION TERRITORIAL, AUTONOMIA Y SOSTENIBILIDAD',
-                            'TECNOLOGIA INDUSTRIAL',
-                            'ESPECIALIZACION EN DERECHO PENAL',
                             'ARQUITECTURA',
                             'BIOLOGIA AMBIENTAL',
                             'INGENIERIA INDUSTRIAL',
-                            'TECNOLOGIA MECANICA',
                             'INGENIERIA CIVIL',
-                            'MAESTRIA EN ANALITICA DE DATOS PARA LA TOMA DE DECISIONES',
-                            'MAESTRIA EN INGENIERIA DE CONTROL',
                             'COMUNICACION SOCIAL Y PERIODISMO',
                             'INGENIERIA MECANICA',
-                            'MAESTRIA EN GERENCIA DE LA CALIDAD',
                             'PSICOLOGIA',
-                            'ESP. EN GESTION DE OPERACIONES Y LOGISTA',
-                            'TECNOLOGIA EN REDES Y COMUNICACIONES',
-                            'TECNOLOGIA EN SISTEMAS',
                             'INGENIERIA ELECTRONICA',
-                            'MAESTRIA EN GESTION INDUSTRIAL',
-                            'TECNOLOGIA EN MANTENIMIENTO INDUSTRIAL',
-                            'TECNOLOGIA EN MERCADEO Y VENTAS',
-                            'TECNOLOGIA EN LOGISTICA',
                             'DISEÑO',
                             'DERECHO',
                             'ADMINISTRACION DE EMPRESAS',
-                            'TECNOLOGIA EN ELECTRONICA',
                             'ADMINISTRACION DE NEGOCIOS INTERNACIONALES',
                             'ECONOMIA',
-                            'ESPECIALIZACION EN DERECHO CIVIL',
                             'MERCADEO'
                         ],
                         required: true
@@ -864,6 +847,9 @@
 
         function isFieldEmpty(field) {
             const val = answers[field.key];
+            if (field.key === 'pais') {
+                return !answers.pais_codigo;
+            }
             if (field.type === 'checkbox') {
                 return !Array.isArray(val) || val.length === 0;
             }
@@ -913,39 +899,40 @@
                 const countries = Country.getAllCountries();
 
                 return `
-                    <select class="input-field" id="field_${field.key}" onchange="onCountryChange()">
-                        <option value="">— Selecciona un país —</option>
-                        ${countries.map(country => `
-                            <option
-                                value="${country.isoCode}"
-                                data-name="${country.name.replace(/"/g, '&quot;')}"
-                                ${answers.pais_codigo === country.isoCode ? 'selected' : ''}
-                            >
-                                ${country.name}
-                            </option>
-                        `).join('')}
-                    </select>
+                    <input class="input-field searchable-field" type="text" id="field_${field.key}"
+                           value="${answers.pais || ''}" list="pais_options"
+                           placeholder="Escribe para buscar un país" autocomplete="off"
+                           oninput="onCountryChange()">
+                    <datalist id="pais_options">
+                        ${countries.map(country => `<option value="${country.name}"></option>`).join('')}
+                    </datalist>
                 `;
             }
 
             if (field.type === 'city') {
                 return `
-                    <select
-                        class="input-field"
-                        id="field_${field.key}"
-                        onchange="onInputChange('${field.key}')"
-                        ${answers.pais_codigo ? '' : 'disabled'}
-                    >
-                        <option value="">
-                            ${answers.pais_codigo
-                                ? '— Selecciona una ciudad —'
-                                : '— Primero selecciona un país —'}
-                        </option>
-                    </select>
+                    <input class="input-field searchable-field" type="text" id="field_${field.key}"
+                           value="${answers.ciudad || ''}" list="ciudad_options"
+                           placeholder="${answers.pais_codigo ? 'Escribe para buscar una ciudad' : 'Primero selecciona un país'}"
+                           autocomplete="off" oninput="onInputChange('${field.key}')"
+                           ${answers.pais_codigo ? '' : 'disabled'}>
+                    <datalist id="ciudad_options"></datalist>
                 `;
             }
 
             if (field.type === 'select') {
+                if (field.key === 'programa') {
+                    return `
+                        <input class="input-field searchable-field" type="text" id="field_${field.key}"
+                               value="${value}" list="programa_options"
+                               placeholder="Escribe para buscar tu programa" autocomplete="off"
+                               oninput="onInputChange('${field.key}')">
+                        <datalist id="programa_options">
+                            ${(field.options || []).map(opt => `<option value="${opt}"></option>`).join('')}
+                        </datalist>
+                    `;
+                }
+
                 const options = (field.options || []).map(opt =>
                     `<option value="${opt.replace(/"/g, '&quot;')}" ${value === opt ? 'selected' : ''}>${opt}</option>`
                 ).join('');
@@ -1023,47 +1010,44 @@
 
             if (!countrySelect || !citySelect) return;
 
-            const countryCode = countrySelect.value;
-            const selectedOption = countrySelect.options[countrySelect.selectedIndex];
-            const countryName = selectedOption?.dataset.name || '';
+            const countryName = countrySelect.value.trim();
+            const country = Country.getAllCountries()
+                .find(item => item.name.toLowerCase() === countryName.toLowerCase());
+            const countryCode = country?.isoCode || '';
 
             answers.pais = countryName;
             answers.pais_codigo = countryCode;
             answers.ciudad = '';
 
-            citySelect.innerHTML = '';
+            citySelect.value = '';
+            citySelect.disabled = !countryCode;
+            citySelect.placeholder = countryCode
+                ? 'Escribe para buscar una ciudad'
+                : 'Primero selecciona un país';
 
             if (!countryCode) {
-                citySelect.disabled = true;
-                citySelect.innerHTML = `<option value="">— Primero selecciona un país —</option>`;
+                document.getElementById('ciudad_options').innerHTML = '';
                 updateNextButton();
                 return;
             }
 
-            citySelect.disabled = false;
-            citySelect.innerHTML = `<option value="">— Selecciona una ciudad —</option>`;
-
-            const cities = City.getCitiesOfCountry(countryCode);
-
-            if (!cities || cities.length === 0) {
-                citySelect.innerHTML = `<option value="">— No hay ciudades disponibles —</option>`;
-                updateNextButton();
-                return;
-            }
-
-            cities
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .forEach(city => {
-                    const option = document.createElement('option');
-                    option.value = city.name;
-                    option.textContent = city.name;
-                    citySelect.appendChild(option);
-                });
+            populateCityOptions(countryCode);
 
             const countryField = document.querySelector('.form-field[data-key="pais"]');
             if (countryField) countryField.classList.remove('has-error');
 
             updateNextButton();
+        }
+
+        function populateCityOptions(countryCode) {
+            const cityOptions = document.getElementById('ciudad_options');
+            if (!cityOptions) return;
+
+            const cities = City.getCitiesOfCountry(countryCode) || [];
+            cityOptions.innerHTML = cities
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map(city => `<option value="${city.name}"></option>`)
+                .join('');
         }
 
         async function lookupGraduadoPorCedula() {
@@ -1136,10 +1120,12 @@
 
                 if (field.type === 'country') {
                     const countrySelect = document.getElementById('field_pais');
-                    if (countrySelect && countrySelect.value) {
-                        const selectedOption = countrySelect.options[countrySelect.selectedIndex];
-                        answers.pais_codigo = countrySelect.value;
-                        answers.pais = selectedOption.dataset.name || '';
+                    if (countrySelect) {
+                        const countryName = countrySelect.value.trim();
+                        const country = Country.getAllCountries()
+                            .find(item => item.name.toLowerCase() === countryName.toLowerCase());
+                        answers.pais = countryName;
+                        answers.pais_codigo = country?.isoCode || '';
                     }
                     return;
                 }
@@ -1238,7 +1224,7 @@
                         <div class="field-input-wrap">
                             ${fieldHtml(field)}
                         </div>
-                        <div class="field-error">Este campo es obligatorio</div>
+                        <div class="field-error">${field.key === 'pais' ? 'Selecciona un país válido de la lista' : 'Este campo es obligatorio'}</div>
                     </div>
                 `;
             }).join('');
@@ -1270,23 +1256,14 @@
             if (answers.pais_codigo) {
                 const countrySelect = document.getElementById('field_pais');
                 if (countrySelect) {
-                    countrySelect.value = answers.pais_codigo;
+                    countrySelect.value = answers.pais || '';
 
                     const citySelect = document.getElementById('field_ciudad');
                     if (citySelect) {
-                        const cities = City.getCitiesOfCountry(answers.pais_codigo);
                         citySelect.disabled = false;
-                        citySelect.innerHTML = `<option value="">— Selecciona una ciudad —</option>`;
-
-                        cities
-                            .sort((a, b) => a.name.localeCompare(b.name))
-                            .forEach(city => {
-                                const option = document.createElement('option');
-                                option.value = city.name;
-                                option.textContent = city.name;
-                                if (city.name === answers.ciudad) option.selected = true;
-                                citySelect.appendChild(option);
-                            });
+                        citySelect.value = answers.ciudad || '';
+                        citySelect.placeholder = 'Escribe para buscar una ciudad';
+                        populateCityOptions(answers.pais_codigo);
                     }
                 }
             }
@@ -1304,8 +1281,8 @@
         }
 
         async function goNext() {
-            if (!validateCurrentSection()) return;
             saveCurrentSectionAnswers();
+            if (!validateCurrentSection()) return;
 
             const sections = getVisibleSections();
             const current = sections[currentSectionIndex];

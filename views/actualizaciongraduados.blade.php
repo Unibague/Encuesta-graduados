@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@11.1.0/public/assets/styles/choices.min.css">
     <style>
         :root {
             --primary: #1A3A6B;
@@ -63,6 +64,51 @@
             color: var(--text-muted);
             margin: 0;
             font-size: 0.95rem;
+        }
+
+        .identity-card {
+            background: #fff;
+            border: 1px solid rgba(26, 58, 107, 0.12);
+            border-radius: 26px;
+            box-shadow: var(--shadow);
+            padding: 36px 32px;
+        }
+
+        .identity-card h2 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .identity-card > p {
+            color: var(--text-muted);
+            margin-bottom: 22px;
+        }
+
+        .identity-actions {
+            display: flex;
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .identity-actions .input-field { flex: 1; }
+
+        .identity-message {
+            display: none;
+            margin-top: 18px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: var(--danger-light);
+            color: #991b1b;
+            line-height: 1.5;
+        }
+
+        .identity-message.visible { display: block; }
+        .identity-message a { color: inherit; font-weight: 800; }
+
+        @media (max-width: 560px) {
+            .identity-card { padding: 28px 18px; border-radius: 20px; }
+            .identity-actions { flex-direction: column; }
         }
 
         .progress-container { margin-bottom: 22px; }
@@ -261,6 +307,41 @@
         }
 
         .input-field::placeholder { color: #b3b4c6; }
+
+        .choices { margin-bottom: 0; }
+
+        .choices__inner {
+            min-height: 52px;
+            padding: 10px 14px;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            background: #fbfbfe;
+            font-size: 0.98rem;
+        }
+
+        .is-focused .choices__inner,
+        .is-open .choices__inner {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(26, 58, 107, 0.12);
+        }
+
+        .form-field.has-error .choices__inner {
+            border-color: var(--danger);
+            background: var(--danger-light);
+        }
+
+        .choices__list--dropdown,
+        .choices__list[aria-expanded] {
+            z-index: 20;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .choices__input {
+            font-family: inherit;
+            font-size: 0.95rem;
+            border-bottom-color: var(--border);
+        }
 
         .input-field:focus {
             outline: none;
@@ -665,7 +746,21 @@
                 <p>Solo te tomará unos minutos. Completa cada sección a tu ritmo.</p>
             </div>
 
-            <div class="progress-container">
+            <div class="identity-card" id="identityView">
+                <h2>Consulta tu c&eacute;dula</h2>
+                <p>Primero verificaremos si eres graduado o egresado de la Universidad de Ibagu&eacute;.</p>
+                <div class="identity-actions">
+                    <input class="input-field" type="text" inputmode="numeric"
+                           id="identityNumber" placeholder="N&uacute;mero de c&eacute;dula"
+                           autocomplete="off" maxlength="15">
+                    <button type="button" class="btn btn-primary" id="btnVerifyIdentity">
+                        Consultar
+                    </button>
+                </div>
+                <div class="identity-message" id="identityMessage" role="alert"></div>
+            </div>
+
+            <div class="progress-container" id="progressContainer" style="display: none;">
                 <div class="progress-top-row">
                     <span class="section-pill" id="sectionPill">📋 Cargando…</span>
                     <span class="progress-meta" id="progressMeta">Sección 1</span>
@@ -675,7 +770,7 @@
                 </div>
             </div>
 
-            <div class="survey-card">
+            <div class="survey-card" id="surveyCard" style="display: none;">
 
                 <div id="formView">
                     <div id="sectionArea" class="section-anim"></div>
@@ -695,7 +790,7 @@
                     <div id="summaryContainer"></div>
                     <div class="nav-row">
                         <button type="button" class="btn btn-secondary-outline" onclick="backToLastSection()">← Seguir editando</button>
-                        <button type="button" class="btn btn-success" onclick="submitSurvey()">Terminar encuesta ✓</button>
+                        <button type="button" class="btn btn-success" onclick="submitSurvey()">Enviar actualizaci&oacute;n &#10003;</button>
                     </div>
                 </div>
 
@@ -703,7 +798,7 @@
                     <div class="thankyou-wrap">
                         <div class="thankyou-icon">✓</div>
                         <h2>¡Gracias por responder!</h2>
-                        <p>Tus respuestas fueron registradas correctamente. Agradecemos el tiempo que dedicaste a esta encuesta.</p>
+                        <p>Tus datos fueron actualizados correctamente en SIGA y quedaron registrados en la Universidad.</p>
                     </div>
                 </div>
 
@@ -721,6 +816,7 @@
 
     <script type="module">
         import { Country, State, City } from 'https://cdn.jsdelivr.net/npm/country-state-city@3.2.1/+esm';
+        import Choices from 'https://cdn.jsdelivr.net/npm/choices.js@11.1.0/+esm';
 
         window.Country = Country;
         window.State = State;
@@ -752,8 +848,7 @@
                     { key: 'numero_celular', label: 'Número celular', type: 'tel', description: 'Teléfono de contacto', required: true, placeholder: 'Ej: +57 3001234567' },
                     { key: 'numero_alterno', label: 'Número celular alterno', type: 'tel', description: 'Teléfono de contacto alterno', required: false, placeholder: 'Ej: +57 3001234567' },
                     { key: 'fecha_nacimiento', label: 'Fecha de nacimiento', type: 'date', required: true },
-                    { key: 'sexo', label: 'Sexo', type: 'radio', options: ['Hombre', 'Mujer', 'Intersexual', 'Indeterminado'], required: true },
-                    { key: 'genero', label: 'Género', type: 'radio', options: ['Masculino', 'Femenino', 'Transgénero', 'Otro'], required: true },
+                    { key: 'genero', label: 'Género', type: 'radio', options: ['Masculino', 'Femenino', 'Otro'], required: true },
                     { key: 'direccion', label: 'Dirección', type: 'text', description: 'Dirección de residencia', required: true, placeholder: 'Calle 123 #45-67' },
                     { key: 'pais', label: 'País', type: 'country', required: true },
                     { key: 'departamento', label: 'Departamento', type: 'state', required: true },
@@ -1067,7 +1162,7 @@
                 ]
             },
             {
-                tittle: 'Recomendación',
+                title: 'Recomendación',
                 icon: '',
                 fields: [
                     {
@@ -1088,6 +1183,88 @@
         );
         let currentSectionIndex = 0;
         let returnToSummary = false;
+        let verifiedIdentification = '';
+        let searchableSelects = [];
+
+        function destroySearchableSelects() {
+            searchableSelects.forEach(instance => instance.destroy());
+            searchableSelects = [];
+        }
+
+        function initializeSearchableSelects() {
+            searchableSelects = Array.from(document.querySelectorAll('.searchable-select'))
+                .map(select => new Choices(select, {
+                    allowHTML: false,
+                    searchEnabled: true,
+                    searchChoices: true,
+                    shouldSort: false,
+                    itemSelectText: '',
+                    searchPlaceholderValue: 'Escribe para buscar...',
+                    noResultsText: 'No se encontraron resultados',
+                    noChoicesText: 'No hay opciones disponibles',
+                }));
+        }
+
+        async function verifyIdentity() {
+            const input = document.getElementById('identityNumber');
+            const button = document.getElementById('btnVerifyIdentity');
+            const message = document.getElementById('identityMessage');
+            const cedula = String(input.value || '').replace(/\D+/g, '');
+
+            message.classList.remove('visible');
+            message.textContent = '';
+
+            if (cedula.length < 6 || cedula.length > 15) {
+                message.textContent = 'Ingresa un número de cédula válido.';
+                message.classList.add('visible');
+                input.focus();
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = 'Consultando...';
+
+            try {
+                const response = await fetch('/api/validate-graduate.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cedula }),
+                });
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'No fue posible consultar SIGA.');
+                }
+
+                if (!result.eligible) {
+                    message.innerHTML = 'La cédula no corresponde a un graduado o egresado. '
+                        + 'Comunícate con <a href="mailto:desarrolladorg3@unibague.edu.co">'
+                        + 'desarrolladorg3@unibague.edu.co</a>.';
+                    message.classList.add('visible');
+                    return;
+                }
+
+                verifiedIdentification = cedula;
+                answers.id = cedula;
+                Object.entries(result.data || {}).forEach(([key, value]) => {
+                    if (value !== null && String(value).trim() !== '') {
+                        answers[key] = String(value).trim();
+                    }
+                });
+
+                document.getElementById('identityView').style.display = 'none';
+                document.getElementById('progressContainer').style.display = 'block';
+                document.getElementById('surveyCard').style.display = 'flex';
+                renderSection();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (error) {
+                message.textContent = error.message;
+                message.classList.add('visible');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Consultar';
+            }
+        }
 
         function getVisibleSections() {
             return encuestaSections
@@ -1105,6 +1282,21 @@
             }
             if (field.type === 'matrix') {
                 return !val || field.rows.some(row => !val[row]);
+            }
+            if (field.type === 'select') {
+                return !field.options.includes(val);
+            }
+            if (field.type === 'country') {
+                return !answers[`${field.key}_codigo`];
+            }
+            if (field.type === 'state') {
+                const states = State.getStatesOfCountry(answers.pais_codigo || '');
+                return !states.some(state => state.name === val);
+            }
+            if (field.type === 'city') {
+                const countryKey = field.key === 'ciudad_empresa' ? 'pais_empresa' : 'pais';
+                const cities = City.getCitiesOfCountry(answers[`${countryKey}_codigo`] || '') || [];
+                return !cities.some(city => city.name === val);
             }
             return val === undefined || val === null || String(val).trim() === '';
         }
@@ -1185,16 +1377,14 @@
                 const countries = Country.getAllCountries();
 
                 return `
-                    <select class="input-field" id="field_${field.key}" onchange="onCountryChange('${field.key}')">
+                    <select class="input-field searchable-select" id="field_${field.key}" onchange="onCountryChange('${field.key}')">
                         <option value="">— Selecciona un país —</option>
                         ${countries.map(country => `
                             <option
                                 value="${country.isoCode}"
                                 data-name="${country.name.replace(/"/g, '&quot;')}"
-                                ${answers.pais_codigo === country.isoCode ? 'selected' : ''}
-                            >
-                                ${country.name}
-                            </option>
+                                ${answers[`${field.key}_codigo`] === country.isoCode ? 'selected' : ''}
+                            >${country.name}</option>
                         `).join('')}
                     </select>
                 `;
@@ -1205,17 +1395,18 @@
                 const countryCodeKey = `${countryKey}_codigo`;
 
                 return `
-                    <select
-                        class="input-field"
+                    <select class="input-field searchable-select"
                         id="field_${field.key}"
                         onchange="onInputChange('${field.key}')"
                         ${answers[countryCodeKey] ? '' : 'disabled'}
                     >
-                        <option value="">
-                            ${answers[countryCodeKey]
-                                ? '— Selecciona una ciudad —'
-                                : '— Primero selecciona un país —'}
-                        </option>
+                        <option value="">— Selecciona una ciudad —</option>
+                        ${(answers[countryCodeKey]
+                            ? City.getCitiesOfCountry(answers[countryCodeKey]) || []
+                            : []
+                        ).map(city => `
+                            <option value="${city.name.replace(/"/g, '&quot;')}" ${value === city.name ? 'selected' : ''}>${city.name}</option>
+                        `).join('')}
                     </select>
                 `;
             }
@@ -1224,22 +1415,15 @@
                 const countryCode = answers.pais_codigo || '';
 
                 return `
-                    <select
-                        class="input-field"
+                    <select class="input-field searchable-select"
                         id="field_${field.key}"
                         onchange="onInputChange('${field.key}')"
                         ${countryCode ? '' : 'disabled'}
                     >
-                        <option value="">
-                            ${countryCode
-                                ? '— Selecciona un departamento —'
-                                : '— Primero selecciona un país —'}
-                        </option>
+                        <option value="">— Selecciona un departamento —</option>
                         ${countryCode
                             ? State.getStatesOfCountry(countryCode).map(state => `
-                                <option value="${state.name.replace(/"/g, '&quot;')}" ${answers[field.key] === state.name ? 'selected' : ''}>
-                                    ${state.name}
-                                </option>
+                                <option value="${state.name.replace(/"/g, '&quot;')}" ${value === state.name ? 'selected' : ''}>${state.name}</option>
                             `).join('')
                             : ''}
                     </select>
@@ -1252,7 +1436,7 @@
                 ).join('');
 
                 return `
-                    <select class="input-field" id="field_${field.key}" onchange="onInputChange('${field.key}')">
+                    <select class="input-field searchable-select" id="field_${field.key}" onchange="onInputChange('${field.key}')">
                         <option value="">— Selecciona una opción —</option>
                         ${options}
                     </select>
@@ -1263,7 +1447,8 @@
                 return `<textarea class="input-field" id="field_${field.key}" placeholder="${placeholder}" oninput="onInputChange('${field.key}')">${value}</textarea>`;
             }
 
-            return `<input class="input-field" type="${field.type}" id="field_${field.key}" value="${value}" placeholder="${placeholder}" autocomplete="off" oninput="onInputChange('${field.key}')">`;
+            const readOnly = field.key === 'id' ? 'readonly' : '';
+            return `<input class="input-field" type="${field.type}" id="field_${field.key}" value="${value}" placeholder="${placeholder}" autocomplete="off" ${readOnly} oninput="onInputChange('${field.key}')">`;
         }
 
         function selectChip(key, value, isMulti) {
@@ -1320,6 +1505,7 @@
         }
 
         function onCountryChange(countryKey) {
+            destroySearchableSelects();
             const cityKey = countryKey === 'pais_empresa' ? 'ciudad_empresa' : 'ciudad';
             const countryCodeKey = `${countryKey}_codigo`;
             const stateKey = countryKey === 'pais' ? 'departamento' : null;
@@ -1331,62 +1517,37 @@
 
             const countryCode = countrySelect.value;
             const selectedOption = countrySelect.options[countrySelect.selectedIndex];
-            const countryName = selectedOption?.dataset.name || '';
-
-            answers[countryKey] = countryName;
+            answers[countryKey] = selectedOption?.dataset.name || '';
             answers[countryCodeKey] = countryCode;
             answers[cityKey] = '';
             if (stateKey) answers[stateKey] = '';
 
-            citySelect.innerHTML = '';
-            if (stateSelect) stateSelect.innerHTML = '';
-
-            if (!countryCode) {
-                citySelect.disabled = true;
-                citySelect.innerHTML = `<option value="">— Primero selecciona un país —</option>`;
-                if (stateSelect) {
-                    stateSelect.disabled = true;
-                    stateSelect.innerHTML = `<option value="">— Primero selecciona un país —</option>`;
-                }
-                updateNextButton();
-                return;
-            }
+            citySelect.innerHTML = '<option value="">— Selecciona una ciudad —</option>';
+            citySelect.disabled = !countryCode;
 
             if (stateSelect) {
-                const states = State.getStatesOfCountry(countryCode);
-                stateSelect.disabled = false;
-                stateSelect.innerHTML = `<option value="">— Selecciona un departamento —</option>`;
-                states.forEach(state => {
-                    const option = document.createElement('option');
-                    option.value = state.name;
-                    option.textContent = state.name;
-                    stateSelect.appendChild(option);
-                });
+                stateSelect.innerHTML = '<option value="">— Selecciona un departamento —</option>';
+                stateSelect.disabled = !countryCode;
             }
 
-            citySelect.disabled = false;
-            citySelect.innerHTML = `<option value="">— Selecciona una ciudad —</option>`;
-
-            const cities = City.getCitiesOfCountry(countryCode);
-
-            if (!cities || cities.length === 0) {
-                citySelect.innerHTML = `<option value="">— No hay ciudades disponibles —</option>`;
+            if (!countryCode) {
+                initializeSearchableSelects();
                 updateNextButton();
                 return;
             }
 
-            cities
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .forEach(city => {
-                    const option = document.createElement('option');
-                    option.value = city.name;
-                    option.textContent = city.name;
-                    citySelect.appendChild(option);
-                });
+            (City.getCitiesOfCountry(countryCode) || [])
+                .sort((first, second) => first.name.localeCompare(second.name))
+                .forEach(city => citySelect.add(new Option(city.name, city.name)));
+
+            if (stateSelect) {
+                State.getStatesOfCountry(countryCode)
+                    .forEach(state => stateSelect.add(new Option(state.name, state.name)));
+            }
 
             const countryField = document.querySelector(`.form-field[data-key="${countryKey}"]`);
             if (countryField) countryField.classList.remove('has-error');
-
+            initializeSearchableSelects();
             updateNextButton();
         }
 
@@ -1403,7 +1564,7 @@
                     if (countrySelect && countrySelect.value) {
                         const selectedOption = countrySelect.options[countrySelect.selectedIndex];
                         answers[`${field.key}_codigo`] = countrySelect.value;
-                        answers[field.key] = selectedOption.dataset.name || '';
+                        answers[field.key] = selectedOption.dataset.name || selectedOption.textContent || '';
                     }
                     return;
                 }
@@ -1508,6 +1669,7 @@
             }).join('');
 
             const area = document.getElementById('sectionArea');
+            destroySearchableSelects();
             area.innerHTML = `
                 <div class="validation-alert" id="validationAlert">
                     ⚠️ Completa todos los campos obligatorios antes de continuar.
@@ -1530,34 +1692,8 @@
             document.getElementById('summaryView').style.display = 'none';
             document.getElementById('thankyouView').style.display = 'none';
             document.getElementById('rejectedView').style.display = 'none';
+            initializeSearchableSelects();
 
-            section.fields.filter(field => field.type === 'country').forEach(countryField => {
-                const countryCode = answers[`${countryField.key}_codigo`];
-                const cityKey = countryField.key === 'pais_empresa' ? 'ciudad_empresa' : 'ciudad';
-                if (countryCode) {
-                    const countrySelect = document.getElementById(`field_${countryField.key}`);
-                    if (countrySelect) {
-                        countrySelect.value = countryCode;
-
-                        const citySelect = document.getElementById(`field_${cityKey}`);
-                        if (citySelect) {
-                            const cities = City.getCitiesOfCountry(countryCode);
-                        citySelect.disabled = false;
-                        citySelect.innerHTML = `<option value="">— Selecciona una ciudad —</option>`;
-
-                        cities
-                            .sort((a, b) => a.name.localeCompare(b.name))
-                            .forEach(city => {
-                                const option = document.createElement('option');
-                                option.value = city.name;
-                                option.textContent = city.name;
-                                if (city.name === answers[cityKey]) option.selected = true;
-                                citySelect.appendChild(option);
-                            });
-                        }
-                    }
-                }
-            });
         }
 
         function showRejected() {
@@ -1689,6 +1825,11 @@
 
         async function submitSurvey() {
             saveCurrentSectionAnswers();
+            if (!verifiedIdentification || answers.id !== verifiedIdentification) {
+                alert('Debes validar nuevamente tu cédula antes de enviar la actualización.');
+                return;
+            }
+
             const button = document.querySelector('#summaryView .btn-success');
             if (button) button.disabled = true;
 
@@ -1727,7 +1868,17 @@
         window.backToLastSection = backToLastSection;
         window.submitSurvey = submitSurvey;
 
-        renderSection();
+        document.getElementById('btnVerifyIdentity').addEventListener('click', verifyIdentity);
+        document.getElementById('identityNumber').addEventListener('input', function () {
+            this.value = this.value.replace(/\D+/g, '');
+        });
+        document.getElementById('identityNumber').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                verifyIdentity();
+            }
+        });
+        document.getElementById('identityNumber').focus();
     </script>
 </body>
 </html>

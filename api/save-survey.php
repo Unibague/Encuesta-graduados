@@ -1,6 +1,7 @@
 <?php
 
 require __DIR__ . '/../app/controllers/autoloader.php';
+require_once __DIR__ . '/../Helpers/SigaGraduado.php';
 
 use Ospina\EasySQL\EasySQL;
 
@@ -49,6 +50,29 @@ if ($identificationNumber === '') {
     exit;
 }
 
+$eligibility = null;
+if ($surveyType === 'actualizaciongraduados') {
+    $eligibility = consultarElegibilidadGraduadoSiga($identificationNumber);
+
+    if (!$eligibility->available) {
+        http_response_code(503);
+        echo json_encode([
+            'success' => false,
+            'message' => 'No fue posible validar la cedula en SIGA. Intenta nuevamente.',
+        ]);
+        exit;
+    }
+
+    if (!$eligibility->eligible) {
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'message' => 'La cedula no corresponde a un graduado o egresado. Comunicate con desarrolladorg3@unibague.edu.co.',
+        ]);
+        exit;
+    }
+}
+
 $email = (string) firstAnswer($answers, ['email', 'Correo electrónico', 'Correo']);
 $name = (string) firstAnswer($answers, ['nombres', 'Nombres']);
 $lastName = (string) firstAnswer($answers, ['apellidos', 'Apellidos']);
@@ -86,10 +110,14 @@ try {
         WHERE identification_number = '$identSafe' AND is_deleted = 0
         ORDER BY id DESC LIMIT 1")->fetch_assoc();
 
-    try {
-        $isGraduated = verifyIfIsGraduated($identificationNumber);
-    } catch (Throwable $e) {
-        $isGraduated = 0;
+    if ($eligibility !== null) {
+        $isGraduated = $eligibility->graduated ? 1 : 0;
+    } else {
+        try {
+            $isGraduated = verifyIfIsGraduated($identificationNumber);
+        } catch (Throwable $e) {
+            $isGraduated = 0;
+        }
     }
 
     $fields = [
@@ -108,6 +136,7 @@ try {
         'is_deleted = 0',
         'has_error = 0',
         'modificated_at = NOW()',
+        'updated_at = NOW()',
     ];
 
     if ($existing) {
@@ -119,14 +148,14 @@ try {
             (email, identification_number, name, last_name, mobile_phone,
              alternative_mobile_phone, address, country, city, answers,
              is_graduated, is_migrated, is_denied, is_deleted, has_error,
-             created_at, modificated_at)
+             created_at, modificated_at, updated_at)
             VALUES (
                 '" . addslashes($email) . "', '$identSafe',
                 '" . addslashes($name) . "', '" . addslashes($lastName) . "',
                 '" . addslashes($phone) . "', '" . addslashes($alternativePhone) . "',
                 '" . addslashes($address) . "', '" . addslashes($country) . "',
                 '" . addslashes($city) . "', '" . addslashes($jsonAnswers) . "',
-                " . (int) $isGraduated . ", 0, 0, 0, 0, NOW(), NOW()
+                " . (int) $isGraduated . ", 0, 0, 0, 0, NOW(), NOW(), NOW()
             )");
     }
 
@@ -140,15 +169,15 @@ try {
 
     $sigaResponse = sendSurveyDataToSiga(
         $identificationNumber,
-        $name,
-        $lastName,
         $email,
         $phone,
-        $city
+        $alternativePhone,
+        $city,
+        $address
     );
 
     if ($sigaResponse->ok) {
-        $db->makeQuery("UPDATE form_answers SET is_migrated = 1, modificated_at = NOW()
+        $db->makeQuery("UPDATE form_answers SET is_migrated = 1, modificated_at = NOW(), updated_at = NOW()
             WHERE identification_number = '$identSafe' AND is_deleted = 0");
 
         echo json_encode([
@@ -159,11 +188,20 @@ try {
         exit;
     }
 
-    echo json_encode([
-        'success' => true,
-        'message' => 'Encuesta guardada, pero no se pudo enviar a SIGA: ' . $sigaResponse->error,
-        'siga_sent' => false,
-    ]);
+    if ($surveyType === 'actualizaciongraduados') {
+        http_response_code(502);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Los datos quedaron guardados, pero SIGA no confirmo la actualizacion. Motivo: ' . $sigaResponse->error,
+            'siga_sent' => false,
+        ]);
+    } else {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Encuesta guardada, pero no se pudo enviar a SIGA: ' . $sigaResponse->error,
+            'siga_sent' => false,
+        ]);
+    }
 } catch (Throwable $e) {
     registroGraduadosSheetsLog('Error guardando encuesta: ' . $e->getMessage(), 'ERROR');
     http_response_code(500);
@@ -200,28 +238,35 @@ function verifyIfIsGraduated(string $identificationNumber): int
 
 function sendSurveyDataToSiga(
     string $identificationNumber,
-    string $name,
-    string $lastName,
     string $email,
     string $phone,
-    string $city
+    string $alternativePhone,
+    string $city,
+    string $address
 ): object {
     $data = [
         'consulta' => 'Modificar',
         'documento' => $identificationNumber,
-        'nombres' => $name,
-        'apellidos' => $lastName,
-        'correo' => $email,
-        'telefono' => $phone,
-        'ciudad' => normalizeCityForSiga($city),
         'token' => md5($identificationNumber) . getenv('SECURE_TOKEN'),
     ];
+
+    $normalizedPhone = normalizePhoneForSiga($phone);
+    $normalizedAlternativePhone = normalizePhoneForSiga($alternativePhone);
+    $normalizedCity = normalizarCiudadParaSiga($city);
+
+    if (filter_var($email, FILTER_VALIDATE_EMAIL)) $data['correo'] = trim($email);
+    if ($normalizedPhone !== '') $data['telefono'] = $normalizedPhone;
+    if ($normalizedAlternativePhone !== '') $data['tel_alterno'] = $normalizedAlternativePhone;
+    if ($normalizedCity !== null) $data['ciudad'] = $normalizedCity;
+    if (trim($address) !== '') $data['direccion'] = trim($address);
 
     try {
         if (function_exists('curl_init')) {
             $curl = new \Ospina\CurlCobain\CurlCobain(
                 'https://academia.unibague.edu.co/atlante/actualiza_graduados.php'
             );
+            $curl->setCurlOption(CURLOPT_CONNECTTIMEOUT, 5);
+            $curl->setCurlOption(CURLOPT_TIMEOUT, 20);
             $curl->setQueryParamsAsArray($data);
             $response = trim((string) $curl->makeRequest());
         } else {
@@ -254,6 +299,11 @@ function sendSurveyDataToSiga(
         ];
     }
 
+    registroGraduadosSheetsLog(
+        'Respuesta actualizacion SIGA documento ' . $identificationNumber . ' | body=' .
+        substr(str_replace(["\r", "\n"], ['\\r', '\\n'], $response), 0, 1200)
+    );
+
     $jsonPayload = extractJsonObject($response);
     $decoded = $jsonPayload !== null ? json_decode($jsonPayload, false) : null;
 
@@ -273,9 +323,21 @@ function sendSurveyDataToSiga(
                     : '',
             ];
         }
+
+        if (isset($decoded->status)) {
+            $status = strtoupper((string) $decoded->status);
+            return (object) [
+                'ok' => !in_array($status, ['ERROR', 'FAIL', 'FAILED'], true),
+                'error' => in_array($status, ['ERROR', 'FAIL', 'FAILED'], true)
+                    ? (string) ($decoded->message ?? $decoded->mensaje ?? 'SIGA rechazo la actualizacion')
+                    : '',
+            ];
+        }
+
+        return (object) ['ok' => true, 'error' => ''];
     }
 
-    $normalized = strtolower($response);
+    $normalized = mb_strtolower($response, 'UTF-8');
     $success = str_contains($normalized, 'actualiz')
         || str_contains($normalized, 'modific')
         || str_contains($normalized, 'exito')
@@ -287,16 +349,20 @@ function sendSurveyDataToSiga(
     ];
 }
 
-function normalizeCityForSiga(string $city): string
+function normalizePhoneForSiga(string $phone): string
 {
-    $city = trim($city);
-    $converted = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $city);
-
-    if ($converted !== false) {
-        $city = $converted;
+    $digits = preg_replace('/\D+/', '', trim($phone));
+    if ($digits === null || $digits === '') {
+        return '';
     }
 
-    return strtoupper(trim($city));
+    if (str_starts_with($digits, '0057')) {
+        $digits = substr($digits, 4);
+    } elseif (strlen($digits) === 12 && str_starts_with($digits, '57')) {
+        $digits = substr($digits, 2);
+    }
+
+    return $digits;
 }
 
 function extractJsonObject(string $response): ?string

@@ -19,7 +19,16 @@ $dotenv->safeLoad();
 $request = parseRequest();
 
 if (!empty($request->approve_all)) {
-    approveAllRecords((string) ($request->approve_all_type ?? 'ready'));
+    try {
+        approveAllRecords((string) ($request->approve_all_type ?? 'ready'), $request);
+    } catch (Throwable $e) {
+        approveLog(
+            'Error no controlado en aprobacion masiva | detalle=' . $e->getMessage(),
+            'ERROR'
+        );
+        flashSession('No fue posible completar la aprobacion masiva. Intenta nuevamente.');
+        header('Location: ' . approvalReturnUrl((string) ($request->approve_all_type ?? 'ready')));
+    }
     exit;
 }
 
@@ -119,12 +128,14 @@ function approveLog(string $message, string $level = 'INFO'): void
     file_put_contents($logDir . '/approve.log', $line, FILE_APPEND);
 }
 
-function approveAllRecords(string $recordType): void
+function approveAllRecords(string $recordType, object $request): void
 {
     $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
     $userId = (int) user()->id;
-    $successCount = 0;
-    $failureCount = 0;
+    $successCount = max(0, (int) ($request->approve_all_success ?? 0));
+    $failureCount = max(0, (int) ($request->approve_all_failure ?? 0));
+    $cursor = max(0, (int) ($request->approve_all_cursor ?? PHP_INT_MAX));
+    $batchSize = 5;
 
     $graduatedCondition = match ($recordType) {
         'pending' => 'is_graduated IS NULL',
@@ -137,9 +148,23 @@ function approveAllRecords(string $recordType): void
           AND is_migrated = 0
           AND is_denied = 0
           AND is_deleted = 0
-        ORDER BY created_at DESC")->fetch_all(MYSQLI_ASSOC);
+          AND id < $cursor
+        ORDER BY id DESC
+        LIMIT $batchSize")->fetch_all(MYSQLI_ASSOC);
+
+    if ($rows === []) {
+        finishApprovalBatch($recordType, $successCount, $failureCount);
+        return;
+    }
+
+    $nextCursor = $cursor;
 
     foreach ($rows as $row) {
+        $rowId = (int) ($row['id'] ?? 0);
+        if ($rowId > 0) {
+            $nextCursor = min($nextCursor, $rowId);
+        }
+
         $request = (object) [
             'email' => $row['email'] ?? '',
             'city' => $row['city'] ?? '',
@@ -154,13 +179,14 @@ function approveAllRecords(string $recordType): void
             continue;
         }
 
-        if (!hasUpdateData($request)) {
-            $success = $db->makeQuery("UPDATE form_answers SET
-                is_migrated = 1, migrated_by = $userId, updated_at = NOW()
-                WHERE identification_number = '" . addslashes($identificationNumber) . "'");
-            $success ? $successCount++ : $failureCount++;
-            continue;
-        }
+        try {
+            if (!hasUpdateData($request)) {
+                $success = $db->makeQuery("UPDATE form_answers SET
+                    is_migrated = 1, migrated_by = $userId, updated_at = NOW()
+                    WHERE id = $rowId");
+                $success ? $successCount++ : $failureCount++;
+                continue;
+            }
 
         $response = updateUserData($identificationNumber, $request);
         $isSuccessful = $response
@@ -174,25 +200,85 @@ function approveAllRecords(string $recordType): void
             continue;
         }
 
-        $updated = $db->makeQuery("UPDATE form_answers SET
-            is_migrated = 1, migrated_by = $userId, updated_at = NOW()
-            WHERE identification_number = '" . addslashes($identificationNumber) . "'");
-        $updated ? $successCount++ : $failureCount++;
+            $updated = $db->makeQuery("UPDATE form_answers SET
+                is_migrated = 1, migrated_by = $userId, updated_at = NOW()
+                WHERE id = $rowId");
+            $updated ? $successCount++ : $failureCount++;
+        } catch (Throwable $e) {
+            $failureCount++;
+            approveLog(
+                'Error procesando documento ' . $identificationNumber .
+                ' | detalle=' . $e->getMessage(),
+                'ERROR'
+            );
+        }
     }
 
+    continueApprovalBatch($recordType, $nextCursor, $successCount, $failureCount);
+}
+
+function continueApprovalBatch(
+    string $recordType,
+    int $cursor,
+    int $successCount,
+    int $failureCount
+): void {
+    $recordTypeHtml = htmlspecialchars($recordType, ENT_QUOTES, 'UTF-8');
+    $cursorHtml = (string) max(0, $cursor);
+    $successHtml = (string) max(0, $successCount);
+    $failureHtml = (string) max(0, $failureCount);
+
+    header('Content-Type: text/html; charset=UTF-8');
+    echo <<<HTML
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Procesando registros</title>
+</head>
+<body>
+    <p>Procesando registros. Por favor, no cierres esta ventana...</p>
+    <form id="approval-batch" method="post" action="/app/controllers/approve.php">
+        <input type="hidden" name="approve_all" value="1">
+        <input type="hidden" name="approve_all_type" value="$recordTypeHtml">
+        <input type="hidden" name="approve_all_cursor" value="$cursorHtml">
+        <input type="hidden" name="approve_all_success" value="$successHtml">
+        <input type="hidden" name="approve_all_failure" value="$failureHtml">
+        <button type="submit">Continuar</button>
+    </form>
+    <script>document.getElementById('approval-batch').submit();</script>
+</body>
+</html>
+HTML;
+}
+
+function finishApprovalBatch(string $recordType, int $successCount, int $failureCount): void
+{
     $message = "Aprobación masiva finalizada: $successCount registro(s) procesado(s)";
     if ($failureCount > 0) {
         $message .= " y $failureCount con error; permanecen pendientes.";
     }
 
     flashSession($message);
-    header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '/ready.php'));
+    header('Location: ' . approvalReturnUrl($recordType));
+}
+
+function approvalReturnUrl(string $recordType): string
+{
+    return match ($recordType) {
+        'pending' => '/pending.php',
+        'not_graduated' => '/not_graduated.php',
+        default => '/ready.php',
+    };
 }
 
 function updateUserData(string $identification_number, object $request): ?object
 {
     $endpoint = 'https://academia.unibague.edu.co/atlante/actualiza_graduados.php';
     $curl = new \Ospina\CurlCobain\CurlCobain($endpoint);
+    $curl->setCurlOption(CURLOPT_CONNECTTIMEOUT, 5);
+    $curl->setCurlOption(CURLOPT_TIMEOUT, 15);
 
     $data = [
         'consulta' => 'Modificar',

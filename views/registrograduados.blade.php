@@ -744,7 +744,15 @@
                 title: 'Formación académica',
                 icon: '',
                 fields: [
-                    { key: 'nivel_academico', label: 'Máximo nivel académico alcanzado en la universidad de Ibagué', type: 'select', options: ['Universitario', 'Especialización', 'Maestría', 'Doctorado'], required: true },
+                    { key: 'nivel_academico', label: 'Máximo nivel académico alcanzado en la universidad de Ibagué', type: 'select', options: ['Universitario', 'Especialización', 'Maestría', 'Doctorado', 'Otro'], required: true },
+                    {
+                        key: 'nivel_academico_otro',
+                        label: 'Especifica el nivel académico alcanzado',
+                        type: 'text',
+                        required: true,
+                        placeholder: 'Escribe el nivel académico',
+                        showIf: (a) => a.nivel_academico === 'Otro'
+                    },
                     {
                         key: 'programa',
                         label: '¿De qué programa eres egresado?',
@@ -996,6 +1004,10 @@
             const el = document.getElementById(`field_${key}`);
             if (el) {
                 answers[key] = el.value.trim();
+                if (key === 'nivel_academico') {
+                    renderSection();
+                    return;
+                }
                 const fieldEl = document.querySelector(`.form-field[data-key="${key}"]`);
                 if (fieldEl && answers[key]) {
                     fieldEl.classList.remove('has-error');

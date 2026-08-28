@@ -19,7 +19,7 @@ $dotenv->safeLoad();
 $request = parseRequest();
 
 if (!empty($request->approve_all)) {
-    approveAllReadyRecords();
+    approveAllRecords((string) ($request->approve_all_type ?? 'ready'));
     exit;
 }
 
@@ -119,15 +119,21 @@ function approveLog(string $message, string $level = 'INFO'): void
     file_put_contents($logDir . '/approve.log', $line, FILE_APPEND);
 }
 
-function approveAllReadyRecords(): void
+function approveAllRecords(string $recordType): void
 {
     $db = new EasySQL('encuesta_graduados', getenv('ENVIRONMENT'));
     $userId = (int) user()->id;
     $successCount = 0;
     $failureCount = 0;
 
+    $graduatedCondition = match ($recordType) {
+        'pending' => 'is_graduated IS NULL',
+        'not_graduated' => 'is_graduated = 0',
+        default => 'is_graduated = 1',
+    };
+
     $rows = $db->makeQuery("SELECT * FROM form_answers
-        WHERE is_graduated = 1
+        WHERE $graduatedCondition
           AND is_migrated = 0
           AND is_denied = 0
           AND is_deleted = 0

@@ -374,19 +374,19 @@
                             </a>
                         </li>
 
-                        <!-- <li class="nav-item">
+                        <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'pending.php' ? 'active' : '' }}"
                                href="/pending.php">
                                 No están en SIGA
                             </a>
-                        </li> -->
+                        </li> 
 
-                        <!--  <li class="nav-item">
+                         <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'not_graduated.php' ? 'active' : '' }}"
                                href="/not_graduated.php">
                                 Egresados
                             </a>
-                        </li> -->
+                        </li>
 
                         <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'migrated.php' ? 'active' : '' }}"
@@ -409,7 +409,7 @@
                             </a>
                         </li>
 
-                        <!--  <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'rejected.php' ? 'active' : '' }}"
                                href="/rejected.php">
                                 Rechazados

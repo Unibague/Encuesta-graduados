@@ -160,7 +160,7 @@ try {
         ))
     );
 
-    $primaryKeys = ['encuentro_anio', 'id', 'nombres', 'apellidos'];
+    $primaryKeys = ['encuentro_anio', 'id', 'nombres', 'apellidos', 'email', 'numero_celular'];
     $primaryColumns = array_map(
         static fn (string $key): array => [
             'key' => $key,
@@ -168,6 +168,8 @@ try {
                 'encuentro_anio' => 'Año encuentro',
                 'id' => 'Cédula',
                 'anio_graduacion' => 'Año graduación',
+                'email' => 'Correo',
+                'numero_celular' => 'Número celular',
                 default => ucfirst($key),
             },
         ],

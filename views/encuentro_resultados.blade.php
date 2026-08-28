@@ -248,7 +248,6 @@
                         @foreach($primaryColumns as $column)
                             <th>{{ $column['label'] }}</th>
                         @endforeach
-                        <th>Tipo</th>
                         <th>Ver respuestas</th>
                     </tr>
                     </thead>
@@ -258,7 +257,6 @@
                             @foreach($primaryColumns as $column)
                                 <td>{{ $answer['display_answers'][$column['key']] ?? '' }}</td>
                             @endforeach
-                            <td>{{ $answer['source_type'] }}</td>
                             <td>
                                 <button class="btn btn-sm btn-outline-primary"
                                         type="button"
@@ -271,7 +269,7 @@
 
                     @empty
                         <tr>
-                            <td colspan="{{ count($primaryColumns) + 2 }}" class="text-center text-muted py-4">
+                            <td colspan="{{ count($primaryColumns) + 1 }}" class="text-center text-muted py-4">
                                 No hay registros de graduados ni acompañantes.
                             </td>
                         </tr>

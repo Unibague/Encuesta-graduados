@@ -106,6 +106,34 @@
                 transform: scale(0.97);
             }
 
+            .approve-all-form {
+                display: flex;
+                justify-content: center;
+                margin: 0 0 22px;
+            }
+
+            .btn-approve-all {
+                background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                color: #fff;
+                border: none;
+                border-radius: 13px;
+                padding: 13px 22px;
+                font-weight: 700;
+                font-size: 14px;
+                font-family: inherit;
+                cursor: pointer;
+                box-shadow: 0 8px 18px -8px rgba(26, 58, 107, 0.5);
+                transition: filter 0.2s, transform 0.1s;
+            }
+
+            .btn-approve-all:hover {
+                filter: brightness(1.08);
+            }
+
+            .btn-approve-all:active {
+                transform: scale(0.97);
+            }
+
             /* Tabla */
             .page-scroll {
                 overflow-x: auto;
@@ -334,6 +362,17 @@
         <div class="ready-page">
 
         <h1>Registros pendientes de sincronización</h1>
+
+        <form action="/app/controllers/approve.php"
+              method="POST"
+              class="approve-all-form"
+              onsubmit="return confirm('¿Deseas aprobar todos los registros pendientes?')">
+            <input type="hidden" name="approve_all" value="1">
+            <input type="hidden" name="approve_all_type" value="pending">
+            <button type="submit" class="btn-approve-all">
+                Aprobar todos los registros
+            </button>
+        </form>
 
         <div class="ready-card">
 

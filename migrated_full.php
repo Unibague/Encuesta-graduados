@@ -899,7 +899,7 @@ $total = count($filteredRows);
 $totalPages = max((int) ceil($total / $limit), 1);
 
 if (($_GET['export'] ?? '') === 'excel') {
-    exportMigratedFullCsv($filteredRows, $baseColumns, $formColumns);
+    exportMigratedFullCsv($filteredRows);
     exit;
 }
 
@@ -949,11 +949,8 @@ echo $blade->run(
     ]
 );
 
-function exportMigratedFullCsv(
-    array $rows,
-    array $baseColumns,
-    array $formColumns
-): void {
+function exportMigratedFullCsv(array $rows): void
+{
     $filename = 'migrated_full_' . date('Y-m-d_H-i-s') . '.csv';
 
     header('Content-Type: text/csv; charset=UTF-8');
@@ -964,25 +961,30 @@ function exportMigratedFullCsv(
     $output = fopen('php://output', 'wb');
     fwrite($output, "\xEF\xBB\xBF");
 
-    $headers = array_values($baseColumns);
-    foreach ($formColumns as $column) {
-        $headers[] = $column['label'];
-    }
+    $headers = [
+        'Nombre y apellido',
+        'Correo electrónico',
+        'Número de celular',
+        'Programa',
+        'Año de graduación',
+    ];
 
     fputcsv($output, $headers, ';');
 
     foreach ($rows as $row) {
-        $values = [];
+        $fullName = trim(
+            ($row['base_values']['name'] ?? '')
+            . ' '
+            . ($row['base_values']['last_name'] ?? '')
+        );
 
-        foreach ($baseColumns as $field => $_label) {
-            $values[] = excelSafeValue($row['base_values'][$field] ?? '');
-        }
-
-        foreach ($formColumns as $column) {
-            $values[] = excelSafeValue(
-                $row['dynamic_values'][$column['norm']] ?? ''
-            );
-        }
+        $values = [
+            excelSafeValue($fullName),
+            excelSafeValue($row['base_values']['email'] ?? ''),
+            excelSafeValue($row['base_values']['mobile_phone'] ?? ''),
+            excelSafeValue($row['dynamic_values']['programaacademico'] ?? ''),
+            excelSafeValue($row['dynamic_values']['aniodegraduacion'] ?? ''),
+        ];
 
         fputcsv($output, $values, ';');
     }

@@ -367,26 +367,26 @@
 
                     <ul class="navbar-nav ms-auto align-items-lg-center">
 
-                        <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'ready.php' ? 'active' : '' }}"
                                href="/ready.php">
                                 Listos para actualizar
                             </a>
-                        </li>
+                        </li> -->
 
-                        <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'pending.php' ? 'active' : '' }}"
                                href="/pending.php">
                                 No están en SIGA
                             </a>
-                        </li> 
+                        </li> -->
 
-                         <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'not_graduated.php' ? 'active' : '' }}"
                                href="/not_graduated.php">
                                 Egresados
                             </a>
-                        </li>
+                        </li> -->
 
                         <!-- <li class="nav-item">
                             <a class="nav-link {{ basename($_SERVER['PHP_SELF']) === 'migrated.php' ? 'active' : '' }}"

@@ -51,6 +51,18 @@ $noGraduadosNoActualizados  = (int) ($counts['no_graduados_no_actualizados'] ?? 
 $total = $graduadosActualizados + $graduadosNoActualizados
        + $noGraduadosActualizados + $noGraduadosNoActualizados;
 
+$allowedGraphicQuestions = [
+    'pais' => 'Pais',
+    'ciudad' => 'Ciudad',
+    'sector' => 'Sector de la empresa',
+    'programa' => 'Programa de cuál es egresado',
+    'sector_eco' => 'Sector economico',
+    'nivel_academico' => 'Maximo nivel alcanzado',
+    'estado_laboral' => 'Situación laboral',
+    'antiguedad' => 'antiguedad laboral',
+    'genero' => 'Genero',
+];
+
 $surveyQuestionStats = [];
 $surveyRows = $db->makeQuery("SELECT answers FROM form_answers WHERE $where")
     ->fetch_all(MYSQLI_ASSOC);
@@ -73,7 +85,7 @@ foreach ($surveyRows as $surveyRow) {
         }
 
         $question = trim((string) $question);
-        if ($question === '') {
+        if ($question === '' || !array_key_exists($question, $allowedGraphicQuestions)) {
             continue;
         }
 
@@ -97,6 +109,14 @@ foreach ($surveyQuestionStats as $question => $values) {
     arsort($values);
     $surveyQuestionStats[$question] = $values;
 }
+
+$orderedStats = [];
+foreach (array_keys($allowedGraphicQuestions) as $questionKey) {
+    if (isset($surveyQuestionStats[$questionKey])) {
+        $orderedStats[$questionKey] = $surveyQuestionStats[$questionKey];
+    }
+}
+$surveyQuestionStats = $orderedStats;
 
 $selectedQuestion = trim($_GET['question'] ?? '');
 if (!isset($surveyQuestionStats[$selectedQuestion])) {
@@ -123,6 +143,7 @@ echo $blade->run('graphic', [
     'noGraduadosActualizados'    => $noGraduadosActualizados,
     'noGraduadosNoActualizados'  => $noGraduadosNoActualizados,
     'surveyQuestionStats'        => $surveyQuestionStats,
+    'graphicQuestionLabels'      => $allowedGraphicQuestions,
     'selectedQuestion'            => $selectedQuestion,
     'message'                    => $message,
     'error'                      => $error,

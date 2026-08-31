@@ -182,7 +182,7 @@
             <select id="questionSelect" name="question" onchange="this.form.submit()">
                 @forelse(($surveyQuestionStats ?? []) as $question => $values)
                     <option value="{{ $question }}" {{ ($selectedQuestion ?? '') === $question ? 'selected' : '' }}>
-                        {{ $question }}
+                        {{ $graphicQuestionLabels[$question] ?? $question }}
                     </option>
                 @empty
                     <option value="">No hay respuestas de preguntas disponibles</option>
@@ -210,7 +210,7 @@
             @if(!empty($selectedStats))
                 <div class="col-12">
                     <div class="chart-card">
-                        <h5 class="text-center mb-1">{{ $selectedQuestion }}</h5>
+                        <h5 class="text-center mb-1">{{ $graphicQuestionLabels[$selectedQuestion] ?? $selectedQuestion }}</h5>
                         <p class="text-center chart-total mb-3">Distribución de respuestas</p>
                         <div class="chart-wrap">
                             <canvas id="chartQuestion"></canvas>
@@ -218,26 +218,6 @@
                     </div>
                 </div>
             @endif
-
-            <div class="col-md-5">
-                <div class="chart-card">
-                    <h5 class="text-center mb-1">Graduados</h5>
-                    <p class="text-center chart-total mb-3">{{ number_format($totalGraduados) }} registro(s)</p>
-                    <div class="chart-wrap">
-                        <canvas id="chartGraduados"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-5">
-                <div class="chart-card">
-                    <h5 class="text-center mb-1">No graduados</h5>
-                    <p class="text-center chart-total mb-3">{{ number_format($totalNoGraduados) }} registro(s)</p>
-                    <div class="chart-wrap">
-                        <canvas id="chartNoGraduados"></canvas>
-                    </div>
-                </div>
-            </div>
 
             </div>
         </div>
@@ -309,35 +289,7 @@
                 });
             }
 
-            new Chart(document.getElementById('chartGraduados'), {
-                type: 'pie',
-                data: {
-                    labels: ['Actualizados', 'No actualizados'],
-                    datasets: [{
-                        data: [
-                            {{ (int) $graduadosActualizados }},
-                            {{ (int) $graduadosNoActualizados }}
-                        ],
-                        backgroundColor: ['#198754', '#dc3545']
-                    }]
-                },
-                options: commonOptions
-            });
 
-            new Chart(document.getElementById('chartNoGraduados'), {
-                type: 'pie',
-                data: {
-                    labels: ['Actualizados', 'No actualizados'],
-                    datasets: [{
-                        data: [
-                            {{ (int) $noGraduadosActualizados }},
-                            {{ (int) $noGraduadosNoActualizados }}
-                        ],
-                        backgroundColor: ['#0d6efd', '#dc3545']
-                    }]
-                },
-                options: commonOptions
-            });
         });
     </script>
     @endslot

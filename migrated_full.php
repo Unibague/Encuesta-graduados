@@ -1041,6 +1041,52 @@ echo $blade->run(
     ]
 );
 
+// Toma la respuesta de la pregunta "Programa del cuál es egresado"
+// (y variantes con la misma redacción inicial), ignorando cualquier
+// otra pregunta que solo mencione la palabra "programa" de pasada.
+function getProgramaAnswer(array $extraAnswers): string
+{
+    foreach ($extraAnswers as $label => $value) {
+        if (str_starts_with(normalize_key((string) $label), 'programa del')) {
+            return stringifyAnswer($value);
+        }
+    }
+
+    return '';
+}
+
+// Toma la respuesta de la pregunta "Año de graduación programa
+// académico" específicamente (no cualquier pregunta de "año de
+// graduación" que pueda existir en otro formulario/encuesta).
+function getAnioGraduacionAnswer(array $extraAnswers): string
+{
+    foreach ($extraAnswers as $label => $value) {
+        $normalized = normalize_key((string) $label);
+
+        $startsWithAnio = str_starts_with($normalized, 'ano de graduacion')
+            || str_starts_with($normalized, 'anio de graduacion');
+
+        if ($startsWithAnio && str_contains($normalized, 'programa')) {
+            return stringifyAnswer($value);
+        }
+    }
+
+    // Si no existe la variante con "programa académico", se usa
+    // cualquier otra pregunta de año de graduación como respaldo.
+    foreach ($extraAnswers as $label => $value) {
+        $normalized = normalize_key((string) $label);
+
+        if (
+            str_starts_with($normalized, 'ano de graduacion')
+            || str_starts_with($normalized, 'anio de graduacion')
+        ) {
+            return stringifyAnswer($value);
+        }
+    }
+
+    return '';
+}
+
 function exportMigratedFullCsv(array $rows): void
 {
     $filename = 'migrated_full_' . date('Y-m-d_H-i-s') . '.csv';
@@ -1074,8 +1120,8 @@ function exportMigratedFullCsv(array $rows): void
             excelSafeValue($fullName),
             excelSafeValue($row['base_values']['email'] ?? ''),
             excelSafePhone($row['base_values']['mobile_phone'] ?? ''),
-            excelSafeValue($row['dynamic_values']['programaacademico'] ?? ''),
-            excelSafeValue($row['dynamic_values']['aniodegraduacion'] ?? ''),
+            excelSafeValue(getProgramaAnswer($row['extra_answers'] ?? [])),
+            excelSafeValue(getAnioGraduacionAnswer($row['extra_answers'] ?? [])),
         ];
 
         fputcsv($output, $values, ';');

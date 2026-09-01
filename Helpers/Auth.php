@@ -27,6 +27,6 @@ function user(): ?object
 
 function redirectToDefaultRoute()
 {
-    header("Location: /ready.php");
+    header("Location: /migrated_full.php");
     exit;
 }

@@ -562,6 +562,22 @@ foreach ($formColumns as $index => $column) {
     ) {
         $matchedForceKey = 'genero';
     } elseif (
+        (
+            (
+                str_contains($labelCompact, 'ano')
+                || str_contains($labelCompact, 'anio')
+            )
+            && str_contains($labelCompact, 'graduacion')
+        )
+        || str_contains($norm, 'aniodegraduacion')
+        || str_contains($labelCompact, 'aniodegraduacion')
+        || preg_match('/\b(año|ano|anio)\s*(de)?\s*graduaci[oó]n\b/u', $labelLower)
+    ) {
+        // Se revisa antes que "programa" porque preguntas como
+        // "Año de graduación programa académico" también contienen
+        // la palabra "programa" y quedarían mal clasificadas.
+        $matchedForceKey = 'aniodegraduacion';
+    } elseif (
         str_contains($norm, 'programa')
         || str_contains($norm, 'carrera')
         || str_contains($norm, 'titulo')
@@ -611,19 +627,6 @@ foreach ($formColumns as $index => $column) {
         )
     ) {
         $matchedForceKey = 'maximonivelacademico';
-    } elseif (
-        (
-            (
-                str_contains($labelCompact, 'ano')
-                || str_contains($labelCompact, 'anio')
-            )
-            && str_contains($labelCompact, 'graduacion')
-        )
-        || str_contains($norm, 'aniodegraduacion')
-        || str_contains($labelCompact, 'aniodegraduacion')
-        || preg_match('/\b(año|ano|anio)\s*(de)?\s*graduaci[oó]n\b/u', $labelLower)
-    ) {
-        $matchedForceKey = 'aniodegraduacion';
     }
 
     if ($matchedForceKey !== null && isset($forcedFilters[$matchedForceKey])) {
@@ -746,8 +749,31 @@ $baseColumns = [
 
 foreach ($allRows as $rowIndex => $row) {
     foreach ($formColumns as $column) {
-        $allRows[$rowIndex]['dynamic_values'][$column['norm']] =
-            getDynamicColumnValue($row, $column);
+        // Las columnas de filtro forzado que no encontraron ninguna
+        // pregunta real asociada quedan con 'keys' vacío: no aportan
+        // valor y no deben pisar lo que sí encontró otra columna.
+        if (empty($column['keys'])) {
+            continue;
+        }
+
+        $value = getDynamicColumnValue($row, $column);
+        $allRows[$rowIndex]['dynamic_values'][$column['norm']] = $value;
+
+        // Además de guardar el valor bajo el nombre "natural" de la
+        // pregunta, se guarda también bajo la clave del filtro forzado
+        // (p. ej. 'programaacademico', 'aniodegraduacion') para que el
+        // export a Excel, que busca por esas claves, encuentre el dato.
+        if (!empty($column['filterType']) && $value !== '') {
+            $forceKey = $column['filterType'];
+            $current = $allRows[$rowIndex]['dynamic_values'][$forceKey] ?? '';
+
+            if ($current === '') {
+                $allRows[$rowIndex]['dynamic_values'][$forceKey] = $value;
+            } elseif (!str_contains($current, $value)) {
+                $allRows[$rowIndex]['dynamic_values'][$forceKey] =
+                    $current . ' | ' . $value;
+            }
+        }
     }
 
     foreach ($baseColumns as $field => $_label) {
@@ -981,7 +1007,7 @@ function exportMigratedFullCsv(array $rows): void
         $values = [
             excelSafeValue($fullName),
             excelSafeValue($row['base_values']['email'] ?? ''),
-            excelSafeValue($row['base_values']['mobile_phone'] ?? ''),
+            excelSafePhone($row['base_values']['mobile_phone'] ?? ''),
             excelSafeValue($row['dynamic_values']['programaacademico'] ?? ''),
             excelSafeValue($row['dynamic_values']['aniodegraduacion'] ?? ''),
         ];
@@ -1001,4 +1027,19 @@ function excelSafeValue($value): string
     }
 
     return $value;
+}
+
+// Excel convierte cualquier cadena de puros dígitos larga (como un
+// número de celular con indicativo) a notación científica al abrir el
+// CSV. Envolverlo en una fórmula que devuelve texto ("=""...""") obliga
+// a Excel a tratarlo como texto y a mostrar todos los dígitos.
+function excelSafePhone($value): string
+{
+    $value = trim((string) ($value ?? ''));
+
+    if ($value === '') {
+        return '';
+    }
+
+    return '="' . str_replace('"', '""', $value) . '"';
 }

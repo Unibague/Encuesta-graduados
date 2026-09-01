@@ -224,6 +224,67 @@ function getDynamicColumnValue(array $row, array $column): string
     return implode(' | ', $values);
 }
 
+// Dado el texto crudo de una o varias respuestas (unidas con " | "),
+// extrae solo la parte que corresponde a una opción válida para el
+// filtro forzado indicado (p. ej. el nombre exacto de un programa
+// académico), descartando cualquier otro texto (grados de satisfacción,
+// "Sí"/"No", etc.) que haya quedado mezclado por coincidencia de
+// palabras clave.
+function extractForcedOptionValue(string $rawValue, string $forceKey, array $forcedFilters): string
+{
+    $segments = preg_split('/\s*\|\s*/', trim($rawValue)) ?: [];
+
+    if ($forceKey === 'aniodegraduacion') {
+        foreach ($segments as $segment) {
+            if (preg_match('/\b(19|20)\d{2}\b/', $segment, $match)) {
+                return $match[0];
+            }
+        }
+
+        return '';
+    }
+
+    $options = $forcedFilters[$forceKey] ?? [];
+
+    if (empty($options)) {
+        return trim($rawValue);
+    }
+
+    $normalizedOptions = [];
+    foreach ($options as $optionValue) {
+        $normalizedOptions[normalize_key((string) $optionValue)] = $optionValue;
+    }
+
+    foreach ($segments as $segment) {
+        $segment = trim($segment);
+
+        if ($segment === '') {
+            continue;
+        }
+
+        $normalizedSegment = normalize_key($segment);
+
+        if (isset($normalizedOptions[$normalizedSegment])) {
+            return $normalizedOptions[$normalizedSegment];
+        }
+    }
+
+    // El segmento puede traer texto adicional alrededor del valor real
+    // (p. ej. "Alto grado | Sí | CONTADURIA PUBLICA" en un solo segmento
+    // si la respuesta original no usaba el separador " | ").
+    foreach ($segments as $segment) {
+        $normalizedSegment = normalize_key($segment);
+
+        foreach ($normalizedOptions as $normalizedOption => $originalOption) {
+            if ($normalizedOption !== '' && str_contains($normalizedSegment, $normalizedOption)) {
+                return $originalOption;
+            }
+        }
+    }
+
+    return '';
+}
+
 function getBaseColumnValue(array $row, string $field): string
 {
     $value = $row[$field] ?? '';
@@ -763,15 +824,20 @@ foreach ($allRows as $rowIndex => $row) {
         // pregunta, se guarda también bajo la clave del filtro forzado
         // (p. ej. 'programaacademico', 'aniodegraduacion') para que el
         // export a Excel, que busca por esas claves, encuentre el dato.
+        // Varias preguntas distintas pueden coincidir con la misma clave
+        // forzada (por texto parecido), así que se extrae solo la parte
+        // que realmente corresponde a una opción válida (p. ej. el
+        // nombre exacto del programa), descartando el resto del texto.
         if (!empty($column['filterType']) && $value !== '') {
             $forceKey = $column['filterType'];
-            $current = $allRows[$rowIndex]['dynamic_values'][$forceKey] ?? '';
+            $existing = $allRows[$rowIndex]['dynamic_values'][$forceKey] ?? '';
 
-            if ($current === '') {
-                $allRows[$rowIndex]['dynamic_values'][$forceKey] = $value;
-            } elseif (!str_contains($current, $value)) {
-                $allRows[$rowIndex]['dynamic_values'][$forceKey] =
-                    $current . ' | ' . $value;
+            if ($existing === '') {
+                $cleanValue = extractForcedOptionValue($value, $forceKey, $forcedFilters);
+
+                if ($cleanValue !== '') {
+                    $allRows[$rowIndex]['dynamic_values'][$forceKey] = $cleanValue;
+                }
             }
         }
     }

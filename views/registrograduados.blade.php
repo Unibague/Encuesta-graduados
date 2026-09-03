@@ -347,6 +347,7 @@
         .cedula-lookup-status.loading { color: var(--text-muted); }
         .cedula-lookup-status.found { color: var(--success); }
         .cedula-lookup-status.empty { color: var(--text-muted); }
+        .cedula-lookup-status.error { color: var(--danger); }
 
         .validation-alert {
             background: var(--danger-light);
@@ -602,6 +603,40 @@
             text-decoration: underline;
         }
 
+        .verification-blocked {
+            background: #fff8e6;
+            border: 1px solid #f5d98a;
+            border-radius: 16px;
+            padding: 18px 20px;
+            margin-top: 18px;
+            font-size: 0.9rem;
+            line-height: 1.55;
+            color: var(--text);
+        }
+
+        .verification-blocked p {
+            margin: 0 0 10px;
+        }
+
+        .verification-blocked ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .verification-blocked li {
+            margin-bottom: 6px;
+        }
+
+        .verification-blocked li:last-child {
+            margin-bottom: 0;
+        }
+
+        .verification-blocked a {
+            color: var(--primary-dark);
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
         .consent-rejected {
             text-align: center;
             padding: 40px 10px;
@@ -705,6 +740,21 @@
 
         const encuestaSections = [
             {
+                title: 'Verificación',
+                icon: '',
+                isVerification: true,
+                fields: [
+                    {
+                        key: 'cedula_verificacion',
+                        label: 'Cédula',
+                        type: 'text',
+                        description: 'Ingresa tu número de cédula para verificar tu información en la Universidad.',
+                        required: true,
+                        placeholder: 'Ej: 20231001'
+                    }
+                ]
+            },
+            {
                 title: 'Consentimiento',
                 icon: '',
                 isConsent: true,
@@ -716,14 +766,6 @@
                         options: ['Sí', 'No'],
                         required: true
                     }
-                ]
-            },
-            {
-                title: 'Identificación',
-                icon: '',
-                isCedula: true,
-                fields: [
-                    { key: 'id', label: 'Cédula', type: 'text', description: 'Documento oficial. Al escribirla buscaremos tus datos si ya te has registrado antes.', required: true, placeholder: 'Ej: 20231001' }
                 ]
             },
             {
@@ -841,8 +883,9 @@
         );
         let currentSectionIndex = 0;
         let returnToSummary = false;
-        let lastLookedUpCedula = '';
-        let cedulaLookupMessage = { text: '', type: '' };
+        let verificationStatus = null;
+        let verificationCheckedCedula = '';
+        let verificationMessage = { text: '', type: '' };
 
         function getVisibleSections() {
             return encuestaSections
@@ -870,9 +913,16 @@
             const btnNext = document.getElementById('btnNext');
             if (!btnNext) return;
 
+            const currentSection = sections[currentSectionIndex];
             const isLast = currentSectionIndex >= total - 1;
-            btnNext.textContent = isLast ? 'Ver resumen →' : 'Continuar →';
-            btnNext.className = isLast ? 'btn btn-success' : 'btn btn-primary';
+
+            if (currentSection && currentSection.isVerification && verificationStatus === 'no_encontrado') {
+                btnNext.textContent = 'Reintentar verificación';
+                btnNext.className = 'btn btn-primary';
+            } else {
+                btnNext.textContent = isLast ? 'Ver resumen →' : 'Continuar →';
+                btnNext.className = isLast ? 'btn btn-success' : 'btn btn-primary';
+            }
 
             document.getElementById('progressMeta').textContent = `Sección ${currentSectionIndex + 1} de ${total}`;
             const percent = Math.round((currentSectionIndex / Math.max(total, 1)) * 100);
@@ -957,9 +1007,9 @@
                 return `<textarea class="input-field" id="field_${field.key}" placeholder="${placeholder}" oninput="onInputChange('${field.key}')">${value}</textarea>`;
             }
 
-            if (field.key === 'id') {
-                const msg = cedulaLookupMessage.text
-                    ? `<div class="cedula-lookup-status ${cedulaLookupMessage.type}">${cedulaLookupMessage.text}</div>`
+            if (field.key === 'cedula_verificacion') {
+                const msg = verificationMessage.text
+                    ? `<div class="cedula-lookup-status ${verificationMessage.type}">${verificationMessage.text}</div>`
                     : '';
                 return `
                     <input class="input-field" type="text" id="field_${field.key}" value="${value}" placeholder="${placeholder}" autocomplete="off"
@@ -1012,6 +1062,13 @@
                 if (fieldEl && answers[key]) {
                     fieldEl.classList.remove('has-error');
                 }
+                if (key === 'cedula_verificacion') {
+                    verificationStatus = null;
+                    verificationCheckedCedula = '';
+                    verificationMessage = { text: '', type: '' };
+                    const statusEl = fieldEl ? fieldEl.querySelector('.cedula-lookup-status') : null;
+                    if (statusEl) statusEl.remove();
+                }
                 updateNextButton();
             }
         }
@@ -1062,63 +1119,94 @@
                 .join('');
         }
 
-        async function lookupGraduadoPorCedula() {
-            const cedula = String(answers.id || '').replace(/\D/g, '');
-            if (cedula.length < 6 || cedula === lastLookedUpCedula) return;
+        function aplicarDatosGraduado(data) {
+            const fillIfEmpty = (key, val) => { if (val && !answers[key]) answers[key] = val; };
+            fillIfEmpty('nombres', data.nombres);
+            fillIfEmpty('apellidos', data.apellidos);
+            fillIfEmpty('email', data.email);
+            fillIfEmpty('numero_celular', data.numero_celular);
+            fillIfEmpty('direccion', data.direccion);
 
-            saveCurrentSectionAnswers();
-            lastLookedUpCedula = cedula;
-            cedulaLookupMessage = { text: 'Buscando tus datos…', type: 'loading' };
-            renderSection();
+            if (data.pais && !answers.pais_codigo) {
+                const match = Country.getAllCountries()
+                    .find(c => c.name.toLowerCase() === String(data.pais).toLowerCase());
+                if (match) {
+                    answers.pais = match.name;
+                    answers.pais_codigo = match.isoCode;
 
+                    if (data.ciudad) {
+                        const cityMatch = (City.getCitiesOfCountry(match.isoCode) || [])
+                            .find(c => c.name.toLowerCase() === String(data.ciudad).toLowerCase());
+                        answers.ciudad = cityMatch ? cityMatch.name : data.ciudad;
+                    }
+                }
+            } else {
+                fillIfEmpty('ciudad', data.ciudad);
+            }
+        }
+
+        /**
+         * Complementa los datos de la verificación (SIGA, endpoint alterno o
+         * registro manual) con lo que ya exista en el Encuentro o en una
+         * inscripción previa de esta misma encuesta, sin bloquear el flujo si
+         * la consulta falla.
+         */
+        async function autocompletarDatosPrevios(cedula) {
             try {
                 const response = await fetch(`/api/lookup-graduado.php?cedula=${encodeURIComponent(cedula)}`);
                 const result = await response.json();
+                if (response.ok && result.success && result.found) {
+                    aplicarDatosGraduado(result.data || {});
+                }
+            } catch (error) {
+                // Silencioso: esto solo complementa datos, no bloquea el registro.
+            }
+        }
 
-                if (!response.ok || !result.success || !result.found) {
-                    cedulaLookupMessage = {
-                        text: 'No encontramos un registro previo. Continúa diligenciando tus datos.',
-                        type: 'empty'
+        async function verificarGraduado() {
+            const cedula = String(answers.cedula_verificacion || '').replace(/\D/g, '');
+
+            verificationMessage = { text: 'Verificando tu información…', type: 'loading' };
+            renderSection();
+
+            try {
+                const response = await fetch('/api/verificar-graduado.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cedula }),
+                });
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    verificationStatus = 'error';
+                    verificationMessage = {
+                        text: result.message || 'No pudimos verificar tu documento. Intenta nuevamente.',
+                        type: 'error'
                     };
                     renderSection();
-                    return;
+                    return false;
                 }
 
-                const data = result.data || {};
-                const fillIfEmpty = (key, val) => {
-                    if (val && !answers[key]) answers[key] = val;
-                };
+                verificationCheckedCedula = cedula;
+                verificationStatus = result.status;
 
-                fillIfEmpty('nombres', data.nombres);
-                fillIfEmpty('apellidos', data.apellidos);
-                fillIfEmpty('email', data.email);
-                fillIfEmpty('numero_celular', data.numero_celular);
-                fillIfEmpty('direccion', data.direccion);
-
-                if (data.pais && !answers.pais_codigo) {
-                    const match = Country.getAllCountries()
-                        .find(c => c.name.toLowerCase() === String(data.pais).toLowerCase());
-                    if (match) {
-                        answers.pais = match.name;
-                        answers.pais_codigo = match.isoCode;
-
-                        if (data.ciudad) {
-                            const cityMatch = (City.getCitiesOfCountry(match.isoCode) || [])
-                                .find(c => c.name.toLowerCase() === String(data.ciudad).toLowerCase());
-                            answers.ciudad = cityMatch ? cityMatch.name : data.ciudad;
-                        }
-                    }
-                } else {
-                    fillIfEmpty('ciudad', data.ciudad);
+                if (result.eligible) {
+                    answers.id = cedula;
+                    aplicarDatosGraduado(result.data || {});
+                    await autocompletarDatosPrevios(cedula);
+                    verificationMessage = { text: 'Verificación exitosa. Continúa con tu registro.', type: 'found' };
+                    renderSection();
+                    return true;
                 }
 
-                cedulaLookupMessage = {
-                    text: 'Encontramos datos de un registro anterior. Verifícalos.',
-                    type: 'found'
-                };
+                verificationMessage = { text: '', type: '' };
                 renderSection();
+                return false;
             } catch (error) {
-                cedulaLookupMessage = { text: '', type: '' };
+                verificationStatus = 'error';
+                verificationMessage = { text: 'No pudimos verificar tu documento. Intenta nuevamente.', type: 'error' };
+                renderSection();
+                return false;
             }
         }
 
@@ -1217,6 +1305,20 @@
                 `;
             }
 
+            let verificationBlockedHtml = '';
+            if (section.isVerification && verificationStatus === 'no_encontrado') {
+                verificationBlockedHtml = `
+                    <div class="verification-blocked">
+                        <p><strong>No encontramos tu documento en nuestros registros de graduados.</strong></p>
+                        <p>Comunícate con el administrador de graduados (<a href="mailto:desarrolladorg3@unibague.edu.co">desarrolladorg3@unibague.edu.co</a>) para validar si eres egresado o graduado de la Universidad de Ibagué.</p>
+                        <ul>
+                            <li>Si <strong>no</strong> eres graduado, dirígete a la mesa de asistentes para registrarte allí.</li>
+                            <li>Si <strong>sí</strong> eres graduado, una vez te hayan agregado a la lista, presiona el botón de abajo para volver a intentar tu verificación.</li>
+                        </ul>
+                    </div>
+                `;
+            }
+
             const fieldsHtml = section.fields.map((field, idx) => {
                 const num = globalOffset + idx + 1;
                 const desc = field.description
@@ -1250,6 +1352,7 @@
                 <p class="section-subtitle">${section.isConsent ? 'Lee la información y acepta para continuar' : section.fields.length + ' pregunta' + (section.fields.length !== 1 ? 's' : '') + ' en esta sección'}</p>
                 ${consentHtml}
                 ${fieldsHtml}
+                ${verificationBlockedHtml}
             `;
 
             area.classList.remove('section-anim', 'leaving-back');
@@ -1303,17 +1406,18 @@
                 return;
             }
 
-            if (current && current.isCedula) {
+            if (current && current.isVerification) {
                 const btnNext = document.getElementById('btnNext');
                 const btnPrev = document.getElementById('btnPrev');
                 if (btnNext) btnNext.disabled = true;
                 if (btnPrev) btnPrev.disabled = true;
 
-                await lookupGraduadoPorCedula();
-                await new Promise(resolve => setTimeout(resolve, 1200));
+                const verified = await verificarGraduado();
 
                 if (btnNext) btnNext.disabled = false;
                 if (btnPrev) btnPrev.disabled = currentSectionIndex === 0;
+
+                if (!verified) return;
             }
 
             if (returnToSummary) {
@@ -1383,7 +1487,11 @@
             const sections = getVisibleSections();
             const container = document.getElementById('summaryContainer');
 
-            const sectionsToShow = sections.filter(s => !s.isConsent);
+            const sectionsToShow = sections
+                .filter(s => !s.isConsent)
+                .map(s => s.isVerification
+                    ? { ...s, fields: s.fields.filter(f => f.key === 'cedula_verificacion') }
+                    : s);
 
             container.innerHTML = sectionsToShow.map(section => `
                 <div class="summary-group">
@@ -1455,7 +1563,6 @@
         window.selectChip = selectChip;
         window.onInputChange = onInputChange;
         window.onCountryChange = onCountryChange;
-        window.lookupGraduadoPorCedula = lookupGraduadoPorCedula;
         window.goNext = goNext;
         window.goBack = goBack;
         window.editField = editField;

@@ -34,8 +34,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $input = json_decode(file_get_contents('php://input'), true);
 $answers = is_array($input['answers'] ?? null) ? $input['answers'] : [];
-$surveyType = ($input['survey_type'] ?? '') === 'actualizaciongraduados'
-    ? 'actualizaciongraduados'
+$requestedSurveyType = (string) ($input['survey_type'] ?? '');
+$surveyType = in_array($requestedSurveyType, [
+    'actualizaciongraduados',
+    'encuentrograduados',
+    'registrograduados',
+], true)
+    ? $requestedSurveyType
     : 'registrograduados';
 
 $identificationNumber = trim((string) firstAnswer($answers, [

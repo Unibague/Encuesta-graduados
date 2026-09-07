@@ -1448,7 +1448,8 @@
             }
 
             const readOnly = field.key === 'id' ? 'readonly' : '';
-            return `<input class="input-field" type="${field.type}" id="field_${field.key}" value="${value}" placeholder="${placeholder}" autocomplete="off" ${readOnly} oninput="onInputChange('${field.key}')">`;
+            const numericAttributes = field.type === 'number' ? 'min="0" step="1"' : '';
+            return `<input class="input-field" type="${field.type}" id="field_${field.key}" value="${value}" placeholder="${placeholder}" autocomplete="off" ${numericAttributes} ${readOnly} oninput="onInputChange('${field.key}')">`;
         }
 
         function selectChip(key, value, isMulti) {
@@ -1495,6 +1496,14 @@
         function onInputChange(key) {
             const el = document.getElementById(`field_${key}`);
             if (el) {
+                const field = encuestaSections
+                    .flatMap(section => section.fields)
+                    .find(item => item.key === key);
+
+                if (field?.type === 'number') {
+                    el.value = el.value.replace(/\D/g, '');
+                }
+
                 answers[key] = el.value.trim();
                 const fieldEl = document.querySelector(`.form-field[data-key="${key}"]`);
                 if (fieldEl && answers[key]) {
@@ -1587,10 +1596,24 @@
             if (alertEl) alertEl.classList.remove('visible');
 
             section.fields.forEach(field => {
-                if (field.required && isFieldEmpty(field)) {
+                const value = String(answers[field.key] ?? '').trim();
+                const hasInvalidNumber = field.type === 'number'
+                    && value !== ''
+                    && (
+                        !/^\d+$/.test(value)
+                        || (field.key === 'anio_graduacion_master' && value.length !== 4)
+                    );
+
+                if ((field.required && isFieldEmpty(field)) || hasInvalidNumber) {
                     isValid = false;
                     const fieldEl = document.querySelector(`.form-field[data-key="${field.key}"]`);
                     if (fieldEl) {
+                        const errorEl = fieldEl.querySelector('.field-error');
+                        if (errorEl) {
+                            errorEl.textContent = field.key === 'anio_graduacion_master'
+                                ? 'Si respondes este campo, debe tener exactamente 4 dígitos'
+                                : 'Ingresa un número entero no negativo';
+                        }
                         fieldEl.classList.add('has-error');
                         if (!firstError) firstError = fieldEl;
                     }

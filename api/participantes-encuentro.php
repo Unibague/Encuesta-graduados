@@ -11,7 +11,7 @@ $targetGid     = 1419700379;
 
 try {
     $client = new Google_Client();
-    $client->setAuthConfig(getenv('GOOGLE_CREDENTIALS_PATH'));
+    $client->setAuthConfig(googleCredentialsPath());
     $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY);
 
     $service = new Google_Service_Sheets($client);

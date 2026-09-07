@@ -4,6 +4,8 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../Helpers/Sessions.php';
 require_once __DIR__ . '/../../Helpers/Auth.php';
 require_once __DIR__ . '/../../Helpers/EncuentroConfig.php';
+require_once __DIR__ . '/../../Helpers/JuegosConfig.php';
+require_once __DIR__ . '/../../Helpers/SheetsAsistentes.php';
 
 use Dotenv\Dotenv;
 

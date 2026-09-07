@@ -197,6 +197,65 @@
             50%       { opacity: .5; transform: scale(1.5); }
         }
 
+        /* Badge cupo */
+        .cupo-badge {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: .45rem;
+            margin-top: 1.1rem;
+            padding: .7rem 1.4rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,.14);
+            background: rgba(255,255,255,.05);
+            backdrop-filter: blur(8px);
+            width: 100%;
+            max-width: 280px;
+        }
+        .cupo-badge.visible { display: flex; }
+
+        .cupo-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            font-size: .74rem;
+            font-weight: 700;
+            letter-spacing: .02em;
+            color: rgba(255,255,255,.82);
+        }
+        .cupo-label strong { color: #fff; }
+
+        .cupo-track {
+            width: 100%;
+            height: 7px;
+            border-radius: 20px;
+            background: rgba(255,255,255,.12);
+            overflow: hidden;
+        }
+        .cupo-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 20px;
+            background: linear-gradient(90deg, var(--cyan), var(--purple), var(--pink));
+            transition: width .6s ease;
+        }
+        .cupo-badge.agotado .cupo-fill { background: linear-gradient(90deg, #fb923c, #ef4444); }
+
+        .cupo-text {
+            font-size: .7rem;
+            color: rgba(255,255,255,.5);
+        }
+        .cupo-badge.agotado .cupo-text { color: #fca5a5; font-weight: 600; }
+
+        .cupo-lock-tag {
+            display: none;
+            font-size: .68rem;
+            font-weight: 700;
+            color: #ef4444;
+            margin-left: .35rem;
+        }
+
         /* Conector hero → formulario */
         .hero-connector {
             margin-top: 2.2rem;
@@ -405,6 +464,7 @@
             border-color: var(--indigo);
         }
         .ropt.indigo input:checked + label .dot::after { transform: scale(1); }
+        .ropt input:disabled + label { opacity: .5; cursor: not-allowed; }
 
         /* Variante cyan */
         .ropt.teal input:checked + label {
@@ -771,6 +831,18 @@
             19 de septiembre de 2026
         </div>
 
+        <!-- Cupo disponible -->
+        <div class="cupo-badge visible" id="cupoBadge">
+            <div class="cupo-label">
+                <span>Cupos ocupados</span>
+                <strong id="cupoNums">–/–</strong>
+            </div>
+            <div class="cupo-track">
+                <div class="cupo-fill" id="cupoFill"></div>
+            </div>
+            <div class="cupo-text" id="cupoText">Cargando disponibilidad…</div>
+        </div>
+
         <!-- Conector visual hacia el formulario -->
         <div class="hero-connector">
             <span>Regístrate</span>
@@ -845,7 +917,7 @@
                             <div class="radio-row">
                                 <div class="ropt indigo">
                                     <input type="radio" name="asistencia" id="asi-si" value="si">
-                                    <label for="asi-si"><span class="dot"></span>Sí, asistiré</label>
+                                    <label for="asi-si"><span class="dot"></span>Sí, asistiré<span class="cupo-lock-tag" id="cupoLockTag">Cupo lleno</span></label>
                                 </div>
                                 <div class="ropt indigo">
                                     <input type="radio" name="asistencia" id="asi-no" value="no">
@@ -1146,6 +1218,35 @@ $('formActualizar').addEventListener('submit', async e => {
         btn.disabled = false;
     }
 });
+
+/* ── Cupo disponible ── */
+async function loadCupo() {
+    try {
+        const res  = await fetch('/api/cupo-encuentro.php');
+        const data = await res.json();
+
+        const badge = $('cupoBadge');
+        badge.classList.add('visible');
+        badge.classList.toggle('agotado', !!data.agotado);
+
+        $('cupoNums').textContent = `${data.registrados}/${data.capacidad}`;
+        $('cupoFill').style.width = Math.min((data.registrados / data.capacidad) * 100, 100) + '%';
+
+        const asiSi = $('asi-si');
+        if (data.agotado) {
+            $('cupoText').textContent = '¡Cupo completo! Ya no se aceptan más confirmaciones de asistencia.';
+            $('cupoLockTag').style.display = 'inline';
+            if (asiSi) asiSi.disabled = true;
+        } else {
+            $('cupoText').textContent = `Quedan ${data.disponibles} cupos disponibles.`;
+        }
+    } catch (e) {
+        // Si falla la consulta de cupo, no se bloquea el formulario: el backend
+        // sigue validando el límite al enviar la respuesta. Se avisa igual en la UI.
+        $('cupoText').textContent = 'No se pudo consultar la disponibilidad de cupos.';
+    }
+}
+loadCupo();
 
 /* Bloquear acompañantes si elige No */
 document.querySelectorAll('input[name="asistencia"]').forEach(r => {

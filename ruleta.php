@@ -13,6 +13,7 @@
     --pink:   #e91e8c;
     --cyan:   #00d4e0;
     --yellow: #3B82F6;
+    --orange: #ff6d00;
     --purple: #7c3aed;
     --indigo: #4338ca;
     --navy:   #07111f;
@@ -20,55 +21,60 @@
 
 body {
     font-family: 'Inter', system-ui, sans-serif;
-    background: #f8fafc;
+    background: var(--navy);
     min-height: 100vh;
-    color: #1e293b;
+    color: #fff;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
 }
 
-/* ── Chispitas (fondo blanco) ── */
+/* ── Fondo oscuro con brillos neón (igual que el resto del sitio) ── */
 .bg-canvas {
     position: fixed; inset: 0;
     pointer-events: none; z-index: 0; overflow: hidden;
 }
+.bg-canvas::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse 55% 45% at 15% 20%,  rgba(233,30,140,.18)  0%, transparent 65%),
+        radial-gradient(ellipse 45% 55% at 85% 15%,  rgba(0,212,224,.16)   0%, transparent 65%),
+        radial-gradient(ellipse 50% 50% at 50% 60%,  rgba(124,58,237,.14)  0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 80% 80%,  rgba(255,109,0,.12)   0%, transparent 55%);
+}
 .bg-canvas::after {
     content: '';
     position: absolute;
-    width: 4px; height: 4px; border-radius: 50%;
+    width: 3px; height: 3px; border-radius: 50%;
     background: transparent;
     box-shadow:
-        8vw  12vh 0 2px rgba(251,182,206,.85),
-        22vw  5vh 0 3px rgba(196,181,253,.80),
-        38vw 18vh 0 2px rgba(147,197,253,.85),
-        55vw  8vh 0 3px rgba(110,231,183,.80),
-        70vw 14vh 0 2px rgba(253,211,116,.85),
-        85vw  6vh 0 3px rgba(253,186,116,.80),
-        92vw 22vh 0 2px rgba(251,182,206,.75),
-        5vw  40vh 0 3px rgba(216,180,254,.80),
-        18vw 55vh 0 2px rgba(167,243,208,.85),
-        32vw 70vh 0 3px rgba(147,197,253,.75),
-        48vw 48vh 0 2px rgba(251,182,206,.80),
-        62vw 62vh 0 3px rgba(196,181,253,.75),
-        76vw 45vh 0 2px rgba(110,231,183,.80),
-        90vw 58vh 0 3px rgba(253,211,116,.75),
-        12vw 80vh 0 2px rgba(253,186,116,.80),
-        28vw 88vh 0 3px rgba(216,180,254,.75),
-        44vw 82vh 0 2px rgba(167,243,208,.80),
-        60vw 78vh 0 3px rgba(147,197,253,.80),
-        78vw 85vh 0 2px rgba(251,182,206,.75),
-        95vw 72vh 0 3px rgba(196,181,253,.80);
-    animation: twinkle 5s ease-in-out infinite alternate;
+        8vw  12vh 0 1px rgba(233,30,140,.75),
+        30vw  5vh 0 1px rgba(233,30,140,.55),
+        55vw 18vh 0 2px rgba(233,30,140,.45),
+        88vw  8vh 0 1px rgba(233,30,140,.65),
+        18vw 35vh 0 2px rgba(0,212,224,.70),
+        45vw 10vh 0 1px rgba(0,212,224,.60),
+        78vw 28vh 0 2px rgba(0,212,224,.55),
+        62vw 65vh 0 1px rgba(0,212,224,.45),
+        35vw 22vh 0 2px rgba(124,58,237,.65),
+        65vw 12vh 0 1px rgba(124,58,237,.55),
+        12vw 55vh 0 2px rgba(124,58,237,.50),
+        82vw 58vh 0 1px rgba(124,58,237,.45),
+        22vw 48vh 0 1px rgba(255,109,0,.55),
+        58vw 38vh 0 2px rgba(255,109,0,.45),
+        75vw 75vh 0 1px rgba(255,109,0,.40),
+        6vw  90vh 0 2px rgba(255,109,0,.50);
+    animation: twinkle 6s ease-in-out infinite alternate;
 }
 @keyframes twinkle {
-    0%  { opacity:.5; transform:scale(1);   }
-    50% { opacity:1;  transform:scale(1.4); }
-    100%{ opacity:.4; transform:scale(.8);  }
+    0%   { opacity: .6; transform: scale(1); }
+    50%  { opacity: 1;  transform: scale(1.3); }
+    100% { opacity: .5; transform: scale(.9); }
 }
 
 /* ── Wrapper ── */
 .page {
-    position: relative; z-index: 1;
+    position: relative; z-index: 2;
     max-width: 860px;
     margin: 0 auto;
     padding: 0 1.25rem 4rem;
@@ -80,27 +86,43 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 1.75rem 0 1.5rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid rgba(255,255,255,.08);
     margin-bottom: 2.5rem;
     gap: 1rem;
+}
+.header-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.header-logo {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    object-fit: cover;
+    flex-shrink: 0;
+    box-shadow:
+        0 0 0 1px rgba(255,255,255,.1),
+        0 0 24px rgba(233,30,140,.35),
+        0 8px 20px rgba(0,0,0,.4);
 }
 .header-bar h1 {
     font-size: clamp(1.3rem, 3.5vw, 2rem);
     font-weight: 900;
-    color: #1a3a6b;
+    color: #fff;
     letter-spacing: -.02em;
     line-height: 1.15;
 }
 .header-bar p {
     font-size: .78rem;
-    color: #94a3b8;
+    color: rgba(255,255,255,.4);
     margin-top: .2rem;
 }
 .total-box {
     text-align: right;
     flex-shrink: 0;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.12);
+    backdrop-filter: blur(8px);
     border-radius: 14px;
     padding: .7rem 1.2rem;
     min-width: 110px;
@@ -110,13 +132,13 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .1em;
-    color: #94a3b8;
+    color: rgba(255,255,255,.45);
 }
 .total-box .num {
     font-size: 2rem;
     font-weight: 900;
     line-height: 1;
-    color: #1a3a6b;
+    color: #fff;
 }
 
 /* ── Wheel ── */
@@ -139,17 +161,18 @@ body {
     width: 0; height: 0;
     border-left: 14px solid transparent;
     border-right: 14px solid transparent;
-    border-top: 28px solid var(--yellow);
-    filter: drop-shadow(0 2px 6px rgba(255,193,7,.7));
+    border-top: 28px solid var(--cyan);
+    filter: drop-shadow(0 2px 10px rgba(0,212,224,.85));
 }
 canvas#wheel {
     width: min(460px, 86vw);
     height: min(460px, 86vw);
     border-radius: 50%; display: block;
     box-shadow:
-        0 0 0 6px #fff,
-        0 4px 32px rgba(100,116,139,.18),
-        0 12px 60px rgba(196,181,253,.25);
+        0 0 0 4px rgba(255,255,255,.1),
+        0 0 60px rgba(233,30,140,.35),
+        0 0 100px rgba(0,212,224,.25),
+        0 20px 60px rgba(0,0,0,.5);
 }
 .btn-spin {
     height: 52px; padding: 0 3.5rem;
@@ -185,8 +208,9 @@ canvas#wheel {
 
 /* ── Ganador actual ── */
 .current-winner {
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
+    background: rgba(34,197,94,.1);
+    border: 1px solid rgba(74,222,128,.35);
+    backdrop-filter: blur(8px);
     border-radius: 16px;
     padding: 1.25rem 1.75rem;
     text-align: center;
@@ -200,11 +224,12 @@ canvas#wheel {
 .current-winner .tag {
     font-size: .65rem; font-weight: 700;
     text-transform: uppercase; letter-spacing: .1em;
-    color: #16a34a; margin-bottom: .5rem;
+    color: #4ade80; margin-bottom: .5rem;
 }
 .current-winner .cw-name {
     font-size: clamp(1.3rem, 4vw, 1.9rem);
-    font-weight: 900; color: #166534; line-height: 1.2;
+    font-weight: 900; color: #fff; line-height: 1.2;
+    text-shadow: 0 0 24px rgba(74,222,128,.5);
 }
 
 /* ── Historial ── */
@@ -222,12 +247,12 @@ canvas#wheel {
 .history-label {
     font-size: .68rem; font-weight: 700;
     text-transform: uppercase; letter-spacing: .1em;
-    color: #94a3b8;
+    color: rgba(255,255,255,.4);
 }
 .winners-pill {
-    background: rgba(255,193,7,.15);
-    border: 1px solid rgba(255,193,7,.3);
-    color: var(--yellow);
+    background: rgba(251,191,36,.15);
+    border: 1px solid rgba(251,191,36,.35);
+    color: #fbbf24;
     font-size: .7rem; font-weight: 700;
     padding: .2rem .65rem; border-radius: 20px;
 }
@@ -247,13 +272,13 @@ canvas#wheel {
 
 .btn-clear {
     height: 34px; padding: 0 .9rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid rgba(255,255,255,.15);
     background: transparent; border-radius: 8px;
-    color: #94a3b8; font-family: inherit;
+    color: rgba(255,255,255,.4); font-family: inherit;
     font-size: .75rem; font-weight: 500;
     cursor: pointer; transition: all .15s;
 }
-.btn-clear:hover:not(:disabled) { border-color: #94a3b8; color: #475569; }
+.btn-clear:hover:not(:disabled) { border-color: rgba(255,255,255,.4); color: rgba(255,255,255,.75); }
 .btn-clear:disabled { opacity: .3; cursor: default; }
 
 /* Lista de ganadores */
@@ -262,10 +287,10 @@ canvas#wheel {
 .empty-state {
     text-align: center;
     padding: 2.5rem 1rem;
-    color: #cbd5e1;
+    color: rgba(255,255,255,.3);
     font-size: .82rem; line-height: 1.8;
-    background: #f8fafc;
-    border: 1px dashed #e2e8f0;
+    background: rgba(255,255,255,.03);
+    border: 1px dashed rgba(255,255,255,.15);
     border-radius: 14px;
 }
 .empty-state .icon { display: none; }
@@ -275,29 +300,30 @@ canvas#wheel {
     align-items: center;
     gap: 1rem;
     padding: .85rem 1.25rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+    backdrop-filter: blur(6px);
     border-radius: 12px;
     animation: slideIn .35s ease;
 }
 @keyframes slideIn { from{transform:translateX(-16px);opacity:0} to{transform:translateX(0);opacity:1} }
 .winner-row:first-child {
-    background: #fffbeb;
-    border-color: #fde68a;
+    background: rgba(251,191,36,.12);
+    border-color: rgba(251,191,36,.35);
 }
 .wr-num {
     width: 30px; height: 30px; border-radius: 50%;
-    background: linear-gradient(135deg, #c4b5fd, #93c5fd);
-    color: #3730a3;
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    color: #fff;
     display: flex; align-items: center; justify-content: center;
     font-size: .72rem; font-weight: 800; flex-shrink: 0;
 }
 .winner-row:first-child .wr-num {
-    background: linear-gradient(135deg, #fde68a, #fcd34d);
-    color: #92400e;
+    background: linear-gradient(135deg, #fde68a, #fbbf24);
+    color: #78350f;
 }
-.wr-name { flex: 1; font-size: .9rem; font-weight: 700; color: #1e293b; }
-.wr-time { font-size: .72rem; color: #94a3b8; flex-shrink: 0; }
+.wr-name { flex: 1; font-size: .9rem; font-weight: 700; color: #fff; }
+.wr-time { font-size: .72rem; color: rgba(255,255,255,.35); flex-shrink: 0; }
 
 /* ── Winner Modal ── */
 .modal-overlay {
@@ -391,8 +417,8 @@ canvas#wheel {
 footer {
     position: relative; z-index: 1;
     text-align: center; padding: 1.5rem;
-    color: #1a3a6b; font-size: .75rem;
-    border-top: 1px solid #e2e8f0;
+    color: rgba(255,255,255,.25); font-size: .75rem;
+    border-top: 1px solid rgba(255,255,255,.08);
 }
 
 @media (max-width: 500px) {
@@ -411,9 +437,13 @@ footer {
 
     <!-- Header -->
     <div class="header-bar">
-        <div>
-            <h1>Ruleta de Participantes</h1>
-            <p>Encuentro de Graduados 2026 &nbsp;•&nbsp; 19 de septiembre de 2026</p>
+        <div class="header-bar-left">
+            <img src="/images/encuentro-2026.png" alt="Encuentro de Graduados 2026" class="header-logo"
+                 onerror="this.style.display='none'">
+            <div>
+                <h1>Ruleta de Participantes</h1>
+                <p>Encuentro de Graduados 2026 &nbsp;•&nbsp; 19 de septiembre de 2026</p>
+            </div>
         </div>
         <div class="total-box">
             <div class="lbl">Total de asistentes</div>
@@ -443,7 +473,7 @@ footer {
             <div class="history-head-left">
                 <span class="history-label">Historial</span>
                 <span class="winners-pill" id="winnersCount">0</span>
-                <span style="font-size:.72rem;color:#94a3b8;font-weight:500;">ganadores anteriores</span>
+                <span style="font-size:.72rem;color:rgba(255,255,255,.35);font-weight:500;">ganadores anteriores</span>
             </div>
             <div class="history-actions">
                 <button class="btn-pdf" id="btnPdf" onclick="downloadPDF()" disabled>
@@ -491,11 +521,12 @@ footer {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
+/* Colores neón saturados de la paleta de marca, para la rueda sobre fondo oscuro. */
 const COLORS = [
-    '#fbb6ce','#c4b5fd','#93c5fd','#6ee7b7',
-    '#fcd34d','#fdba74','#fca5a5','#7dd3fc',
-    '#d8b4fe','#a7f3d0','#fde68a','#f0abfc',
-    '#bae6fd','#bbf7d0','#fed7aa','#e9d5ff',
+    '#e91e8c', '#00d4e0', '#7c3aed', '#ff6d00',
+    '#4338ca', '#ff36a8', '#22f6ff', '#9d5cff',
+    '#ff8f3d', '#6366f1', '#c026a3', '#0891b2',
+    '#a78bfa', '#f97316', '#818cf8', '#d726ff',
 ];
 
 let participants = [];
@@ -536,8 +567,8 @@ function drawWheel(angle) {
 
     if (n === 0) {
         ctx.beginPath(); ctx.arc(CX, CY, R, 0, 2*Math.PI);
-        ctx.fillStyle = '#f5f0e6'; ctx.fill();
-        ctx.fillStyle = 'rgba(26,58,107,.4)';
+        ctx.fillStyle = '#111a2e'; ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.35)';
         ctx.font = 'bold 16px Inter, sans-serif';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText('Sin participantes', CX, CY);
@@ -567,9 +598,9 @@ function drawWheel(angle) {
         ctx.translate(CX, CY);
         ctx.rotate(mid);
         ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#374151';
+        ctx.fillStyle = '#fff';
         ctx.font = `bold ${fontSize}px Inter, sans-serif`;
-        ctx.shadowColor = 'rgba(255,255,255,.8)'; ctx.shadowBlur = 3;
+        ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 4;
         let name = participants[i];
         if (name.length > maxLen) name = name.slice(0, maxLen-1) + '…';
         ctx.fillText(name, R - 14, 0);
@@ -577,10 +608,10 @@ function drawWheel(angle) {
     }
 
     ctx.beginPath(); ctx.arc(CX, CY, R, 0, 2*Math.PI);
-    ctx.strokeStyle = 'rgba(100,116,139,.2)'; ctx.lineWidth = 4; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 4; ctx.stroke();
 
-    ctx.beginPath(); ctx.arc(CX, CY, 24, 0, 2*Math.PI); ctx.fillStyle = '#fff'; ctx.fill();
-    ctx.beginPath(); ctx.arc(CX, CY, 17, 0, 2*Math.PI); ctx.fillStyle = '#1a3a6b'; ctx.fill();
+    ctx.beginPath(); ctx.arc(CX, CY, 24, 0, 2*Math.PI); ctx.fillStyle = '#07111f'; ctx.fill();
+    ctx.beginPath(); ctx.arc(CX, CY, 17, 0, 2*Math.PI); ctx.fillStyle = '#fff'; ctx.fill();
 }
 
 function spin() {

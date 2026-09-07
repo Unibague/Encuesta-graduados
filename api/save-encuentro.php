@@ -4,6 +4,8 @@ require __DIR__ . '/../app/controllers/autoloader.php';
 
 use Ospina\EasySQL\EasySQL;
 
+const ENCUENTRO_CUPO_MAXIMO = 100;
+
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -92,6 +94,36 @@ $existente = $db->makeQuery("
 /* No se bloquea una respuesta repetida: se vuelve a sincronizar con Google Sheets.
    Esto permite reparar una fila faltante si una sincronización anterior falló. */
 $mismaRespuesta = $existente && $existente['asistencia'] === $asistencia;
+
+/* =========================
+ * CUPO MÁXIMO
+ * ========================= */
+$incrementaConfirmados = $asistencia === 'si' && (!$existente || $existente['asistencia'] !== 'si');
+
+if ($incrementaConfirmados) {
+    /* El Google Sheet es la fuente de la verdad para contar confirmados
+       (puede incluir filas que no pasaron por esta base de datos); si no
+       se puede consultar, se usa la base de datos como respaldo. */
+    $asistentesSheet = obtenerAsistentesConfirmadosSheet();
+
+    if ($asistentesSheet !== null) {
+        $confirmados = count($asistentesSheet);
+    } else {
+        $confirmados = (int) ($db->makeQuery("
+            SELECT COUNT(*) AS total FROM encuentro_2026
+            WHERE asistencia = 'si' AND encuentro_anio = $anioActivo
+        ")->fetch_assoc()['total'] ?? 0);
+    }
+
+    if ($confirmados >= ENCUENTRO_CUPO_MAXIMO) {
+        http_response_code(422);
+        echo json_encode([
+            'error'   => true,
+            'message' => 'Se completó el cupo máximo de ' . ENCUENTRO_CUPO_MAXIMO . ' personas confirmadas para el Encuentro de Graduados 2026. Si crees que esto es un error, escribe a graduados@unibague.edu.co.',
+        ]);
+        exit;
+    }
+}
 
 if ($existente) {
     $db->makeQuery("
@@ -501,28 +533,6 @@ function eliminarPersonaDeHoja(
     encuentroLog(
         "Retirado de '{$sheetName}': {$nombreCompleto} | {$identificacion} | filas: " .
         implode(', ', $filasABorrar)
-    );
-}
-
-/**
- * Usa la ruta configurada en el servidor y, al trabajar en localhost, recurre
- * al credentials.json ubicado en la raíz del proyecto.
- */
-function googleCredentialsPath(): string
-{
-    $configuredPath = trim((string) getenv('GOOGLE_CREDENTIALS_PATH'));
-
-    if ($configuredPath !== '' && is_file($configuredPath)) {
-        return $configuredPath;
-    }
-
-    $localPath = dirname(__DIR__) . '/credentials.json';
-    if (is_file($localPath)) {
-        return $localPath;
-    }
-
-    throw new RuntimeException(
-        'No se encontró el archivo de credenciales de Google Sheets.'
     );
 }
 

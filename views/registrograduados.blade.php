@@ -1437,11 +1437,11 @@
         }
 
         function renderSection(direction) {
-            // Evitar renderizaciones recursivas que causan stack overflow
-            if (isRendering) return;
-            isRendering = true;
-            
             try {
+                // Evitar renderizaciones recursivas que causan stack overflow
+                if (isRendering) return;
+                isRendering = true;
+                
                 const sections = getVisibleSections();
 
                 if (currentSectionIndex >= sections.length) {

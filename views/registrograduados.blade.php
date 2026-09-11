@@ -1244,7 +1244,7 @@
         const MAX_CIUDADES_DATALIST = 60;
 
         function populateCityOptions(countryCode) {
-            currentCityList = countryCode ? (City.getCitiesOfCountry(countryCode) || []) : [];
+            currentCityList = countryCode ? (City.getCitiesOfCountry(countryCode) || []).slice(0, 60) : [];
             renderCityDatalistOptions('');
         }
 

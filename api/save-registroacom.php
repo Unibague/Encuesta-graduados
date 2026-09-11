@@ -76,6 +76,7 @@ $sheetsError = null;
 
 try {
     registrarAcompananteEnSheets($nombres, $apellidos, $cedula);
+    registrarNombreEnHojaJuegos(trim($nombres . ' ' . $apellidos));
 } catch (Throwable $e) {
     $sheetsError = $e->getMessage();
     error_log('[save-registroacom] Error Google Sheets: ' . $e->getMessage());

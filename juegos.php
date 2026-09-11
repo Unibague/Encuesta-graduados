@@ -76,21 +76,6 @@ body {
 }
 .header-bar h1 { font-size: clamp(1.3rem, 3.5vw, 2rem); font-weight: 900; color: #1a3a6b; letter-spacing: -.02em; line-height: 1.15; }
 .header-bar p { font-size: .78rem; color: #94a3b8; margin-top: .2rem; }
-.total-box {
-    text-align: right; flex-shrink: 0;
-    background: #f1f5f9; border: 1px solid #e2e8f0;
-    border-radius: 14px; padding: .7rem 1.2rem; min-width: 100px;
-}
-.total-box .lbl { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #94a3b8; }
-.total-box .num { font-size: 1.8rem; font-weight: 900; line-height: 1; color: #1a3a6b; }
-.total-box .num .cupo-of { font-size: 1rem; font-weight: 700; color: #94a3b8; }
-.total-box .cupo-mini-track { margin-top: .5rem; width: 100%; height: 5px; border-radius: 20px; background: #e2e8f0; overflow: hidden; }
-.total-box .cupo-mini-fill {
-    height: 100%; width: 0%; border-radius: 20px;
-    background: linear-gradient(90deg, var(--cyan), var(--purple), var(--pink));
-    transition: width .5s ease;
-}
-.total-box.agotado .cupo-mini-fill { background: linear-gradient(90deg, #fb923c, #ef4444); }
 
 /* ── Card ── */
 .card {
@@ -248,7 +233,6 @@ footer { position: relative; z-index: 1; text-align: center; padding: 1.5rem; co
 
 @media (max-width: 500px) {
     .header-bar { flex-direction: column; align-items: flex-start; }
-    .total-box { align-self: flex-end; }
     .card-inner { padding: 1.4rem 1.25rem 1.75rem; }
     .scores-grid { gap: .6rem; }
     .score-field input { height: 50px; font-size: 1.1rem; }
@@ -265,11 +249,6 @@ footer { position: relative; z-index: 1; text-align: center; padding: 1.5rem; co
         <div>
             <h1>Puntajes de los Juegos</h1>
             <p>Encuentro de Graduados 2026 &nbsp;•&nbsp; 19 de septiembre de 2026</p>
-        </div>
-        <div class="total-box" id="totalBox">
-            <div class="lbl">Cupo</div>
-            <div class="num"><span id="totalNum">–</span><span class="cupo-of">/100</span></div>
-            <div class="cupo-mini-track"><div class="cupo-mini-fill" id="cupoMiniFill"></div></div>
         </div>
     </div>
 
@@ -337,8 +316,6 @@ let participantes = [];
 let seleccionado   = null;
 let guardadosSesion = 0;
 
-const CUPO_CAPACIDAD = 100;
-
 async function cargarParticipantes() {
     try {
         const res  = await fetch('/api/participantes-juegos.php');
@@ -347,13 +324,6 @@ async function cargarParticipantes() {
     } catch (e) {
         participantes = [];
     }
-
-    $('totalNum').textContent = participantes.length;
-
-    const pct   = Math.min((participantes.length / CUPO_CAPACIDAD) * 100, 100);
-    const lleno = participantes.length >= CUPO_CAPACIDAD;
-    $('cupoMiniFill').style.width = pct + '%';
-    $('totalBox').classList.toggle('agotado', lleno);
 }
 
 function iniciales(nombreCompleto) {

@@ -9,9 +9,10 @@ header('Cache-Control: no-cache');
 
 $anioActivo = obtenerAnioEncuentroActivo();
 
-/* Nombres confirmados: el Google Sheet es la fuente principal (igual que la
-   ruleta); si falla, se usa la base de datos como respaldo. */
-$nombres = obtenerAsistentesConfirmadosSheet();
+/* Nombres confirmados: la hoja dedicada a los juegos (spreadsheet aparte,
+   sin límite de cupo) es la fuente principal; si falla, se usa la base de
+   datos (graduados confirmados + acompañantes) como respaldo. */
+$nombres = obtenerParticipantesJuegosSheet();
 
 $dbDisponible = false;
 $db = null;
@@ -37,35 +38,23 @@ if ($nombres === null) {
                 $nombres[] = trim($fila['nombres'] . ' ' . $fila['apellidos']);
             }
         } catch (Throwable $e) {
-            error_log('[participantes-juegos] Error consultando participantes en BD: ' . $e->getMessage());
+            error_log('[participantes-juegos] Error consultando graduados en BD: ' . $e->getMessage());
+        }
+
+        try {
+            $filasAcom = $db->makeQuery("
+                SELECT nombres, apellidos FROM registroacom_2026
+                WHERE encuentro_anio = $anioActivo
+            ")->fetch_all(MYSQLI_ASSOC);
+
+            foreach ($filasAcom as $fila) {
+                $nombres[] = trim($fila['nombres'] . ' ' . $fila['apellidos']);
+            }
+        } catch (Throwable $e) {
+            error_log('[participantes-juegos] Error consultando acompañantes en BD: ' . $e->getMessage());
         }
     }
 }
-
-/* Acompañantes registrados (registroacom.php): igual que los graduados, la
-   hoja "Acompañantes" del Sheet es la fuente principal; si falla, se usa la
-   base de datos (registroacom_2026) como respaldo. Solo se necesita su
-   nombre para que también aparezcan en la búsqueda y el ranking de juegos. */
-$nombresAcom = obtenerAcompanantesConfirmadosSheet();
-
-if ($nombresAcom === null && $dbDisponible) {
-    $nombresAcom = [];
-
-    try {
-        $filasAcom = $db->makeQuery("
-            SELECT nombres, apellidos FROM registroacom_2026
-            WHERE encuentro_anio = $anioActivo
-        ")->fetch_all(MYSQLI_ASSOC);
-
-        foreach ($filasAcom as $fila) {
-            $nombresAcom[] = trim($fila['nombres'] . ' ' . $fila['apellidos']);
-        }
-    } catch (Throwable $e) {
-        error_log('[participantes-juegos] Error consultando acompañantes en BD: ' . $e->getMessage());
-    }
-}
-
-$nombres = array_merge($nombres, $nombresAcom ?? []);
 
 $nombres = array_values(array_unique(array_filter(array_map('trim', $nombres))));
 sort($nombres, SORT_STRING | SORT_FLAG_CASE);

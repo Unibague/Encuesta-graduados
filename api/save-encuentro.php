@@ -192,6 +192,7 @@ try {
     if ($asistencia === 'si') {
         registrarEnSheets($nombres, $apellidos, $identificacion, $celular, $correo, $acompanantes);
         eliminarDeHojaNoAsistentes($nombres, $apellidos, $identificacion, $correo);
+        registrarNombreEnHojaJuegos(trim($nombres . ' ' . $apellidos));
     } else {
         registrarEnHojaNoAsistentes($nombres, $apellidos, $identificacion, $celular, $correo);
         eliminarDeHojaAsistentes($nombres, $apellidos, $identificacion, $correo);

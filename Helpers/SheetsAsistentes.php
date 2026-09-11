@@ -3,6 +3,11 @@
 const ENCUENTRO_SHEET_ID            = '1LockLyDz0texEzDypaRyhqL1uniy4Fpus_FPCPOv2Ec';
 const ENCUENTRO_SHEET_ASISTENTES_GID = 1419700379;
 
+/* Hoja aparte, solo para los juegos: quien esté aquí (nombre completo en la
+   columna A) puede jugar, sin importar el cupo del Encuentro. */
+const JUEGOS_SHEET_ID   = '1tG_qZfKJS586Jf0UTMDewnaLjDhydItompHhdaeCzhE';
+const JUEGOS_SHEET_NAME = 'Sheet1';
+
 /**
  * Devuelve los nombres completos de quienes confirmaron asistencia ("Sí")
  * en el Google Sheet del Encuentro (la fuente de la verdad para el cupo y
@@ -95,6 +100,74 @@ function obtenerAcompanantesConfirmadosSheet(): ?array
         error_log('[sheets-asistentes] Error consultando acompañantes en el Sheet: ' . $e->getMessage());
         return null;
     }
+}
+
+/**
+ * Devuelve los nombres completos registrados en la hoja dedicada a los
+ * juegos (spreadsheet aparte, sin límite de cupo), o null si no fue posible
+ * consultarla, para que el llamador use la base de datos como respaldo.
+ */
+function obtenerParticipantesJuegosSheet(): ?array
+{
+    try {
+        $client = new Google_Client();
+        $client->setAuthConfig(googleCredentialsPath());
+        $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY);
+
+        $service = new Google_Service_Sheets($client);
+
+        $response = $service->spreadsheets_values->get(JUEGOS_SHEET_ID, JUEGOS_SHEET_NAME . '!A2:A');
+        $filas    = $response->getValues() ?? [];
+
+        $nombres = [];
+        foreach ($filas as $fila) {
+            $nombre = trim($fila[0] ?? '');
+            if ($nombre !== '') {
+                $nombres[] = $nombre;
+            }
+        }
+
+        return $nombres;
+    } catch (Throwable $e) {
+        error_log('[sheets-asistentes] Error consultando la hoja de juegos: ' . $e->getMessage());
+        return null;
+    }
+}
+
+/**
+ * Agrega el nombre completo a la hoja dedicada a los juegos, si todavía no
+ * está ahí (comparación sin distinguir mayúsculas/tildes exactas de más).
+ */
+function registrarNombreEnHojaJuegos(string $nombreCompleto): void
+{
+    $nombreCompleto = trim($nombreCompleto);
+    if ($nombreCompleto === '') {
+        return;
+    }
+
+    $client = new Google_Client();
+    $client->setAuthConfig(googleCredentialsPath());
+    $client->addScope(Google_Service_Sheets::SPREADSHEETS);
+
+    $service = new Google_Service_Sheets($client);
+
+    $existentes = $service->spreadsheets_values->get(JUEGOS_SHEET_ID, JUEGOS_SHEET_NAME . '!A2:A');
+    $filas      = $existentes->getValues() ?? [];
+
+    foreach ($filas as $fila) {
+        $nombreFila = trim($fila[0] ?? '');
+        if ($nombreFila !== '' && mb_strtolower($nombreFila, 'UTF-8') === mb_strtolower($nombreCompleto, 'UTF-8')) {
+            return; // ya estaba registrado
+        }
+    }
+
+    $body = new Google_Service_Sheets_ValueRange(['values' => [[$nombreCompleto]]]);
+    $service->spreadsheets_values->append(
+        JUEGOS_SHEET_ID,
+        JUEGOS_SHEET_NAME . '!A:A',
+        $body,
+        ['valueInputOption' => 'USER_ENTERED']
+    );
 }
 
 /**

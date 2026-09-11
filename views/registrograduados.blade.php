@@ -774,8 +774,12 @@
     <script type="module">
         import { Country, City } from '/assets/js/country-state-city/index.js';
 
-        // Registrar inicio del formulario
-        FormLogger.formStarted();
+        // Registrar inicio del formulario (con verificación de que FormLogger cargó)
+        if (typeof FormLogger !== 'undefined') {
+            FormLogger.formStarted();
+        } else {
+            console.warn('FormLogger no cargó correctamente');
+        }
 
         window.Country = Country;
         window.City = City;
@@ -1563,10 +1567,14 @@
             const sections = getVisibleSections();
             const currentSection = sections[currentSectionIndex];
             
-            FormLogger.sectionChange(currentSection?.title, currentSectionIndex, sections.length);
+            if (typeof FormLogger !== 'undefined') {
+                FormLogger.sectionChange(currentSection?.title, currentSectionIndex, sections.length);
+            }
 
             if (!validateCurrentSection()) {
-                FormLogger.validationFailed(currentSection?.title, []);
+                if (typeof FormLogger !== 'undefined') {
+                    FormLogger.validationFailed(currentSection?.title, []);
+                }
                 return;
             }
 

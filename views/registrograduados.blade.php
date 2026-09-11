@@ -1114,6 +1114,9 @@
                     const statusEl = fieldEl ? fieldEl.querySelector('.cedula-lookup-status') : null;
                     if (statusEl) statusEl.remove();
                 }
+                if (key === 'ciudad') {
+                    renderCityDatalistOptions(el.value);
+                }
                 updateNextButton();
             }
         }
@@ -1153,14 +1156,39 @@
             updateNextButton();
         }
 
+        /* Lista de ciudades del país seleccionado, cacheada en memoria (sin
+           tocar el DOM). Algunos países tienen decenas de miles de ciudades
+           (EE. UU. tiene ~19.800): meterlas todas de una vez en el
+           <datalist> puede hacer que Safari/iOS truene con "Maximum call
+           stack size exceeded" al intentar construir esa lista nativa tan
+           grande, algo que Chrome/Android tolera sin problema. Por eso solo
+           se muestran hasta MAX_CIUDADES_DATALIST coincidencias con lo que
+           la persona ya escribió. */
+        let currentCityList = [];
+        const MAX_CIUDADES_DATALIST = 60;
+
         function populateCityOptions(countryCode) {
+            currentCityList = countryCode ? (City.getCitiesOfCountry(countryCode) || []) : [];
+            renderCityDatalistOptions('');
+        }
+
+        function renderCityDatalistOptions(query) {
             const cityOptions = document.getElementById('ciudad_options');
             if (!cityOptions) return;
 
-            const cities = City.getCitiesOfCountry(countryCode) || [];
-            cityOptions.innerHTML = cities
+            const q = query.trim().toLowerCase();
+            const matches = [];
+
+            for (const city of currentCityList) {
+                if (q === '' || city.name.toLowerCase().includes(q)) {
+                    matches.push(city);
+                    if (matches.length >= MAX_CIUDADES_DATALIST) break;
+                }
+            }
+
+            cityOptions.innerHTML = matches
                 .sort((a, b) => a.name.localeCompare(b.name))
-                .map(city => `<option value="${city.name}"></option>`)
+                .map(city => `<option value="${city.name.replace(/"/g, '&quot;')}"></option>`)
                 .join('');
         }
 

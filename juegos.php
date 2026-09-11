@@ -296,7 +296,7 @@ footer { position: relative; z-index: 1; text-align: center; padding: 1.5rem; co
 
                 <div class="scores-grid">
                     <div class="score-field">
-                        <label>Araña</label>
+                        <label>Rana</label>
                         <input type="number" inputmode="numeric" min="0" max="100000" id="juego1" placeholder="0">
                     </div>
                     <div class="score-field">

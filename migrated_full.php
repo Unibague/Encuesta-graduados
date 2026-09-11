@@ -1087,8 +1087,104 @@ function getAnioGraduacionAnswer(array $extraAnswers): string
     return '';
 }
 
+// Si el registro no tiene año de graduación, lo consulta en SIGA por
+// cédula y lo deja guardado en form_answers.answers para que quede ahí de
+// forma permanente (no se vuelve a consultar SIGA para esa persona). Si ya
+// tiene un año guardado, lo devuelve tal cual sin consultar SIGA.
+function obtenerAnioGraduacionConSiga(array $row): string
+{
+    $anio = getAnioGraduacionAnswer($row['extra_answers'] ?? []);
+
+    if ($anio !== '') {
+        return $anio;
+    }
+
+    $cedula = trim((string) ($row['identification_number'] ?? ''));
+
+    if ($cedula === '' || !isset($row['id'])) {
+        return '';
+    }
+
+    $anioSiga = consultarAnioGraduacionSiga($cedula);
+
+    if ($anioSiga === '') {
+        return '';
+    }
+
+    guardarAnioGraduacionEnFormAnswers((int) $row['id'], $row['extra_answers'] ?? [], $anioSiga);
+
+    return $anioSiga;
+}
+
+function consultarAnioGraduacionSiga(string $identificacion): string
+{
+    try {
+        $curl = new \Ospina\CurlCobain\CurlCobain(
+            'https://academia.unibague.edu.co/atlante/grad_dat_siga.php'
+        );
+        $curl->setCurlOption(CURLOPT_CONNECTTIMEOUT, 5);
+        $curl->setCurlOption(CURLOPT_TIMEOUT, 15);
+        $curl->setQueryParamsAsArray([
+            'consulta'  => 'Consultar',
+            'documento' => $identificacion,
+            'dia'       => 'N.A',
+            'mes'       => 'N.A',
+            'token'     => md5($identificacion) . getenv('SECURE_TOKEN'),
+        ]);
+
+        $response = trim((string) $curl->makeRequest());
+
+        if ($response === '') {
+            return '';
+        }
+
+        $start = strpos($response, '{');
+        $end   = strrpos($response, '}');
+
+        if ($start === false || $end === false || $end < $start) {
+            return '';
+        }
+
+        $decoded = json_decode(substr($response, $start, $end - $start + 1), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+            return '';
+        }
+
+        if (isset($decoded['data']) && is_array($decoded['data'])) {
+            $decoded = $decoded['data'];
+        }
+
+        return trim((string) ($decoded['Annio de graduacion'] ?? ''));
+    } catch (Throwable $e) {
+        error_log('[migrated_full][export] Error consultando SIGA (' . $identificacion . '): ' . $e->getMessage());
+
+        return '';
+    }
+}
+
+function guardarAnioGraduacionEnFormAnswers(int $formAnswerId, array $extraAnswers, string $anio): void
+{
+    global $db;
+
+    $extraAnswers['Año de graduación'] = $anio;
+
+    $answersJson = addslashes(json_encode($extraAnswers, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+    $db->makeQuery("
+        UPDATE form_answers
+        SET answers = '$answersJson'
+        WHERE id = $formAnswerId
+    ");
+}
+
 function exportMigratedFullCsv(array $rows): void
 {
+    // Exportar puede implicar consultar SIGA fila por fila para completar
+    // el año de graduación; con muchas filas eso supera el límite normal
+    // de tiempo de ejecución de PHP.
+    set_time_limit(0);
+
     $filename = 'migrated_full_' . date('Y-m-d_H-i-s') . '.csv';
 
     header('Content-Type: text/csv; charset=UTF-8');
@@ -1121,7 +1217,7 @@ function exportMigratedFullCsv(array $rows): void
             excelSafeValue($row['base_values']['email'] ?? ''),
             excelSafePhone($row['base_values']['mobile_phone'] ?? ''),
             excelSafeValue(getProgramaAnswer($row['extra_answers'] ?? [])),
-            excelSafeValue(getAnioGraduacionAnswer($row['extra_answers'] ?? [])),
+            excelSafeValue(obtenerAnioGraduacionConSiga($row)),
         ];
 
         fputcsv($output, $values, ';');

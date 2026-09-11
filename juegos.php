@@ -296,15 +296,15 @@ footer { position: relative; z-index: 1; text-align: center; padding: 1.5rem; co
 
                 <div class="scores-grid">
                     <div class="score-field">
-                        <label>Juego 1</label>
+                        <label>Araña</label>
                         <input type="number" inputmode="numeric" min="0" max="100000" id="juego1" placeholder="0">
                     </div>
                     <div class="score-field">
-                        <label>Juego 2</label>
+                        <label>Minitejo</label>
                         <input type="number" inputmode="numeric" min="0" max="100000" id="juego2" placeholder="0">
                     </div>
                     <div class="score-field">
-                        <label>Juego 3</label>
+                        <label>Diana</label>
                         <input type="number" inputmode="numeric" min="0" max="100000" id="juego3" placeholder="0">
                     </div>
                 </div>

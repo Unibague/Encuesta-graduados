@@ -734,6 +734,7 @@
         </div>
     </div>
 
+    <script src="/assets/js/form-logger.js"></script>
     <script>
         // Reporta al servidor errores de JS y eventos de diagnóstico puntuales
         // (para poder ver, por ejemplo, si a un iPhone le llega la respuesta de
@@ -772,6 +773,9 @@
     </script>
     <script type="module">
         import { Country, City } from '/assets/js/country-state-city/index.js';
+
+        // Registrar inicio del formulario
+        FormLogger.formStarted();
 
         window.Country = Country;
         window.City = City;
@@ -1555,7 +1559,15 @@
 
         async function goNext() {
             saveCurrentSectionAnswers();
-            if (!validateCurrentSection()) return;
+            const sections = getVisibleSections();
+            const currentSection = sections[currentSectionIndex];
+            
+            FormLogger.sectionChange(currentSection?.title, currentSectionIndex, sections.length);
+
+            if (!validateCurrentSection()) {
+                FormLogger.validationFailed(currentSection?.title, []);
+                return;
+            }
 
             const sections = getVisibleSections();
             const current = sections[currentSectionIndex];
@@ -1733,6 +1745,45 @@
         window.editField = editField;
         window.backToLastSection = backToLastSection;
         window.submitSurvey = submitSurvey;
+
+        /**
+         * Función para registrar eventos del formulario en el servidor
+         * Usado para debugging de errores en iOS y otros dispositivos
+         */
+        async function logFormEvent(eventType, data = {}) {
+            try {
+                const payload = {
+                    type: eventType,
+                    section: data.section || null,
+                    field: data.field || null,
+                    status: data.status || null,
+                    message: data.message || null,
+                    error: data.error || null,
+                    timestamp: new Date().toISOString(),
+                    url: window.location.href
+                };
+
+                await fetch('/api/log-formulario.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).catch(() => {}); // Silencioso si falla
+            } catch (e) {
+                console.error('Error logging form event:', e);
+            }
+        }
+
+        // Registrar inicio del formulario
+        logFormEvent('formulario_iniciado', { message: 'Formulario de registro cargado' });
+
+        // Capturar errores globales
+        window.addEventListener('error', (event) => {
+            logFormEvent('error_js', {
+                message: event.message,
+                error: `${event.filename}:${event.lineno}:${event.colno}`,
+                stack: event.error?.stack || 'No stack available'
+            });
+        });
 
         renderSection();
         window.__formularioListo = true;

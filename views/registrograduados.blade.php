@@ -1569,7 +1569,6 @@
                 return;
             }
 
-            const sections = getVisibleSections();
             const current = sections[currentSectionIndex];
             if (current && current.isConsent && answers.autorizacion_datos === 'No') {
                 showRejected();

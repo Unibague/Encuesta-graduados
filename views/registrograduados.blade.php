@@ -732,6 +732,42 @@
         </div>
     </div>
 
+    <script>
+        // Reporta al servidor errores de JS y eventos de diagnóstico puntuales
+        // (para poder ver, por ejemplo, si a un iPhone le llega la respuesta de
+        // verificación de cédula pero luego algo falla al intentar avanzar,
+        // cosa que en el navegador del usuario no se ve en ningún lado).
+        function reportarDiagnostico(detalle) {
+            try {
+                fetch('/api/log-cliente.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(Object.assign({ pagina: 'registrograduados', url: location.href }, detalle)),
+                    keepalive: true
+                }).catch(function () {});
+            } catch (e) {}
+        }
+
+        window.addEventListener('error', function (event) {
+            reportarDiagnostico({
+                tipo: 'error_js',
+                mensaje: event.message,
+                archivo: event.filename,
+                linea: event.lineno,
+                columna: event.colno,
+                stack: (event.error && event.error.stack) ? String(event.error.stack) : ''
+            });
+        });
+
+        window.addEventListener('unhandledrejection', function (event) {
+            var reason = event.reason;
+            reportarDiagnostico({
+                tipo: 'promise_rechazada',
+                mensaje: (reason && reason.message) ? reason.message : String(reason),
+                stack: (reason && reason.stack) ? String(reason.stack) : ''
+            });
+        });
+    </script>
     <script type="module">
         import { Country, City } from '/assets/js/country-state-city/index.js';
 
@@ -1205,16 +1241,19 @@
                     await autocompletarDatosPrevios(cedula);
                     verificationMessage = { text: 'Verificación exitosa. Continúa con tu registro.', type: 'found' };
                     renderSection();
+                    reportarDiagnostico({ tipo: 'verificacion_cedula', resultado: 'eligible', status: result.status });
                     return true;
                 }
 
                 verificationMessage = { text: '', type: '' };
                 renderSection();
+                reportarDiagnostico({ tipo: 'verificacion_cedula', resultado: 'no_eligible', status: result.status });
                 return false;
             } catch (error) {
                 verificationStatus = 'error';
                 verificationMessage = { text: 'No pudimos verificar tu documento. Intenta nuevamente.', type: 'error' };
                 renderSection();
+                reportarDiagnostico({ tipo: 'verificacion_cedula', resultado: 'excepcion', mensaje: error.message });
                 return false;
             }
         }
@@ -1440,6 +1479,8 @@
                 if (btnNext) btnNext.disabled = false;
                 if (btnPrev) btnPrev.disabled = currentSectionIndex === 0;
 
+                reportarDiagnostico({ tipo: 'goNext_verificacion', verified: verified });
+
                 if (!verified) return;
             }
 
@@ -1452,6 +1493,7 @@
             const updatedSections = getVisibleSections();
             if (currentSectionIndex < updatedSections.length - 1) {
                 currentSectionIndex++;
+                reportarDiagnostico({ tipo: 'goNext_avanzando', nuevaSeccion: currentSectionIndex });
                 renderSection('next');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {

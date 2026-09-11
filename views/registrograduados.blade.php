@@ -1254,6 +1254,7 @@
 
                     if (data.ciudad) {
                         const cityMatch = (City.getCitiesOfCountry(match.isoCode) || [])
+                            .slice(0, 60)
                             .find(c => c.name.toLowerCase() === String(data.ciudad).toLowerCase());
                         answers.ciudad = cityMatch ? cityMatch.name : data.ciudad;
                     }

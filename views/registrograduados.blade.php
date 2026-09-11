@@ -1037,7 +1037,7 @@
                     ).join('');
                     
                     return `
-                        <select class="input-field searchable-field" id="field_${field.key}" onchange="onCountryChange()">
+                        <select class="input-field searchable-field" id="field_${field.key}" onchange="setTimeout(() => onCountryChange(), 0)">
                             <option value="">— Selecciona un país —</option>
                             ${options}
                         </select>

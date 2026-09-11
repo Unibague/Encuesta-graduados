@@ -781,7 +781,7 @@
         let isRendering = false;
 
         // Logger simple para eventos del formulario
-        async function logFormEvent(eventType, data = {}) {
+        function logFormEvent(eventType, data = {}) {
             try {
                 const payload = {
                     type: eventType,
@@ -795,8 +795,17 @@
                     userAgent: navigator.userAgent
                 };
 
-                // Enviar al servidor sin esperar respuesta
-                navigator.sendBeacon('/api/log-formulario.php', JSON.stringify(payload));
+                // Enviar al servidor sin esperar respuesta (sendBeacon es más confiable)
+                if (navigator.sendBeacon) {
+                    navigator.sendBeacon('/api/log-formulario.php', JSON.stringify(payload));
+                } else {
+                    // Fallback para navegadores viejos
+                    fetch('/api/log-formulario.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    }).catch(() => {});
+                }
             } catch (e) {
                 console.error('Error logging form event:', e);
             }

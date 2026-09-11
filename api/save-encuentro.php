@@ -4,8 +4,6 @@ require __DIR__ . '/../app/controllers/autoloader.php';
 
 use Ospina\EasySQL\EasySQL;
 
-const ENCUENTRO_CUPO_MAXIMO = 100;
-
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -94,36 +92,6 @@ $existente = $db->makeQuery("
 /* No se bloquea una respuesta repetida: se vuelve a sincronizar con Google Sheets.
    Esto permite reparar una fila faltante si una sincronización anterior falló. */
 $mismaRespuesta = $existente && $existente['asistencia'] === $asistencia;
-
-/* =========================
- * CUPO MÁXIMO
- * ========================= */
-$incrementaConfirmados = $asistencia === 'si' && (!$existente || $existente['asistencia'] !== 'si');
-
-if ($incrementaConfirmados) {
-    /* El Google Sheet es la fuente de la verdad para contar confirmados
-       (puede incluir filas que no pasaron por esta base de datos); si no
-       se puede consultar, se usa la base de datos como respaldo. */
-    $asistentesSheet = obtenerAsistentesConfirmadosSheet();
-
-    if ($asistentesSheet !== null) {
-        $confirmados = count($asistentesSheet);
-    } else {
-        $confirmados = (int) ($db->makeQuery("
-            SELECT COUNT(*) AS total FROM encuentro_2026
-            WHERE asistencia = 'si' AND encuentro_anio = $anioActivo
-        ")->fetch_assoc()['total'] ?? 0);
-    }
-
-    if ($confirmados >= ENCUENTRO_CUPO_MAXIMO) {
-        http_response_code(422);
-        echo json_encode([
-            'error'   => true,
-            'message' => 'Se completó el cupo máximo de ' . ENCUENTRO_CUPO_MAXIMO . ' personas confirmadas para el Encuentro de Graduados 2026. Si crees que esto es un error, escribe a graduados@unibague.edu.co.',
-        ]);
-        exit;
-    }
-}
 
 if ($existente) {
     $db->makeQuery("
@@ -297,8 +265,7 @@ function registrarEnSheets(
     $spreadsheetId = '1LockLyDz0texEzDypaRyhqL1uniy4Fpus_FPCPOv2Ec';
     $targetGid     = 1419700379;
 
-    $client = new Google_Client();
-    $client->setAuthConfig(googleCredentialsPath());
+    $client = crearClienteGoogleSheets();
     $client->addScope(Google_Service_Sheets::SPREADSHEETS);
 
     $service = new Google_Service_Sheets($client);
@@ -359,8 +326,7 @@ function registrarEnHojaNoAsistentes(
     $spreadsheetId = '1LockLyDz0texEzDypaRyhqL1uniy4Fpus_FPCPOv2Ec';
     $targetTitle   = 'No asistentes';
 
-    $client = new Google_Client();
-    $client->setAuthConfig(googleCredentialsPath());
+    $client = crearClienteGoogleSheets();
     $client->addScope(Google_Service_Sheets::SPREADSHEETS);
 
     $service = new Google_Service_Sheets($client);
@@ -457,8 +423,7 @@ function eliminarPersonaDeHoja(
 ): void {
     $spreadsheetId = '1LockLyDz0texEzDypaRyhqL1uniy4Fpus_FPCPOv2Ec';
 
-    $client = new Google_Client();
-    $client->setAuthConfig(googleCredentialsPath());
+    $client = crearClienteGoogleSheets();
     $client->addScope(Google_Service_Sheets::SPREADSHEETS);
 
     $service     = new Google_Service_Sheets($client);

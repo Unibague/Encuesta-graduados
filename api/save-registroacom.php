@@ -111,8 +111,7 @@ function registrarAcompananteEnSheets(string $nombres, string $apellidos, string
     $spreadsheetId = ENCUENTRO_SHEET_ID;
     $targetTitle   = 'Acompañantes';
 
-    $client = new Google_Client();
-    $client->setAuthConfig(googleCredentialsPath());
+    $client = crearClienteGoogleSheets();
     $client->addScope(Google_Service_Sheets::SPREADSHEETS);
 
     $service = new Google_Service_Sheets($client);

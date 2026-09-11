@@ -242,7 +242,8 @@
                 const response = await fetch('/api/save-registroacom.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ consentimiento, nombres, apellidos, cedula })
+                    body: JSON.stringify({ consentimiento, nombres, apellidos, cedula }),
+                    signal: AbortSignal.timeout(20000)
                 });
                 const result = await response.json();
                 if (!response.ok || !result.success) throw new Error(result.message || 'No fue posible guardar el registro.');
@@ -254,7 +255,10 @@
                 progressFill.style.width = '100%';
                 message.className = 'message hidden';
             } catch (error) {
-                showMessage(error.message);
+                const timedOut = error.name === 'TimeoutError' || error.name === 'AbortError';
+                showMessage(timedOut
+                    ? 'La conexión está muy lenta y no respondió a tiempo. Verifica tu internet y vuelve a intentar.'
+                    : error.message);
                 this.disabled = false;
             }
         });

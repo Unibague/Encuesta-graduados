@@ -9,6 +9,25 @@ const JUEGOS_SHEET_ID   = '1tG_qZfKJS586Jf0UTMDewnaLjDhydItompHhdaeCzhE';
 const JUEGOS_SHEET_NAME = 'Sheet1';
 
 /**
+ * Cliente de Google configurado con un timeout. Sin esto, una llamada a la
+ * API de Sheets que se queda esperando (red lenta o saturada, como puede
+ * pasar con muchos celulares conectados a la vez en el Encuentro) deja la
+ * petición del formulario colgada indefinidamente en vez de fallar rápido
+ * y dejar que la persona reintente.
+ */
+function crearClienteGoogleSheets(): Google_Client
+{
+    $client = new Google_Client();
+    $client->setAuthConfig(googleCredentialsPath());
+    $client->setHttpClient(new \GuzzleHttp\Client([
+        'timeout'         => 10,
+        'connect_timeout' => 5,
+    ]));
+
+    return $client;
+}
+
+/**
  * Devuelve los nombres completos de quienes confirmaron asistencia ("Sí")
  * en el Google Sheet del Encuentro (la fuente de la verdad para el cupo y
  * los juegos), o null si no fue posible consultarlo, para que el llamador
@@ -17,8 +36,7 @@ const JUEGOS_SHEET_NAME = 'Sheet1';
 function obtenerAsistentesConfirmadosSheet(): ?array
 {
     try {
-        $client = new Google_Client();
-        $client->setAuthConfig(googleCredentialsPath());
+        $client = crearClienteGoogleSheets();
         $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY);
 
         $service = new Google_Service_Sheets($client);
@@ -64,8 +82,7 @@ function obtenerAsistentesConfirmadosSheet(): ?array
 function obtenerAcompanantesConfirmadosSheet(): ?array
 {
     try {
-        $client = new Google_Client();
-        $client->setAuthConfig(googleCredentialsPath());
+        $client = crearClienteGoogleSheets();
         $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY);
 
         $service = new Google_Service_Sheets($client);
@@ -110,8 +127,7 @@ function obtenerAcompanantesConfirmadosSheet(): ?array
 function obtenerParticipantesJuegosSheet(): ?array
 {
     try {
-        $client = new Google_Client();
-        $client->setAuthConfig(googleCredentialsPath());
+        $client = crearClienteGoogleSheets();
         $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY);
 
         $service = new Google_Service_Sheets($client);
@@ -145,8 +161,7 @@ function registrarNombreEnHojaJuegos(string $nombreCompleto): void
         return;
     }
 
-    $client = new Google_Client();
-    $client->setAuthConfig(googleCredentialsPath());
+    $client = crearClienteGoogleSheets();
     $client->addScope(Google_Service_Sheets::SPREADSHEETS);
 
     $service = new Google_Service_Sheets($client);

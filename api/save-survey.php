@@ -398,6 +398,10 @@ function marcarAsistenciaRegistroGraduados(
 
     $client = new Google_Client();
     $client->setAuthConfig(registroGraduadosCredentialsPath());
+    $client->setHttpClient(new \GuzzleHttp\Client([
+        'timeout'         => 10,
+        'connect_timeout' => 5,
+    ]));
     $client->addScope(Google_Service_Sheets::SPREADSHEETS);
 
     $service = new Google_Service_Sheets($client);

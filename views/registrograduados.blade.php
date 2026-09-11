@@ -733,7 +733,7 @@
     </div>
 
     <script type="module">
-        import { Country, City } from 'https://cdn.jsdelivr.net/npm/country-state-city@3.2.1/+esm';
+        import { Country, City } from '/assets/js/country-state-city/index.js';
 
         window.Country = Country;
         window.City = City;
@@ -1567,6 +1567,7 @@
                         question_types: questionTypes,
                         answers,
                     }),
+                    signal: AbortSignal.timeout(20000),
                 });
                 const result = await response.json();
                 if (!response.ok || !result.success) {
@@ -1579,7 +1580,10 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } catch (error) {
                 if (button) button.disabled = false;
-                alert(error.message);
+                const timedOut = error.name === 'TimeoutError' || error.name === 'AbortError';
+                alert(timedOut
+                    ? 'La conexión está muy lenta y no respondió a tiempo. Verifica tu internet y vuelve a intentar.'
+                    : error.message);
             }
         }
 
@@ -1593,6 +1597,25 @@
         window.submitSurvey = submitSurvey;
 
         renderSection();
+        window.__formularioListo = true;
+    </script>
+    <script>
+        // Si el módulo de arriba no terminó de cargar (red lenta, bloqueo
+        // del CDN, etc.) el formulario se queda sin ninguna función
+        // conectada y no responde a nada, sin avisar por qué. Esto detecta
+        // ese caso y muestra un mensaje claro en vez de dejarlo "trabado".
+        setTimeout(function () {
+            if (window.__formularioListo) return;
+
+            var banner = document.createElement('div');
+            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;'
+                + 'background:#b91c1c;color:#fff;padding:14px 18px;text-align:center;'
+                + 'font:600 14px Manrope, sans-serif;';
+            banner.innerHTML = 'No se pudo cargar el formulario por completo. '
+                + 'Verifica tu conexión a internet y '
+                + '<a href="javascript:location.reload()" style="color:#fff;text-decoration:underline;">vuelve a intentar</a>.';
+            document.body.prepend(banner);
+        }, 8000);
     </script>
 </body>
 </html>

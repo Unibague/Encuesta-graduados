@@ -38,7 +38,7 @@ $logData = [
     'device_info' => [
         'is_ios' => strpos($userAgent, 'iPhone') !== false || strpos($userAgent, 'iPad') !== false,
         'is_android' => strpos($userAgent, 'Android') !== false,
-        'browser' => $this->getBrowser($userAgent)
+        'browser' => getBrowser($userAgent)
     ]
 ];
 

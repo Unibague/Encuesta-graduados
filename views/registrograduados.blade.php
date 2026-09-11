@@ -1790,29 +1790,8 @@
         /**
          * Función para registrar eventos del formulario en el servidor
          * Usado para debugging de errores en iOS y otros dispositivos
+         * (La implementación real está al inicio del módulo)
          */
-        async function logFormEvent(eventType, data = {}) {
-            try {
-                const payload = {
-                    type: eventType,
-                    section: data.section || null,
-                    field: data.field || null,
-                    status: data.status || null,
-                    message: data.message || null,
-                    error: data.error || null,
-                    timestamp: new Date().toISOString(),
-                    url: window.location.href
-                };
-
-                await fetch('/api/log-formulario.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }).catch(() => {}); // Silencioso si falla
-            } catch (e) {
-                console.error('Error logging form event:', e);
-            }
-        }
 
         // Registrar inicio del formulario
         logFormEvent('formulario_iniciado', { message: 'Formulario de registro cargado' });

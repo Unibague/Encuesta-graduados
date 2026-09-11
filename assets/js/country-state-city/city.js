@@ -1,5 +1,5 @@
 import cityList from './city-data.js';
-import { compare, convertArrayToObject } from './utils.js';
+import { compare, convertArrayToObject, mergeSort } from './utils.js';
 const KEYS = [
     "name",
     "countryCode",
@@ -27,7 +27,7 @@ function getCitiesOfState(countryCode, stateCode) {
     const cities = cityList.filter((value) => {
         return value.countryCode === countryCode && value.stateCode === stateCode;
     });
-    return cities.sort(compare);
+    return mergeSort(cities, compare);
 }
 // Get a list of cities belonging to a specific country.
 function getCitiesOfCountry(countryCode) {
@@ -37,10 +37,10 @@ function getCitiesOfCountry(countryCode) {
     const cities = cityList.filter((value) => {
         return value.countryCode === countryCode;
     });
-    return cities.sort(compare);
+    return mergeSort(cities, compare);
 }
 function sortByStateAndName(cities) {
-    return cities.sort((a, b) => {
+    return mergeSort(cities, (a, b) => {
         const result = compare(a, b, (entity) => {
             return `${entity.countryCode}-${entity.stateCode}`;
         });

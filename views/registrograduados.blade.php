@@ -2,7 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Registro de graduados - Universidad de Ibagué</title>
     <link rel="icon" type="image/svg+xml" href="/images/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -968,6 +970,7 @@
         function fieldHtml(field) {
             const value = answers[field.key] !== undefined ? answers[field.key] : '';
             const placeholder = field.placeholder || '';
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
             if (field.type === 'radio' || field.type === 'checkbox') {
                 const selectedValues = field.type === 'checkbox'
@@ -992,6 +995,20 @@
             if (field.type === 'country') {
                 const countries = Country.getAllCountries();
 
+                // En iOS, usar un select normal porque datalist no funciona bien
+                if (isIOS) {
+                    const options = countries.map(country => 
+                        `<option value="${country.name.replace(/"/g, '&quot;')}" ${answers.pais === country.name ? 'selected' : ''}>${country.name}</option>`
+                    ).join('');
+                    
+                    return `
+                        <select class="input-field searchable-field" id="field_${field.key}" onchange="onCountryChange()">
+                            <option value="">— Selecciona un país —</option>
+                            ${options}
+                        </select>
+                    `;
+                }
+
                 return `
                     <input class="input-field searchable-field" type="text" id="field_${field.key}"
                            value="${answers.pais || ''}" list="pais_options"
@@ -1004,6 +1021,16 @@
             }
 
             if (field.type === 'city') {
+                // En iOS, usar select normal en lugar de input con datalist
+                if (isIOS) {
+                    return `
+                        <select class="input-field searchable-field" id="field_${field.key}" onchange="onInputChange('${field.key}')" 
+                                ${answers.pais_codigo ? '' : 'disabled'}>
+                            <option value="">— ${answers.pais_codigo ? 'Selecciona una ciudad' : 'Primero selecciona un país'} —</option>
+                        </select>
+                    `;
+                }
+
                 return `
                     <input class="input-field searchable-field" type="text" id="field_${field.key}"
                            value="${answers.ciudad || ''}" list="ciudad_options"
@@ -1127,6 +1154,7 @@
 
             if (!countrySelect || !citySelect) return;
 
+            // Funciona con select o input
             const countryName = countrySelect.value.trim();
             const country = Country.getAllCountries()
                 .find(item => item.name.toLowerCase() === countryName.toLowerCase());
@@ -1138,9 +1166,13 @@
 
             citySelect.value = '';
             citySelect.disabled = !countryCode;
-            citySelect.placeholder = countryCode
-                ? 'Escribe para buscar una ciudad'
-                : 'Primero selecciona un país';
+            
+            // Actualizar placeholder si es input
+            if (countrySelect.tagName === 'INPUT') {
+                countrySelect.placeholder = countryCode
+                    ? 'Escribe para buscar una ciudad'
+                    : 'Primero selecciona un país';
+            }
 
             if (!countryCode) {
                 document.getElementById('ciudad_options').innerHTML = '';
@@ -1148,7 +1180,16 @@
                 return;
             }
 
-            populateCityOptions(countryCode);
+            // Si es select (iOS), llenar las opciones (limitadas a 60)
+            if (citySelect.tagName === 'SELECT') {
+                const cities = City.getCitiesOfCountry(countryCode) || [];
+                const sortedCities = cities.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 60);
+                
+                citySelect.innerHTML = `<option value="">— Selecciona una ciudad —</option>` +
+                    sortedCities.map(city => `<option value="${city.name.replace(/"/g, '&quot;')}">${city.name}</option>`).join('');
+            } else {
+                populateCityOptions(countryCode);
+            }
 
             const countryField = document.querySelector('.form-field[data-key="pais"]');
             if (countryField) countryField.classList.remove('has-error');
@@ -1467,10 +1508,37 @@
                     if (citySelect) {
                         citySelect.disabled = false;
                         citySelect.value = answers.ciudad || '';
-                        citySelect.placeholder = 'Escribe para buscar una ciudad';
-                        populateCityOptions(answers.pais_codigo);
+                        
+                        // Si es un select (iOS), llenar opciones (limitadas a 60)
+                        if (citySelect.tagName === 'SELECT') {
+                            const cities = City.getCitiesOfCountry(answers.pais_codigo) || [];
+                            const sortedCities = cities.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 60);
+                            citySelect.innerHTML = `<option value="">— Selecciona una ciudad —</option>` +
+                                sortedCities.map(city => `<option value="${city.name.replace(/"/g, '&quot;')}">${city.name}</option>`).join('');
+                        } else {
+                            // Si es input (Android), llenar datalist
+                            const cityOptions = document.getElementById('ciudad_options');
+                            if (cityOptions) {
+                                populateCityOptions(answers.pais_codigo);
+                            }
+                        }
                     }
                 }
+            }
+        }
+
+        // Agregar listeners a los inputs al renderizar la sección
+        function attachInputListeners() {
+            // Solo para inputs (datalist en Android)
+            const countryInput = document.getElementById('field_pais');
+            if (countryInput && countryInput.tagName === 'INPUT') {
+                // Usar addEventListener para evitar sobrescribir oninput
+                countryInput.addEventListener('input', onCountryChange, { once: false });
+            }
+
+            const cityInput = document.getElementById('field_ciudad');
+            if (cityInput && cityInput.tagName === 'INPUT') {
+                cityInput.addEventListener('input', (e) => onInputChange('ciudad'), { once: false });
             }
         }
 

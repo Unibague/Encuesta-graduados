@@ -42,6 +42,31 @@ if ($nombres === null) {
     }
 }
 
+/* Acompañantes registrados (registroacom.php): igual que los graduados, la
+   hoja "Acompañantes" del Sheet es la fuente principal; si falla, se usa la
+   base de datos (registroacom_2026) como respaldo. Solo se necesita su
+   nombre para que también aparezcan en la búsqueda y el ranking de juegos. */
+$nombresAcom = obtenerAcompanantesConfirmadosSheet();
+
+if ($nombresAcom === null && $dbDisponible) {
+    $nombresAcom = [];
+
+    try {
+        $filasAcom = $db->makeQuery("
+            SELECT nombres, apellidos FROM registroacom_2026
+            WHERE encuentro_anio = $anioActivo
+        ")->fetch_all(MYSQLI_ASSOC);
+
+        foreach ($filasAcom as $fila) {
+            $nombresAcom[] = trim($fila['nombres'] . ' ' . $fila['apellidos']);
+        }
+    } catch (Throwable $e) {
+        error_log('[participantes-juegos] Error consultando acompañantes en BD: ' . $e->getMessage());
+    }
+}
+
+$nombres = array_merge($nombres, $nombresAcom ?? []);
+
 $nombres = array_values(array_unique(array_filter(array_map('trim', $nombres))));
 sort($nombres, SORT_STRING | SORT_FLAG_CASE);
 

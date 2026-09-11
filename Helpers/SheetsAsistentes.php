@@ -52,6 +52,52 @@ function obtenerAsistentesConfirmadosSheet(): ?array
 }
 
 /**
+ * Devuelve los nombres completos registrados en la hoja "Acompañantes" del
+ * Google Sheet del Encuentro, o null si no fue posible consultarla, para que
+ * el llamador pueda usar la base de datos (registroacom_2026) como respaldo.
+ */
+function obtenerAcompanantesConfirmadosSheet(): ?array
+{
+    try {
+        $client = new Google_Client();
+        $client->setAuthConfig(googleCredentialsPath());
+        $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY);
+
+        $service = new Google_Service_Sheets($client);
+
+        $spreadsheet = $service->spreadsheets->get(ENCUENTRO_SHEET_ID);
+        $sheetName   = null;
+        foreach ($spreadsheet->getSheets() as $sheet) {
+            $titulo = trim($sheet->getProperties()->getTitle());
+            if (mb_strtolower($titulo, 'UTF-8') === mb_strtolower('Acompañantes', 'UTF-8')) {
+                $sheetName = $sheet->getProperties()->getTitle();
+                break;
+            }
+        }
+
+        if (!$sheetName) {
+            return null;
+        }
+
+        $response = $service->spreadsheets_values->get(ENCUENTRO_SHEET_ID, "{$sheetName}!A4:A");
+        $filas    = $response->getValues() ?? [];
+
+        $nombres = [];
+        foreach ($filas as $fila) {
+            $nombre = trim($fila[0] ?? '');
+            if ($nombre !== '') {
+                $nombres[] = $nombre;
+            }
+        }
+
+        return $nombres;
+    } catch (Throwable $e) {
+        error_log('[sheets-asistentes] Error consultando acompañantes en el Sheet: ' . $e->getMessage());
+        return null;
+    }
+}
+
+/**
  * Usa la ruta configurada en el servidor y, al trabajar en localhost, recurre
  * al credentials.json ubicado en la raíz del proyecto.
  */

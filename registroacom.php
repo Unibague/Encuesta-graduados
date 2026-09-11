@@ -1,5 +1,16 @@
 <?php
 // Encuesta pública de consentimiento y datos personales.
+
+// Log de acceso (para poder ver quién abrió el formulario, desde qué
+// dispositivo/navegador y cuándo, útil para depurar problemas como el de
+// los celulares que se quedaban "trabados" al escanear el QR).
+$ip = trim(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '')[0]);
+$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+$referer = $_SERVER['HTTP_REFERER'] ?? '';
+$logLine = '[' . date('Y-m-d H:i:s') . "] ip={$ip} referer=\"{$referer}\" ua=\"{$userAgent}\"" . PHP_EOL;
+$logDir = __DIR__ . '/logs';
+if (!is_dir($logDir)) mkdir($logDir, 0777, true);
+file_put_contents($logDir . '/registroacom_accesos.log', $logLine, FILE_APPEND);
 ?>
 <!DOCTYPE html>
 <html lang="es">

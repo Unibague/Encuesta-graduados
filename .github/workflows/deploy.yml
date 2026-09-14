@@ -16,12 +16,7 @@ jobs:
       WORKSPACE_PATH: "/var/www/encuesta-graduados"
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Install Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '24.14.0'
+      uses: actions/checkout@v4
 
     - name: Install OpenConnect
       run: sudo apt-get install -y openconnect
@@ -42,8 +37,6 @@ jobs:
           --passwd-on-stdin \
           --servercert pin-sha256:+4XOhCB4GmaXr8/TMWL09EayWRbrz3X8WWAWgu79f9U= \
           "$VPN_HOST" -b
-    
-
 
     - name: Verify VPN connection
       run: ip a
@@ -94,7 +87,7 @@ jobs:
             STASHED=false
           fi
 
-          git pull --rebase
+          git pull origin main
 
           if [[ \"\$STASHED\" == \"true\" ]]; then
             git stash pop

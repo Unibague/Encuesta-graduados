@@ -2,7 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Registro de graduados - Universidad de Ibagué</title>
     <link rel="icon" type="image/svg+xml" href="/images/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -732,6 +734,7 @@
         </div>
     </div>
 
+    <script src="/assets/js/form-logger.js"></script>
     <script>
         // Reporta al servidor errores de JS y eventos de diagnóstico puntuales
         // (para poder ver, por ejemplo, si a un iPhone le llega la respuesta de
@@ -773,6 +776,40 @@
 
         window.Country = Country;
         window.City = City;
+
+        // Bandera para evitar renderizaciones recursivas
+        let isRendering = false;
+
+        // Logger simple para eventos del formulario
+        function logFormEvent(eventType, data = {}) {
+            try {
+                const payload = {
+                    type: eventType,
+                    section: data.section || null,
+                    field: data.field || null,
+                    status: data.status || null,
+                    message: data.message || null,
+                    error: data.error || null,
+                    timestamp: new Date().toISOString(),
+                    url: window.location.href,
+                    userAgent: navigator.userAgent
+                };
+
+                // Enviar al servidor sin esperar respuesta (sendBeacon es más confiable)
+                if (navigator.sendBeacon) {
+                    navigator.sendBeacon('/api/log-formulario.php', JSON.stringify(payload));
+                } else {
+                    // Fallback para navegadores viejos
+                    fetch('/api/log-formulario.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    }).catch(() => {});
+                }
+            } catch (e) {
+                console.error('Error logging form event:', e);
+            }
+        }
 
         const encuestaSections = [
             {
@@ -968,6 +1005,7 @@
         function fieldHtml(field) {
             const value = answers[field.key] !== undefined ? answers[field.key] : '';
             const placeholder = field.placeholder || '';
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
             if (field.type === 'radio' || field.type === 'checkbox') {
                 const selectedValues = field.type === 'checkbox'
@@ -992,6 +1030,20 @@
             if (field.type === 'country') {
                 const countries = Country.getAllCountries();
 
+                // En iOS, usar un select normal porque datalist no funciona bien
+                if (isIOS) {
+                    const options = countries.map(country => 
+                        `<option value="${country.name.replace(/"/g, '&quot;')}" ${answers.pais === country.name ? 'selected' : ''}>${country.name}</option>`
+                    ).join('');
+                    
+                    return `
+                        <select class="input-field searchable-field" id="field_${field.key}" onchange="setTimeout(() => onCountryChange(), 0)">
+                            <option value="">— Selecciona un país —</option>
+                            ${options}
+                        </select>
+                    `;
+                }
+
                 return `
                     <input class="input-field searchable-field" type="text" id="field_${field.key}"
                            value="${answers.pais || ''}" list="pais_options"
@@ -1004,6 +1056,16 @@
             }
 
             if (field.type === 'city') {
+                // En iOS, usar select normal en lugar de input con datalist
+                if (isIOS) {
+                    return `
+                        <select class="input-field searchable-field" id="field_${field.key}" onchange="onInputChange('${field.key}')" 
+                                ${answers.pais_codigo ? '' : 'disabled'}>
+                            <option value="">— ${answers.pais_codigo ? 'Selecciona una ciudad' : 'Primero selecciona un país'} —</option>
+                        </select>
+                    `;
+                }
+
                 return `
                     <input class="input-field searchable-field" type="text" id="field_${field.key}"
                            value="${answers.ciudad || ''}" list="ciudad_options"
@@ -1127,6 +1189,7 @@
 
             if (!countrySelect || !citySelect) return;
 
+            // Funciona con select o input
             const countryName = countrySelect.value.trim();
             const country = Country.getAllCountries()
                 .find(item => item.name.toLowerCase() === countryName.toLowerCase());
@@ -1138,9 +1201,13 @@
 
             citySelect.value = '';
             citySelect.disabled = !countryCode;
-            citySelect.placeholder = countryCode
-                ? 'Escribe para buscar una ciudad'
-                : 'Primero selecciona un país';
+            
+            // Actualizar placeholder si es input
+            if (countrySelect.tagName === 'INPUT') {
+                countrySelect.placeholder = countryCode
+                    ? 'Escribe para buscar una ciudad'
+                    : 'Primero selecciona un país';
+            }
 
             if (!countryCode) {
                 document.getElementById('ciudad_options').innerHTML = '';
@@ -1148,7 +1215,16 @@
                 return;
             }
 
-            populateCityOptions(countryCode);
+            // Si es select (iOS), llenar las opciones (limitadas a 60)
+            if (citySelect.tagName === 'SELECT') {
+                const cities = City.getCitiesOfCountry(countryCode) || [];
+                const sortedCities = cities.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 60);
+                
+                citySelect.innerHTML = `<option value="">— Selecciona una ciudad —</option>` +
+                    sortedCities.map(city => `<option value="${city.name.replace(/"/g, '&quot;')}">${city.name}</option>`).join('');
+            } else {
+                populateCityOptions(countryCode);
+            }
 
             const countryField = document.querySelector('.form-field[data-key="pais"]');
             if (countryField) countryField.classList.remove('has-error');
@@ -1168,7 +1244,7 @@
         const MAX_CIUDADES_DATALIST = 60;
 
         function populateCityOptions(countryCode) {
-            currentCityList = countryCode ? (City.getCitiesOfCountry(countryCode) || []) : [];
+            currentCityList = countryCode ? (City.getCitiesOfCountry(countryCode) || []).slice(0, 60) : [];
             renderCityDatalistOptions('');
         }
 
@@ -1209,6 +1285,7 @@
 
                     if (data.ciudad) {
                         const cityMatch = (City.getCitiesOfCountry(match.isoCode) || [])
+                            .slice(0, 60)
                             .find(c => c.name.toLowerCase() === String(data.ciudad).toLowerCase());
                         answers.ciudad = cityMatch ? cityMatch.name : data.ciudad;
                     }
@@ -1360,117 +1437,153 @@
         }
 
         function renderSection(direction) {
-            const sections = getVisibleSections();
+            try {
+                // Evitar renderizaciones recursivas que causan stack overflow
+                if (isRendering) return;
+                isRendering = true;
+                
+                const sections = getVisibleSections();
 
-            if (currentSectionIndex >= sections.length) {
-                showSummary();
-                return;
-            }
-            if (currentSectionIndex < 0) currentSectionIndex = 0;
+                if (currentSectionIndex >= sections.length) {
+                    showSummary();
+                    return;
+                }
+                if (currentSectionIndex < 0) currentSectionIndex = 0;
 
-            const section = sections[currentSectionIndex];
-            const total = sections.length;
-            const percent = Math.round((currentSectionIndex / total) * 100);
+                const section = sections[currentSectionIndex];
+                const total = sections.length;
+                const percent = Math.round((currentSectionIndex / total) * 100);
 
-            document.getElementById('sectionPill').textContent = `${section.icon} ${section.title}`;
-            document.getElementById('progressMeta').textContent = `Sección ${currentSectionIndex + 1} de ${total}`;
-            document.getElementById('progressBar').style.width = percent + '%';
+                document.getElementById('sectionPill').textContent = `${section.icon} ${section.title}`;
+                document.getElementById('progressMeta').textContent = `Sección ${currentSectionIndex + 1} de ${total}`;
+                document.getElementById('progressBar').style.width = percent + '%';
 
-            let globalOffset = 0;
-            for (let i = 0; i < currentSectionIndex; i++) {
-                globalOffset += sections[i].fields.length;
-            }
+                let globalOffset = 0;
+                for (let i = 0; i < currentSectionIndex; i++) {
+                    globalOffset += sections[i].fields.length;
+                }
 
-            let consentHtml = '';
-            if (section.isConsent) {
-                consentHtml = `
-                    <div class="consent-info">
-                        <p>Los graduados son actores sociales que representan los valores de la Universidad de Ibagué y dan sentido al existir de la Institución. Son agentes de cambio y embajadores Unibagué en su ejercicio laboral y social. Por ello, lo invitamos a actualizar sus datos para mantenernos en contacto.</p>
-                        <p>La actualización nos permitirá informarle sobre las actividades, talleres, beneficios, eventos, ofertas comerciales y programas que la Universidad tiene para usted.</p>
-                        <p>Tenga en cuenta que su participación es fundamental. Todas sus respuestas son confidenciales, según lo contemplado en la Ley 1581 de 2012 y tendrán un trato especial, se mantienen bajo estrictas medidas de seguridad y solo el personal autorizado tendrá acceso a ellas. Los datos obtenidos serán utilizados y procesados estadísticamente para los propósitos anteriormente señalados y para comunicaciones relacionadas con ofertas institucionales.</p>
-                    </div>
-                    <div class="consent-policy">
-                        <strong>Política de tratamiento de datos.</strong> Autorizo expresamente a la Universidad de Ibagué, a quien le hago entrega de mis datos personales de forma libre y voluntaria, previa, explícita, informada e inequívoca, para que puedan ser utilizados de conformidad con las finalidades establecidas en la política de tratamiento de datos la cual podrá ser consultada a través de la página web: <a href="https://www.unibague.edu.co/" target="_blank" rel="noopener">https://www.unibague.edu.co/</a>. Declaro que conozco que en cualquier momento podré solicitar a la Universidad de Ibagué, la actualización, rectificación y supresión de los datos suministrados, dirigiéndome al correo electrónico: <a href="mailto:habeasdata@unibague.edu.co">habeasdata@unibague.edu.co</a>. Acepto las condiciones dispuestas en la presente consulta. Al diligenciar este formato autorizo el uso de los datos aquí consignados. Adicional autorizo el tratamiento de mis datos personales para recibir información sobre la oferta académica, programas de posgrado, educación continua, extensión, eventos y demás servicios académicos o formativos de la Universidad, así como para que se realicen actividades de seguimiento comercial, mercadeo, promoción y orientación a través de llamadas telefónicas, correo electrónico, WhatsApp, mensajes de texto u otros medios físicos o digitales.
-                    </div>
-                `;
-            }
-
-            let verificationBlockedHtml = '';
-            if (section.isVerification && verificationStatus === 'no_encontrado') {
-                verificationBlockedHtml = `
-                    <div class="verification-blocked">
-                        <p><strong>No encontramos tu documento en nuestros registros de graduados.</strong></p>
-                        <p>Comunícate con el administrador de graduados (<a href="mailto:desarrolladorg3@unibague.edu.co">desarrolladorg3@unibague.edu.co</a>) para validar si eres egresado o graduado de la Universidad de Ibagué.</p>
-                        <ul>
-                            <li>Si <strong>no</strong> eres graduado, dirígete a la mesa de asistentes para registrarte allí.</li>
-                            <li>Si <strong>sí</strong> eres graduado, una vez te hayan agregado a la lista, presiona el botón de abajo para volver a intentar tu verificación.</li>
-                        </ul>
-                    </div>
-                `;
-            }
-
-            const fieldsHtml = section.fields.map((field, idx) => {
-                const num = globalOffset + idx + 1;
-                const desc = field.description
-                    ? `<p class="field-desc">${field.description}</p>`
-                    : '';
-                const optionalTag = field.required
-                    ? ''
-                    : ' <span style="font-size:11px;font-weight:700;color:var(--text-muted);background:#f1f1f8;padding:2px 8px;border-radius:999px;margin-left:6px;">Opcional</span>';
-
-                return `
-                    <div class="form-field" data-key="${field.key}">
-                        <div class="field-label">
-                            <span class="field-number">${num}</span>
-                            <span class="field-label-text">${field.label}${field.required ? ' <span class="required-mark">*</span>' : ''}${optionalTag}</span>
+                let consentHtml = '';
+                if (section.isConsent) {
+                    consentHtml = `
+                        <div class="consent-info">
+                            <p>Los graduados son actores sociales que representan los valores de la Universidad de Ibagué y dan sentido al existir de la Institución. Son agentes de cambio y embajadores Unibagué en su ejercicio laboral y social. Por ello, lo invitamos a actualizar sus datos para mantenernos en contacto.</p>
+                            <p>La actualización nos permitirá informarle sobre las actividades, talleres, beneficios, eventos, ofertas comerciales y programas que la Universidad tiene para usted.</p>
+                            <p>Tenga en cuenta que su participación es fundamental. Todas sus respuestas son confidenciales, según lo contemplado en la Ley 1581 de 2012 y tendrán un trato especial, se mantienen bajo estrictas medidas de seguridad y solo el personal autorizado tendrá acceso a ellas. Los datos obtenidos serán utilizados y procesados estadísticamente para los propósitos anteriormente señalados y para comunicaciones relacionadas con ofertas institucionales.</p>
                         </div>
-                        ${desc}
-                        <div class="field-input-wrap">
-                            ${fieldHtml(field)}
+                        <div class="consent-policy">
+                            <strong>Política de tratamiento de datos.</strong> Autorizo expresamente a la Universidad de Ibagué, a quien le hago entrega de mis datos personales de forma libre y voluntaria, previa, explícita, informada e inequívoca, para que puedan ser utilizados de conformidad con las finalidades establecidas en la política de tratamiento de datos la cual podrá ser consultada a través de la página web: <a href="https://www.unibague.edu.co/" target="_blank" rel="noopener">https://www.unibague.edu.co/</a>. Declaro que conozco que en cualquier momento podré solicitar a la Universidad de Ibagué, la actualización, rectificación y supresión de los datos suministrados, dirigiéndome al correo electrónico: <a href="mailto:habeasdata@unibague.edu.co">habeasdata@unibague.edu.co</a>. Acepto las condiciones dispuestas en la presente consulta. Al diligenciar este formato autorizo el uso de los datos aquí consignados. Adicional autorizo el tratamiento de mis datos personales para recibir información sobre la oferta académica, programas de posgrado, educación continua, extensión, eventos y demás servicios académicos o formativos de la Universidad, así como para que se realicen actividades de seguimiento comercial, mercadeo, promoción y orientación a través de llamadas telefónicas, correo electrónico, WhatsApp, mensajes de texto u otros medios físicos o digitales.
                         </div>
-                        <div class="field-error">${field.key === 'pais' ? 'Selecciona un país válido de la lista' : 'Este campo es obligatorio'}</div>
+                    `;
+                }
+
+                let verificationBlockedHtml = '';
+                if (section.isVerification && verificationStatus === 'no_encontrado') {
+                    verificationBlockedHtml = `
+                        <div class="verification-blocked">
+                            <p><strong>No encontramos tu documento en nuestros registros de graduados.</strong></p>
+                            <p>Comunícate con el administrador de graduados (<a href="mailto:desarrolladorg3@unibague.edu.co">desarrolladorg3@unibague.edu.co</a>) para validar si eres egresado o graduado de la Universidad de Ibagué.</p>
+                            <ul>
+                                <li>Si <strong>no</strong> eres graduado, dirígete a la mesa de asistentes para registrarte allí.</li>
+                                <li>Si <strong>sí</strong> eres graduado, una vez te hayan agregado a la lista, presiona el botón de abajo para volver a intentar tu verificación.</li>
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                const fieldsHtml = section.fields.map((field, idx) => {
+                    const num = globalOffset + idx + 1;
+                    const desc = field.description
+                        ? `<p class="field-desc">${field.description}</p>`
+                        : '';
+                    const optionalTag = field.required
+                        ? ''
+                        : ' <span style="font-size:11px;font-weight:700;color:var(--text-muted);background:#f1f1f8;padding:2px 8px;border-radius:999px;margin-left:6px;">Opcional</span>';
+
+                    return `
+                        <div class="form-field" data-key="${field.key}">
+                            <div class="field-label">
+                                <span class="field-number">${num}</span>
+                                <span class="field-label-text">${field.label}${field.required ? ' <span class="required-mark">*</span>' : ''}${optionalTag}</span>
+                            </div>
+                            ${desc}
+                            <div class="field-input-wrap">
+                                ${fieldHtml(field)}
+                            </div>
+                            <div class="field-error">${field.key === 'pais' ? 'Selecciona un país válido de la lista' : 'Este campo es obligatorio'}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                const area = document.getElementById('sectionArea');
+                area.innerHTML = `
+                    <div class="validation-alert" id="validationAlert">
+                        ⚠️ Completa todos los campos obligatorios antes de continuar.
                     </div>
+                    <h2 class="section-title">${section.icon} ${section.title}</h2>
+                    <p class="section-subtitle">${section.isConsent ? 'Lee la información y acepta para continuar' : section.fields.length + ' pregunta' + (section.fields.length !== 1 ? 's' : '') + ' en esta sección'}</p>
+                    ${consentHtml}
+                    ${fieldsHtml}
+                    ${verificationBlockedHtml}
                 `;
-            }).join('');
 
-            const area = document.getElementById('sectionArea');
-            area.innerHTML = `
-                <div class="validation-alert" id="validationAlert">
-                    ⚠️ Completa todos los campos obligatorios antes de continuar.
-                </div>
-                <h2 class="section-title">${section.icon} ${section.title}</h2>
-                <p class="section-subtitle">${section.isConsent ? 'Lee la información y acepta para continuar' : section.fields.length + ' pregunta' + (section.fields.length !== 1 ? 's' : '') + ' en esta sección'}</p>
-                ${consentHtml}
-                ${fieldsHtml}
-                ${verificationBlockedHtml}
-            `;
+                area.classList.remove('section-anim', 'leaving-back');
+                void area.offsetWidth;
+                area.classList.add(direction === 'back' ? 'leaving-back' : 'section-anim');
 
-            area.classList.remove('section-anim', 'leaving-back');
-            void area.offsetWidth;
-            area.classList.add(direction === 'back' ? 'leaving-back' : 'section-anim');
+                const btnPrev = document.getElementById('btnPrev');
+                btnPrev.disabled = currentSectionIndex === 0;
+                updateNextButton();
 
-            const btnPrev = document.getElementById('btnPrev');
-            btnPrev.disabled = currentSectionIndex === 0;
-            updateNextButton();
+                document.getElementById('formView').style.display = 'block';
+                document.getElementById('summaryView').style.display = 'none';
+                document.getElementById('thankyouView').style.display = 'none';
+                document.getElementById('rejectedView').style.display = 'none';
 
-            document.getElementById('formView').style.display = 'block';
-            document.getElementById('summaryView').style.display = 'none';
-            document.getElementById('thankyouView').style.display = 'none';
-            document.getElementById('rejectedView').style.display = 'none';
+                if (answers.pais_codigo) {
+                    const countrySelect = document.getElementById('field_pais');
+                    if (countrySelect) {
+                        countrySelect.value = answers.pais || '';
 
-            if (answers.pais_codigo) {
-                const countrySelect = document.getElementById('field_pais');
-                if (countrySelect) {
-                    countrySelect.value = answers.pais || '';
-
-                    const citySelect = document.getElementById('field_ciudad');
-                    if (citySelect) {
-                        citySelect.disabled = false;
-                        citySelect.value = answers.ciudad || '';
-                        citySelect.placeholder = 'Escribe para buscar una ciudad';
-                        populateCityOptions(answers.pais_codigo);
+                        const citySelect = document.getElementById('field_ciudad');
+                        if (citySelect) {
+                            citySelect.disabled = false;
+                            citySelect.value = answers.ciudad || '';
+                            
+                            // Si es un select (iOS), llenar opciones (limitadas a 60)
+                            if (citySelect.tagName === 'SELECT') {
+                                const cities = City.getCitiesOfCountry(answers.pais_codigo) || [];
+                                const sortedCities = cities.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 60);
+                                citySelect.innerHTML = `<option value="">— Selecciona una ciudad —</option>` +
+                                    sortedCities.map(city => `<option value="${city.name.replace(/"/g, '&quot;')}">${city.name}</option>`).join('');
+                            } else {
+                                // Si es input (Android), llenar datalist
+                                const cityOptions = document.getElementById('ciudad_options');
+                                if (cityOptions) {
+                                    populateCityOptions(answers.pais_codigo);
+                                }
+                            }
+                        }
                     }
                 }
+            } finally {
+                // Permitir el siguiente renderizado
+                isRendering = false;
+            }
+        }
+
+        // Agregar listeners a los inputs al renderizar la sección
+        function attachInputListeners() {
+            // Solo para inputs (datalist en Android)
+            const countryInput = document.getElementById('field_pais');
+            if (countryInput && countryInput.tagName === 'INPUT') {
+                // Usar addEventListener para evitar sobrescribir oninput
+                countryInput.addEventListener('input', onCountryChange, { once: false });
+            }
+
+            const cityInput = document.getElementById('field_ciudad');
+            if (cityInput && cityInput.tagName === 'INPUT') {
+                cityInput.addEventListener('input', (e) => onInputChange('ciudad'), { once: false });
             }
         }
 
@@ -1487,9 +1600,13 @@
 
         async function goNext() {
             saveCurrentSectionAnswers();
-            if (!validateCurrentSection()) return;
-
             const sections = getVisibleSections();
+            const currentSection = sections[currentSectionIndex];
+
+            if (!validateCurrentSection()) {
+                return;
+            }
+
             const current = sections[currentSectionIndex];
             if (current && current.isConsent && answers.autorizacion_datos === 'No') {
                 showRejected();
@@ -1521,6 +1638,10 @@
             const updatedSections = getVisibleSections();
             if (currentSectionIndex < updatedSections.length - 1) {
                 currentSectionIndex++;
+                logFormEvent('cambio_seccion', { 
+                    section: updatedSections[currentSectionIndex].title,
+                    message: `Movido a sección ${currentSectionIndex + 1} de ${updatedSections.length}`
+                });
                 reportarDiagnostico({ tipo: 'goNext_avanzando', nuevaSeccion: currentSectionIndex });
                 renderSection('next');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1665,6 +1786,24 @@
         window.editField = editField;
         window.backToLastSection = backToLastSection;
         window.submitSurvey = submitSurvey;
+
+        /**
+         * Función para registrar eventos del formulario en el servidor
+         * Usado para debugging de errores en iOS y otros dispositivos
+         * (La implementación real está al inicio del módulo)
+         */
+
+        // Registrar inicio del formulario
+        logFormEvent('formulario_iniciado', { message: 'Formulario de registro cargado' });
+
+        // Capturar errores globales
+        window.addEventListener('error', (event) => {
+            logFormEvent('error_js', {
+                message: event.message,
+                error: `${event.filename}:${event.lineno}:${event.colno}`,
+                stack: event.error?.stack || 'No stack available'
+            });
+        });
 
         renderSection();
         window.__formularioListo = true;

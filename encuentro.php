@@ -1,5 +1,8 @@
 <?php
 // Página pública - sin autenticación requerida
+
+// Cambia a true para volver a abrir las inscripciones
+$inscripcionesAbiertas = false;
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -669,6 +672,40 @@
 
         .done-inner strong { color: rgba(255,255,255,.85); }
 
+        /* ── Cierre de inscripciones ── */
+        .closed-box {
+            text-align: center;
+            padding: 1rem 0 .5rem;
+        }
+
+        .closed-ring {
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--indigo), var(--purple));
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.25rem;
+            box-shadow: 0 8px 24px rgba(67,56,202,.35), 0 0 40px rgba(124,58,237,.2);
+        }
+
+        .closed-ring svg {
+            width: 28px; height: 28px;
+            stroke: #fff; stroke-width: 2.5;
+            fill: none; stroke-linecap: round; stroke-linejoin: round;
+        }
+
+        .closed-box h3 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--navy);
+            margin-bottom: .6rem;
+        }
+
+        .closed-box p {
+            font-size: .9rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
         /* ── Footer ── */
         footer {
             position: relative;
@@ -785,6 +822,21 @@
             <div class="card-stripe"></div>
             <div class="card-inner">
 
+                <?php if (!$inscripcionesAbiertas): ?>
+
+                <div class="closed-box">
+                    <div class="closed-ring">
+                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </div>
+                    <h3>Inscripciones cerradas</h3>
+                    <p>
+                        Ya no se aceptan más inscripciones al <strong>Encuentro de Graduados 2026</strong>.<br>
+                        ¡Gracias por tu interés! Te esperamos el 19 de septiembre de 2026.
+                    </p>
+                </div>
+
+                <?php else: ?>
+
                 <div class="card-head">
                     <h2>Formulario de Registro</h2>
                     <p>Completa los campos para confirmar tu asistencia al evento</p>
@@ -896,6 +948,9 @@
                     </button>
 
                 </form>
+
+                <?php endif; ?>
+
             </div>
         </div>
     </div>

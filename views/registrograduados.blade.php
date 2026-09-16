@@ -1239,9 +1239,15 @@
             const q = query.trim().toLowerCase();
             const countryCode = answers.pais_codigo;
 
-            if (!countryCode || currentCityList.length === 0) {
+            if (!countryCode) {
                 cityOptions.innerHTML = '';
                 return;
+            }
+
+            // Cargar ciudades si no están cargadas
+            if (currentCityList.length === 0) {
+                const allCities = City.getCitiesOfCountry(countryCode) || [];
+                currentCityList = allCities.sort((a, b) => a.name.localeCompare(b.name));
             }
 
             // Filtrar ciudades por búsqueda

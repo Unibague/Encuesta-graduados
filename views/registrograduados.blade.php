@@ -1256,12 +1256,15 @@
             const q = query.trim().toLowerCase();
             const countryCode = answers.pais_codigo;
 
-            // Cargar ciudades bajo demanda (SIEMPRE, no solo la primera vez)
-            if (countryCode && currentCityList.length === 0) {
+            if (!countryCode) return;
+
+            // Cargar TODAS las ciudades del país bajo demanda (una sola vez)
+            if (currentCityList.length === 0) {
                 const allCities = City.getCitiesOfCountry(countryCode) || [];
-                currentCityList = allCities.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 60);
+                currentCityList = allCities.sort((a, b) => a.name.localeCompare(b.name));
             }
 
+            // Filtrar por lo que el usuario escribió
             const matches = [];
             for (const city of currentCityList) {
                 if (q === '' || city.name.toLowerCase().includes(q)) {

@@ -1062,7 +1062,7 @@
                            value="${answers.ciudad || ''}" list="ciudad_options"
                            placeholder="Escribe una ciudad"
                            autocomplete="off" 
-                           oninput="renderCityDatalistOptions(this.value); answers.ciudad = this.value;">
+                           oninput="renderCityDatalistOptions(this.value)">
                     <datalist id="ciudad_options"></datalist>
                 `;
             }

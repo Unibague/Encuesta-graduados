@@ -1176,7 +1176,10 @@
                     if (statusEl) statusEl.remove();
                 }
                 if (key === 'ciudad') {
-                    renderCityDatalistOptions(el.value);
+                    // Solo renderizar datalist si es un input (Android)
+                    if (el.tagName === 'INPUT') {
+                        renderCityDatalistOptions(el.value);
+                    }
                 }
                 updateNextButton();
             }

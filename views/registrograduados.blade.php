@@ -1772,6 +1772,7 @@
         window.selectChip = selectChip;
         window.onInputChange = onInputChange;
         window.onCountryChange = onCountryChange;
+        window.renderCityDatalistOptions = renderCityDatalistOptions;
         window.goNext = goNext;
         window.goBack = goBack;
         window.editField = editField;

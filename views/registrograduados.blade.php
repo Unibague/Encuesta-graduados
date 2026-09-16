@@ -1059,9 +1059,8 @@
                 // En iOS, usar select normal en lugar de input con datalist
                 if (isIOS) {
                     return `
-                        <select class="input-field searchable-field" id="field_${field.key}" onchange="onInputChange('${field.key}')" 
-                                ${answers.pais_codigo ? '' : 'disabled'}>
-                            <option value="">— ${answers.pais_codigo ? 'Selecciona una ciudad' : 'Primero selecciona un país'} —</option>
+                        <select class="input-field searchable-field" id="field_${field.key}" onchange="onInputChange('${field.key}')">
+                            <option value="">— Selecciona una ciudad —</option>
                         </select>
                     `;
                 }

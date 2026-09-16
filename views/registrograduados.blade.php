@@ -1183,7 +1183,6 @@
 
             if (!countrySelect || !citySelect) return;
 
-            // Funciona con select o input
             const countryName = countrySelect.value.trim();
             const country = Country.getAllCountries()
                 .find(item => item.name.toLowerCase() === countryName.toLowerCase());
@@ -1194,14 +1193,6 @@
             answers.ciudad = '';
 
             citySelect.value = '';
-            citySelect.disabled = !countryCode;
-            
-            // Actualizar placeholder si es input
-            if (countrySelect.tagName === 'INPUT') {
-                countrySelect.placeholder = countryCode
-                    ? 'Escribe para buscar una ciudad'
-                    : 'Primero selecciona un país';
-            }
 
             if (!countryCode) {
                 document.getElementById('ciudad_options').innerHTML = '';
@@ -1209,16 +1200,14 @@
                 return;
             }
 
-            // Si es select (iOS), llenar las opciones (limitadas a 60)
-            if (citySelect.tagName === 'SELECT') {
-                const cities = City.getCitiesOfCountry(countryCode) || [];
-                const sortedCities = cities.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 60);
-                
-                citySelect.innerHTML = `<option value="">— Selecciona una ciudad —</option>` +
-                    sortedCities.map(city => `<option value="${city.name.replace(/"/g, '&quot;')}">${city.name}</option>`).join('');
-            } else {
-                populateCityOptions(countryCode);
+            // Cargar las ciudades del país seleccionado
+            if (currentCityList.length === 0) {
+                const allCities = City.getCitiesOfCountry(countryCode) || [];
+                currentCityList = allCities.sort((a, b) => a.name.localeCompare(b.name));
             }
+
+            // Llenar el datalist con las primeras 60 ciudades
+            renderCityDatalistOptions('');
 
             const countryField = document.querySelector('.form-field[data-key="pais"]');
             if (countryField) countryField.classList.remove('has-error');
@@ -1250,34 +1239,22 @@
             const q = query.trim().toLowerCase();
             const countryCode = answers.pais_codigo;
 
-            if (!countryCode) {
+            if (!countryCode || currentCityList.length === 0) {
                 cityOptions.innerHTML = '';
                 return;
             }
 
-            // Solo mostrar opciones si el usuario escribió algo
-            if (q.length === 0) {
-                cityOptions.innerHTML = '';
-                return;
-            }
-
-            // Cargar TODAS las ciudades del país bajo demanda (una sola vez)
-            if (currentCityList.length === 0) {
-                const allCities = City.getCitiesOfCountry(countryCode) || [];
-                currentCityList = allCities.sort((a, b) => a.name.localeCompare(b.name));
-            }
-
-            // Filtrar por lo que el usuario escribió
+            // Filtrar ciudades por búsqueda
             const matches = [];
             for (const city of currentCityList) {
-                if (city.name.toLowerCase().includes(q)) {
+                if (q === '' || city.name.toLowerCase().includes(q)) {
                     matches.push(city);
                     if (matches.length >= MAX_CIUDADES_DATALIST) break;
                 }
             }
 
+            // Llenar datalist con las sugerencias
             cityOptions.innerHTML = matches
-                .sort((a, b) => a.name.localeCompare(b.name))
                 .map(city => `<option value="${city.name.replace(/"/g, '&quot;')}"></option>`)
                 .join('');
         }

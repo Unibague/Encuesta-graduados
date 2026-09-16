@@ -1256,7 +1256,16 @@
             const q = query.trim().toLowerCase();
             const countryCode = answers.pais_codigo;
 
-            if (!countryCode) return;
+            if (!countryCode) {
+                cityOptions.innerHTML = '';
+                return;
+            }
+
+            // Solo mostrar opciones si el usuario escribió algo
+            if (q.length === 0) {
+                cityOptions.innerHTML = '';
+                return;
+            }
 
             // Cargar TODAS las ciudades del país bajo demanda (una sola vez)
             if (currentCityList.length === 0) {
@@ -1267,7 +1276,7 @@
             // Filtrar por lo que el usuario escribió
             const matches = [];
             for (const city of currentCityList) {
-                if (q === '' || city.name.toLowerCase().includes(q)) {
+                if (city.name.toLowerCase().includes(q)) {
                     matches.push(city);
                     if (matches.length >= MAX_CIUDADES_DATALIST) break;
                 }

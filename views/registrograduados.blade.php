@@ -1056,21 +1056,13 @@
             }
 
             if (field.type === 'city') {
-                // En iOS, usar select normal en lugar de input con datalist
-                if (isIOS) {
-                    return `
-                        <select class="input-field searchable-field" id="field_${field.key}" onchange="onInputChange('${field.key}')">
-                            <option value="">— Selecciona una ciudad —</option>
-                        </select>
-                    `;
-                }
-
+                // Input con datalist para sugerencias (funciona en iOS, Android y Desktop)
                 return `
                     <input class="input-field searchable-field" type="text" id="field_${field.key}"
                            value="${answers.ciudad || ''}" list="ciudad_options"
-                           placeholder="${answers.pais_codigo ? 'Escribe para buscar una ciudad' : 'Primero selecciona un país'}"
-                           autocomplete="off" oninput="onInputChange('${field.key}')"
-                           ${answers.pais_codigo ? '' : 'disabled'}>
+                           placeholder="Escribe una ciudad"
+                           autocomplete="off" 
+                           oninput="setTimeout(() => renderCityDatalistOptions(this.value), 100)">
                     <datalist id="ciudad_options"></datalist>
                 `;
             }

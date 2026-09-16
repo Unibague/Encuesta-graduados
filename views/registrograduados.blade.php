@@ -1244,7 +1244,8 @@
         const MAX_CIUDADES_DATALIST = 60;
 
         function populateCityOptions(countryCode) {
-            currentCityList = countryCode ? (City.getCitiesOfCountry(countryCode) || []).slice(0, 60) : [];
+            // NO cargar ciudades aquí - esperar a que el usuario escriba
+            currentCityList = [];
             renderCityDatalistOptions('');
         }
 
@@ -1253,8 +1254,15 @@
             if (!cityOptions) return;
 
             const q = query.trim().toLowerCase();
-            const matches = [];
+            const countryCode = answers.pais_codigo;
 
+            // Cargar ciudades bajo demanda (SIEMPRE, no solo la primera vez)
+            if (countryCode && currentCityList.length === 0) {
+                const allCities = City.getCitiesOfCountry(countryCode) || [];
+                currentCityList = allCities.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 60);
+            }
+
+            const matches = [];
             for (const city of currentCityList) {
                 if (q === '' || city.name.toLowerCase().includes(q)) {
                     matches.push(city);

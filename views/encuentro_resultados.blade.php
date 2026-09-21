@@ -234,9 +234,14 @@
                         </option>
                     @endforeach
                 </select>
+                <select name="rol" class="form-control" style="max-width: 190px;">
+                    <option value="todos" {{ $rol === 'todos' ? 'selected' : '' }}>Todos los roles</option>
+                    <option value="graduado" {{ $rol === 'graduado' ? 'selected' : '' }}>Graduados</option>
+                    <option value="acompanante" {{ $rol === 'acompanante' ? 'selected' : '' }}>Acompañantes</option>
+                </select>
                 <button type="submit" class="btn btn-primary">Filtrar</button>
                 <a class="btn btn-success"
-                   href="?export=excel&amp;search={{ urlencode($search) }}&amp;anio={{ urlencode($anio) }}">
+                   href="?export=excel&amp;search={{ urlencode($search) }}&amp;anio={{ urlencode($anio) }}&amp;rol={{ urlencode($rol) }}">
                     Descargar Excel
                 </a>
             </form>
@@ -270,7 +275,7 @@
                     @empty
                         <tr>
                             <td colspan="{{ count($primaryColumns) + 1 }}" class="text-center text-muted py-4">
-                                No hay registros de graduados ni acompañantes.
+                                No hay registros para el filtro seleccionado.
                             </td>
                         </tr>
                     @endforelse
@@ -316,14 +321,14 @@
                     <div class="encuentro-pagination">
                         @if($page > 1)
                             <a class="btn btn-outline-primary btn-sm"
-                               href="?page={{ $page - 1 }}&search={{ urlencode($search) }}&anio={{ urlencode($anio) }}">Anterior</a>
+                               href="?page={{ $page - 1 }}&search={{ urlencode($search) }}&anio={{ urlencode($anio) }}&rol={{ urlencode($rol) }}">Anterior</a>
                         @endif
                         <span class="align-self-center text-muted small">
                             Página {{ $page }} de {{ $totalPages }}
                         </span>
                         @if($page < $totalPages)
                             <a class="btn btn-outline-primary btn-sm"
-                               href="?page={{ $page + 1 }}&search={{ urlencode($search) }}&anio={{ urlencode($anio) }}">Siguiente</a>
+                               href="?page={{ $page + 1 }}&search={{ urlencode($search) }}&anio={{ urlencode($anio) }}&rol={{ urlencode($rol) }}">Siguiente</a>
                         @endif
                     </div>
                 </nav>

@@ -94,6 +94,43 @@ function consultarElegibilidadGraduadoSiga(string $identificationNumber): object
     ];
 }
 
+/**
+ * Consulta si el documento existe en SIGA con cualquier categoria
+ * (estudiante, egresado, graduado...), sin exigir que este graduado.
+ */
+function consultarExistenciaSiga(string $identificationNumber): object
+{
+    try {
+        $curl = new \Ospina\CurlCobain\CurlCobain(
+            'https://academia.unibague.edu.co/atlante/consulta_estudiante.php'
+        );
+        $curl->setCurlOption(CURLOPT_CONNECTTIMEOUT, 5);
+        $curl->setCurlOption(CURLOPT_TIMEOUT, 15);
+        $curl->setQueryParamsAsArray([
+            'code_user' => $identificationNumber,
+            'type' => 'I',
+        ]);
+
+        $decoded = json_decode(trim((string) $curl->makeRequest()), true);
+        if (!is_array($decoded)) {
+            return (object) ['available' => false, 'exists' => false, 'data' => []];
+        }
+
+        $match = $decoded[0] ?? null;
+
+        return (object) [
+            'available' => true,
+            'exists' => is_array($match),
+            'data' => is_array($match) ? array_filter([
+                'email' => trim((string) ($match['email'] ?? '')),
+                'numero_celular' => trim((string) ($match['telephone'] ?? '')),
+            ]) : [],
+        ];
+    } catch (Throwable $e) {
+        return (object) ['available' => false, 'exists' => false, 'data' => []];
+    }
+}
+
 function decodificarRespuestaJsonSiga(string $response): ?array
 {
     $start = strpos($response, '{');

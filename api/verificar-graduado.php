@@ -1,9 +1,7 @@
 <?php
 
 require __DIR__ . '/../app/controllers/autoloader.php';
-require_once __DIR__ . '/../Helpers/SigaGraduado.php';
-require_once __DIR__ . '/../Helpers/EndpointAlternoGraduado.php';
-require_once __DIR__ . '/../Helpers/ListaManualGraduados.php';
+require_once __DIR__ . '/../Helpers/VerificacionGraduado.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -25,56 +23,18 @@ if (strlen($cedula) < 6 || strlen($cedula) > 15) {
     exit;
 }
 
-// Nivel 1: SIGA
-$siga = consultarElegibilidadGraduadoSiga($cedula);
-if ($siga->eligible) {
-    verificarGraduadoLog($cedula, 'graduado', true, $inicio);
-    echo json_encode([
-        'success' => true,
-        'status' => 'graduado',
-        'eligible' => true,
-        'graduated' => $siga->graduated,
-        'data' => $siga->data,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    exit;
-}
+// SIGA -> endpoint alterno.
+// Si no aparece en ningun sistema se le pide comunicarse con el
+// administrador para validar su condicion de graduado antes de continuar.
+$result = verificarElegibilidadGraduado($cedula);
+verificarGraduadoLog($cedula, $result->status, $result->eligible, $inicio);
 
-// Nivel 2: endpoint alterno (aun sin definir; ver Helpers/EndpointAlternoGraduado.php)
-$alterno = consultarGraduadoEndpointAlterno($cedula);
-if ($alterno->eligible) {
-    verificarGraduadoLog($cedula, 'alterno', true, $inicio);
-    echo json_encode([
-        'success' => true,
-        'status' => 'alterno',
-        'eligible' => true,
-        'graduated' => false,
-        'data' => $alterno->data,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    exit;
-}
-
-// Nivel 3: lista manual "IngresoGraduados" en Google Sheets, donde el
-// administrador agrega a mano a quienes valido como graduados.
-$lista = consultarListaManualGraduados($cedula);
-if ($lista->eligible) {
-    verificarGraduadoLog($cedula, 'lista_manual', true, $inicio);
-    echo json_encode([
-        'success' => true,
-        'status' => 'lista_manual',
-        'eligible' => true,
-        'graduated' => false,
-        'data' => $lista->data,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    exit;
-}
-
-// No aparece en ningun sistema: se le pide comunicarse con el administrador
-// para validar su condicion de graduado antes de continuar.
-verificarGraduadoLog($cedula, 'no_encontrado', false, $inicio);
 echo json_encode([
     'success' => true,
-    'status' => 'no_encontrado',
-    'eligible' => false,
+    'status' => $result->status,
+    'eligible' => $result->eligible,
+    'graduated' => $result->graduated,
+    'data' => $result->data,
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
 /**

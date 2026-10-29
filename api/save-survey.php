@@ -1,7 +1,7 @@
 <?php
 
 require __DIR__ . '/../app/controllers/autoloader.php';
-require_once __DIR__ . '/../Helpers/SigaGraduado.php';
+require_once __DIR__ . '/../Helpers/VerificacionGraduado.php';
 
 use Ospina\EasySQL\EasySQL;
 
@@ -57,9 +57,9 @@ if ($identificationNumber === '') {
 
 $eligibility = null;
 if ($surveyType === 'actualizaciongraduados') {
-    $eligibility = consultarElegibilidadGraduadoSiga($identificationNumber);
+    $eligibility = verificarElegibilidadGraduado($identificationNumber);
 
-    if (!$eligibility->available) {
+    if (!$eligibility->eligible && !$eligibility->available) {
         http_response_code(503);
         echo json_encode([
             'success' => false,

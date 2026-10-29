@@ -1,7 +1,7 @@
 <?php
 
 require __DIR__ . '/../app/controllers/autoloader.php';
-require_once __DIR__ . '/../Helpers/SigaGraduado.php';
+require_once __DIR__ . '/../Helpers/VerificacionGraduado.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -20,8 +20,9 @@ if (strlen($cedula) < 6 || strlen($cedula) > 15) {
     exit;
 }
 
-$result = consultarElegibilidadGraduadoSiga($cedula);
-if (!$result->available) {
+// Misma verificacion del Encuentro: SIGA -> endpoint alterno.
+$result = verificarElegibilidadGraduado($cedula);
+if (!$result->eligible && !$result->available) {
     http_response_code(503);
     echo json_encode([
         'success' => false,

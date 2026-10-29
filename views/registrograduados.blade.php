@@ -1056,22 +1056,13 @@
             }
 
             if (field.type === 'city') {
-                // En iOS, usar select normal en lugar de input con datalist
-                if (isIOS) {
-                    return `
-                        <select class="input-field searchable-field" id="field_${field.key}" onchange="onInputChange('${field.key}')" 
-                                ${answers.pais_codigo ? '' : 'disabled'}>
-                            <option value="">— ${answers.pais_codigo ? 'Selecciona una ciudad' : 'Primero selecciona un país'} —</option>
-                        </select>
-                    `;
-                }
-
+                // Input con datalist para sugerencias (funciona en iOS, Android y Desktop)
                 return `
                     <input class="input-field searchable-field" type="text" id="field_${field.key}"
                            value="${answers.ciudad || ''}" list="ciudad_options"
-                           placeholder="${answers.pais_codigo ? 'Escribe para buscar una ciudad' : 'Primero selecciona un país'}"
-                           autocomplete="off" oninput="onInputChange('${field.key}')"
-                           ${answers.pais_codigo ? '' : 'disabled'}>
+                           placeholder="Escribe una ciudad"
+                           autocomplete="off" 
+                           oninput="renderCityDatalistOptions(this.value)">
                     <datalist id="ciudad_options"></datalist>
                 `;
             }
@@ -1177,7 +1168,10 @@
                     if (statusEl) statusEl.remove();
                 }
                 if (key === 'ciudad') {
-                    renderCityDatalistOptions(el.value);
+                    // Solo renderizar datalist si es un input (Android)
+                    if (el.tagName === 'INPUT') {
+                        renderCityDatalistOptions(el.value);
+                    }
                 }
                 updateNextButton();
             }
@@ -1189,7 +1183,6 @@
 
             if (!countrySelect || !citySelect) return;
 
-            // Funciona con select o input
             const countryName = countrySelect.value.trim();
             const country = Country.getAllCountries()
                 .find(item => item.name.toLowerCase() === countryName.toLowerCase());
@@ -1200,14 +1193,6 @@
             answers.ciudad = '';
 
             citySelect.value = '';
-            citySelect.disabled = !countryCode;
-            
-            // Actualizar placeholder si es input
-            if (countrySelect.tagName === 'INPUT') {
-                countrySelect.placeholder = countryCode
-                    ? 'Escribe para buscar una ciudad'
-                    : 'Primero selecciona un país';
-            }
 
             if (!countryCode) {
                 document.getElementById('ciudad_options').innerHTML = '';
@@ -1215,16 +1200,14 @@
                 return;
             }
 
-            // Si es select (iOS), llenar las opciones (limitadas a 60)
-            if (citySelect.tagName === 'SELECT') {
-                const cities = City.getCitiesOfCountry(countryCode) || [];
-                const sortedCities = cities.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 60);
-                
-                citySelect.innerHTML = `<option value="">— Selecciona una ciudad —</option>` +
-                    sortedCities.map(city => `<option value="${city.name.replace(/"/g, '&quot;')}">${city.name}</option>`).join('');
-            } else {
-                populateCityOptions(countryCode);
+            // Cargar las ciudades del país seleccionado
+            if (currentCityList.length === 0) {
+                const allCities = City.getCitiesOfCountry(countryCode) || [];
+                currentCityList = allCities.sort((a, b) => a.name.localeCompare(b.name));
             }
+
+            // Llenar el datalist con las primeras 60 ciudades
+            renderCityDatalistOptions('');
 
             const countryField = document.querySelector('.form-field[data-key="pais"]');
             if (countryField) countryField.classList.remove('has-error');
@@ -1244,7 +1227,8 @@
         const MAX_CIUDADES_DATALIST = 60;
 
         function populateCityOptions(countryCode) {
-            currentCityList = countryCode ? (City.getCitiesOfCountry(countryCode) || []).slice(0, 60) : [];
+            // NO cargar ciudades aquí - esperar a que el usuario escriba
+            currentCityList = [];
             renderCityDatalistOptions('');
         }
 
@@ -1253,8 +1237,21 @@
             if (!cityOptions) return;
 
             const q = query.trim().toLowerCase();
-            const matches = [];
+            const countryCode = answers.pais_codigo;
 
+            if (!countryCode) {
+                cityOptions.innerHTML = '';
+                return;
+            }
+
+            // Cargar ciudades si no están cargadas
+            if (currentCityList.length === 0) {
+                const allCities = City.getCitiesOfCountry(countryCode) || [];
+                currentCityList = allCities.sort((a, b) => a.name.localeCompare(b.name));
+            }
+
+            // Filtrar ciudades por búsqueda
+            const matches = [];
             for (const city of currentCityList) {
                 if (q === '' || city.name.toLowerCase().includes(q)) {
                     matches.push(city);
@@ -1262,8 +1259,8 @@
                 }
             }
 
+            // Llenar datalist con las sugerencias
             cityOptions.innerHTML = matches
-                .sort((a, b) => a.name.localeCompare(b.name))
                 .map(city => `<option value="${city.name.replace(/"/g, '&quot;')}"></option>`)
                 .join('');
         }
@@ -1781,6 +1778,7 @@
         window.selectChip = selectChip;
         window.onInputChange = onInputChange;
         window.onCountryChange = onCountryChange;
+        window.renderCityDatalistOptions = renderCityDatalistOptions;
         window.goNext = goNext;
         window.goBack = goBack;
         window.editField = editField;

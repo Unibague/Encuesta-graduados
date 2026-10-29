@@ -13,6 +13,10 @@ $page = max((int) ($_GET['page'] ?? 1), 1);
 $limit = 50;
 $search = trim($_GET['search'] ?? '');
 $anio = trim($_GET['anio'] ?? (string) $anioActivo);
+$rol = trim($_GET['rol'] ?? 'todos');
+if (!in_array($rol, ['todos', 'graduado', 'acompanante'], true)) {
+    $rol = 'todos';
+}
 if ($anio !== '' && !preg_match('/^\d{4}$/', $anio)) {
     $anio = (string) $anioActivo;
 }
@@ -119,6 +123,13 @@ try {
     }
 
     $encuentroAnswers = array_merge($graduados, $acompanantes);
+    if ($rol !== 'todos') {
+        $sourceType = $rol === 'graduado' ? 'Graduado' : 'Acompañante';
+        $encuentroAnswers = array_values(array_filter(
+            $encuentroAnswers,
+            static fn (array $answer): bool => ($answer['source_type'] ?? '') === $sourceType
+        ));
+    }
     usort($encuentroAnswers, static fn (array $first, array $second): int =>
         strcmp((string) $second['created_at'], (string) $first['created_at'])
     );
@@ -224,6 +235,7 @@ echo $blade->run('encuentro_resultados', [
     'totalPages' => $totalPages,
     'search' => $search,
     'anio' => $anio,
+    'rol' => $rol,
     'anios' => $anios,
     'anioActivo' => $anioActivo,
     'message' => $message,

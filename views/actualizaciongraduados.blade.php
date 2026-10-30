@@ -1203,16 +1203,25 @@
 
         function initializeSearchableSelects() {
             searchableSelects = Array.from(document.querySelectorAll('.searchable-select'))
-                .map(select => new Choices(select, {
-                    allowHTML: false,
-                    searchEnabled: true,
-                    searchChoices: true,
-                    shouldSort: false,
-                    itemSelectText: '',
-                    searchPlaceholderValue: 'Escribe para buscar...',
-                    noResultsText: 'No se encontraron resultados',
-                    noChoicesText: 'No hay opciones disponibles',
-                }));
+                .map(select => {
+                    const isPrograma = select.id === 'field_programa';
+                    return new Choices(select, {
+                        allowHTML: false,
+                        searchEnabled: true,
+                        searchChoices: true,
+                        shouldSort: false,
+                        itemSelectText: '',
+                        fuseOptions: { threshold: 0.3, ignoreLocation: true },
+                        searchPlaceholderValue: isPrograma
+                            ? 'Escribe para buscar o escribe tu programa y presiona Enter'
+                            : 'Escribe para buscar...',
+                        noResultsText: 'No se encontraron resultados',
+                        noChoicesText: 'No hay opciones disponibles',
+                        addChoices: isPrograma,
+                        addItems: true,
+                        addItemText: (value) => `Presiona Enter para usar "${value}" como tu programa (OTRO)`,
+                    });
+                });
         }
 
         async function verifyIdentity() {
@@ -1518,9 +1527,18 @@
 
                 if (key === 'programa') {
                     const wasShowingOther = !!document.getElementById('field_programa_otro');
+                    // Programa escrito a mano (no está en la lista): se guarda como OTRO
+                    const customPrograma = answers.programa !== '' && !field.options.includes(answers.programa)
+                        ? answers.programa
+                        : null;
+                    if (customPrograma) answers.programa = 'OTRO';
                     if (answers.programa !== 'OTRO') delete answers.programa_otro;
-                    if (wasShowingOther !== (answers.programa === 'OTRO')) {
+                    if (customPrograma || wasShowingOther !== (answers.programa === 'OTRO')) {
                         saveCurrentSectionAnswers();
+                        if (customPrograma) {
+                            answers.programa = 'OTRO';
+                            answers.programa_otro = customPrograma;
+                        }
                         renderSection();
                         document.getElementById('field_programa_otro')?.focus();
                         return;

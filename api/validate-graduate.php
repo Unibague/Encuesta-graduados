@@ -38,5 +38,5 @@ echo json_encode([
     'data' => $result->data,
     'message' => $result->eligible
         ? 'Documento validado correctamente.'
-        : 'La cedula no corresponde a un graduado o egresado de la Universidad de Ibague. Comunicate con desarrolladorg3@unibague.edu.co.',
+        : 'No encontramos tu cédula en los registros de la Universidad de Ibagué. Comunícate con desarrolladorg3@unibague.edu.co.',
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

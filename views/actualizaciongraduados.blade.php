@@ -748,7 +748,7 @@
 
             <div class="identity-card" id="identityView">
                 <h2>Consulta tu c&eacute;dula</h2>
-                <p>Primero verificaremos si eres graduado o egresado de la Universidad de Ibagu&eacute;.</p>
+                <p>Primero verificaremos que est&eacute;s registrado en la Universidad de Ibagu&eacute;.</p>
                 <div class="identity-actions">
                     <input class="input-field" type="text" inputmode="numeric"
                            id="identityNumber" placeholder="N&uacute;mero de c&eacute;dula"
@@ -911,9 +911,19 @@
                             'ADMINISTRACION DE NEGOCIOS INTERNACIONALES',
                             'ECONOMIA',
                             'ESPECIALIZACION EN DERECHO CIVIL',
-                            'MERCADEO'
+                            'MERCADEO',
+                            'OTRO'
                         ],
                         required: true
+                    },
+                    {
+                        key: 'programa_otro',
+                        label: '¿Cuál es tu programa?',
+                        type: 'text',
+                        description: 'Escribe el nombre del programa del que eres egresado',
+                        required: true,
+                        placeholder: 'Ej: Ciencia Política',
+                        showIf: (a) => a.programa === 'OTRO'
                     }
                 ]
             },
@@ -1237,7 +1247,7 @@
                 }
 
                 if (!result.eligible) {
-                    message.innerHTML = 'La cédula no corresponde a un graduado o egresado. '
+                    message.innerHTML = 'No encontramos tu cédula en los registros de la Universidad de Ibagué. '
                         + 'Comunícate con <a href="mailto:desarrolladorg3@unibague.edu.co">'
                         + 'desarrolladorg3@unibague.edu.co</a>.';
                     message.classList.add('visible');
@@ -1505,6 +1515,18 @@
                 }
 
                 answers[key] = el.value.trim();
+
+                if (key === 'programa') {
+                    const wasShowingOther = !!document.getElementById('field_programa_otro');
+                    if (answers.programa !== 'OTRO') delete answers.programa_otro;
+                    if (wasShowingOther !== (answers.programa === 'OTRO')) {
+                        saveCurrentSectionAnswers();
+                        renderSection();
+                        document.getElementById('field_programa_otro')?.focus();
+                        return;
+                    }
+                }
+
                 const fieldEl = document.querySelector(`.form-field[data-key="${key}"]`);
                 if (fieldEl && answers[key]) {
                     fieldEl.classList.remove('has-error');

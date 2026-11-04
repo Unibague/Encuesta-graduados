@@ -7,9 +7,10 @@
  * Esta funcion solo consulta esa hoja; el registro en ella lo hace el
  * administrador directamente en Google Sheets.
  */
-function consultarListaManualGraduados(string $identificationNumber): object
-{
-    $spreadsheetId = '1D7lXrJadn6m7KJH10vHYxrvs5FqQr194s4jFccxPaoA';
+function consultarListaManualGraduados(
+    string $identificationNumber,
+    string $spreadsheetId = '1D7lXrJadn6m7KJH10vHYxrvs5FqQr194s4jFccxPaoA'
+): object {
     $targetGid = 0;
 
     try {
@@ -37,18 +38,22 @@ function consultarListaManualGraduados(string $identificationNumber): object
             ];
         }
 
-        $response = $service->spreadsheets_values->get($spreadsheetId, "{$sheetName}!A1:B");
+        $response = $service->spreadsheets_values->get($spreadsheetId, "{$sheetName}!A1:Z");
         $filas = $response->getValues() ?? [];
 
         foreach ($filas as $i => $fila) {
             if ($i === 0) continue; // encabezado
 
-            $cedulaFila = trim((string) ($fila[1] ?? ''));
-            if ($cedulaFila === $identificationNumber) {
+            // La cedula puede estar en cualquier columna de la fila.
+            $celdas = array_map(fn ($celda) => preg_replace('/\D+/', '', (string) $celda), $fila);
+            if (in_array($identificationNumber, $celdas, true)) {
                 return (object) [
                     'available' => true,
                     'eligible' => true,
-                    'data' => array_filter(['nombres' => trim((string) ($fila[0] ?? ''))]),
+                    // La columna A solo se toma como nombre si no es la cedula.
+                    'data' => $celdas[0] === $identificationNumber
+                        ? []
+                        : array_filter(['nombres' => trim((string) ($fila[0] ?? ''))]),
                     'error' => '',
                 ];
             }

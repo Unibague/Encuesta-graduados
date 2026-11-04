@@ -20,7 +20,7 @@ if (strlen($cedula) < 6 || strlen($cedula) > 15) {
     exit;
 }
 
-// Misma verificacion del Encuentro: SIGA -> endpoint alterno.
+// Misma verificacion del Encuentro: SIGA -> endpoint alterno -> lista manual (Google Sheets).
 $result = verificarElegibilidadGraduado($cedula);
 if (!$result->eligible && !$result->available) {
     http_response_code(503);
@@ -38,5 +38,5 @@ echo json_encode([
     'data' => $result->data,
     'message' => $result->eligible
         ? 'Documento validado correctamente.'
-        : 'No encontramos tu cédula en los registros de la Universidad de Ibagué. Comunícate con desarrolladorg3@unibague.edu.co.',
+        : 'No encontramos tu cédula como graduado o egresado de la Universidad de Ibagué. Si lo eres, escríbenos a graduados@unibague.edu.co y con gusto te habilitamos el acceso para actualizar tus datos.',
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

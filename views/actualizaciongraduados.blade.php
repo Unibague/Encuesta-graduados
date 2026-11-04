@@ -748,7 +748,7 @@
 
             <div class="identity-card" id="identityView">
                 <h2>Consulta tu c&eacute;dula</h2>
-                <p>Primero verificaremos que est&eacute;s registrado en la Universidad de Ibagu&eacute;.</p>
+                <p>Primero verificaremos si eres graduado o egresado de la Universidad de Ibagu&eacute;.</p>
                 <div class="identity-actions">
                     <input class="input-field" type="text" inputmode="numeric"
                            id="identityNumber" placeholder="N&uacute;mero de c&eacute;dula"
@@ -1256,9 +1256,9 @@
                 }
 
                 if (!result.eligible) {
-                    message.innerHTML = 'No encontramos tu cédula en los registros de la Universidad de Ibagué. '
-                        + 'Comunícate con <a href="mailto:desarrolladorg3@unibague.edu.co">'
-                        + 'desarrolladorg3@unibague.edu.co</a>.';
+                    message.innerHTML = 'No encontramos tu cédula como graduado o egresado de la Universidad de Ibagué. '
+                        + 'Si lo eres, escríbenos a <a href="mailto:graduados@unibague.edu.co">'
+                        + 'graduados@unibague.edu.co</a> y con gusto te habilitamos el acceso para actualizar tus datos.';
                     message.classList.add('visible');
                     return;
                 }

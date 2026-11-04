@@ -72,7 +72,7 @@ if ($surveyType === 'actualizaciongraduados') {
         http_response_code(403);
         echo json_encode([
             'success' => false,
-            'message' => 'No encontramos tu cédula en los registros de la Universidad de Ibagué. Comunícate con desarrolladorg3@unibague.edu.co.',
+            'message' => 'No encontramos tu cédula como graduado o egresado de la Universidad de Ibagué. Si lo eres, escríbenos a graduados@unibague.edu.co y con gusto te habilitamos el acceso para actualizar tus datos.',
         ]);
         exit;
     }
